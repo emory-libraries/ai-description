@@ -1,3 +1,4 @@
+import unittest
 from unittest.mock import Mock, patch
 
 from image_captioning_assistant.evaluate.evaluate_freeform_description import (
@@ -6,44 +7,45 @@ from image_captioning_assistant.evaluate.evaluate_freeform_description import (
 )
 
 
-@patch(
-    "image_captioning_assistant.evaluate.evaluate_freeform_description.ChatBedrockConverse"
-)
-def test_evaluate_freeform_description(mock_chat_bedrock):
-    # Set up the mock
-    mock_structured_llm = Mock()
-    mock_chat_bedrock.return_value.with_structured_output.return_value = (
-        mock_structured_llm
-    )
+class TestEvaluateStructuredMetadata(unittest.TestCase):
 
-    # Define the expected output
-    expected_evaluation = FreeformResponseEvaluation(
-        faithfulness_and_consistency=1.0, completeness=0.0, verbosity=0.0, clarity=1.0
+    @patch(
+        "image_captioning_assistant.evaluate.evaluate_freeform_description.ChatBedrockConverse"
     )
-    mock_structured_llm.invoke.return_value = expected_evaluation
+    def test_evaluate_freeform_description(self, mock_chat_bedrock):
+        # Set up the mock
+        mock_structured_llm = Mock()
+        mock_chat_bedrock.return_value.with_structured_output.return_value = (
+            mock_structured_llm
+        )
 
-    # Call the function
-    freeform_description_evaluation = evaluate_freeform_response(
-        llm_freeform_response="The picture depicts a flower in a field",
-        human_freeform_response="It's a picture of a tulip in Holland during WWII",
-        chat_bedrock_converse_kwargs={
-            "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-            "temperature": 0.0,
-        },
-    )
+        # Define the expected output
+        expected_evaluation = FreeformResponseEvaluation(
+            faithfulness_and_consistency=1.0,
+            completeness=0.0,
+            verbosity=0.0,
+            clarity=1.0,
+        )
+        mock_structured_llm.invoke.return_value = expected_evaluation
 
-    # Verify that the mock was called correctly
-    mock_chat_bedrock.assert_called_once_with(
-        model="anthropic.claude-3-5-sonnet-20240620-v1:0", temperature=0.0
-    )
-    mock_chat_bedrock.return_value.with_structured_output.assert_called_once_with(
-        FreeformResponseEvaluation
-    )
-    mock_structured_llm.invoke.assert_called_once()
+        # Call the function
+        freeform_description_evaluation = evaluate_freeform_response(
+            llm_freeform_response="The picture depicts a flower in a field",
+            human_freeform_response="It's a picture of a tulip in Holland during WWII",
+            chat_bedrock_converse_kwargs={
+                "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+                "temperature": 0.0,
+            },
+        )
 
-    # Assertions
-    assert freeform_description_evaluation == expected_evaluation
-    assert 0 <= freeform_description_evaluation.faithfulness_and_consistency <= 1
-    assert 0 <= freeform_description_evaluation.completeness <= 1
-    assert 0 <= freeform_description_evaluation.verbosity <= 1
-    assert 0 <= freeform_description_evaluation.clarity <= 1
+        # Verify that the mock was called correctly
+        mock_chat_bedrock.assert_called_once_with(
+            model="anthropic.claude-3-5-sonnet-20240620-v1:0", temperature=0.0
+        )
+        mock_chat_bedrock.return_value.with_structured_output.assert_called_once_with(
+            FreeformResponseEvaluation
+        )
+        mock_structured_llm.invoke.assert_called_once()
+
+        # Assertions
+        self.assertEqual(freeform_description_evaluation, expected_evaluation)
