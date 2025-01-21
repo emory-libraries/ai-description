@@ -80,12 +80,14 @@ def evaluate_structured_metadata(
         evaluate_freeform_response(
             llm_freeform_response=llm_structured_metadata.description,
             human_freeform_response=human_structured_metadata.description,
+            chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
         )
     )
     # Evaluate bias
     bias_analysis_evaluation: BiasAnalysisEvaluation = evaluate_bias_analysis(
         llm_bias_analysis=llm_structured_metadata.bias_analysis,
         human_bias_analysis=human_structured_metadata.bias_analysis,
+        chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
     )
     # Build structured LLM client
     structured_llm = ChatBedrockConverse(
