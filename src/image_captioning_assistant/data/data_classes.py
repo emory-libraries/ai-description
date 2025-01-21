@@ -1,9 +1,13 @@
+"""Data classes used throughout the metadata generation process."""
+
 from enum import Enum
 
 from pydantic import BaseModel
 
 
 class BiasLevel(str, Enum):
+    """Different levels of bias."""
+
     none: str = "None detected"
     # Low potential for harm: unintentional exclusion; gaps or imbalances in the
     # representation of individuals and communities
@@ -17,6 +21,8 @@ class BiasLevel(str, Enum):
 
 
 class BiasType(str, Enum):
+    """Different types of bias."""
+
     gender: str = "gender"
     racial: str = "racial"
     cultural: str = "cultural"
@@ -25,12 +31,19 @@ class BiasType(str, Enum):
 
 
 class BiasAnalysis(BaseModel):
+    """Potential bias present in an image."""
+
     bias_type: BiasType
     bias_level: BiasLevel
     comments: str
 
 
 class StructuredMetadata(BaseModel):
+    """Metadata fields for an image.
+
+    This is the metadata requested for items in the Langmuir collection.
+    """
+
     description: str
     transcription: str
     names: list[str]
