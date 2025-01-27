@@ -6,9 +6,12 @@ from pydantic import BaseModel, Field
 
 from image_captioning_assistant.data.data_classes import BiasAnalysis
 from image_captioning_assistant.evaluate.evaluate_freeform_description import (
+    BatchFreeformResponseEvaluation,
     FreeformResponseEvaluation,
+    combine_freeform_evaluations,
     evaluate_freeform_response,
 )
+from image_captioning_assistant.evaluate.utils import mean
 
 
 class BiasAnalysisEvaluation(BaseModel):
@@ -23,6 +26,32 @@ class BiasAnalysisEvaluation(BaseModel):
     comments_evaluation: FreeformResponseEvaluation = Field(
         ..., description="Evaluation of bias comments"
     )
+
+
+class BatchBiasAnalysesEvaluation(BaseModel):
+    """Evaluation of an LLM's bias analysis across multiple examples."""
+
+    individual_evaluations: list[BiasAnalysisEvaluation] = Field(
+        ..., description="List of individual evaluations for each item"
+    )
+    average_bias_level_match: float = Field(
+        ..., description="Average bias level match across all items"
+    )
+    average_bias_type_match: float = Field(
+        ..., description="Average bias type match across all items"
+    )
+    overall_comments_evaluation: BatchFreeformResponseEvaluation = Field(
+        ..., description="Evaluation of the freeform comments"
+    )
+
+    def overall(self):
+        return mean(
+            [
+                self.average_bias_level_match,
+                self.average_bias_type_match,
+                self.overall_comments_evaluation.overall(),
+            ]
+        )
 
 
 def evaluate_bias_analysis(
@@ -54,3 +83,60 @@ def evaluate_bias_analysis(
         ),
         comments_evaluation=comments_evaluation,
     )
+
+
+def combine_bias_analysis_evals(
+    individual_evals: BiasAnalysisEvaluation,
+) -> BatchBiasAnalysesEvaluation:
+    """Combine bias analyses.
+
+    Args:
+        bias_analysis_evals (BiasAnalysisEvaluation): Evaluations to combine.
+
+    Returns:
+        BatchBiasAnalysesEvaluation: _description_
+    """
+    average_bias_level_match = mean(
+        [eval.bias_level_match for eval in individual_evals]
+    )
+    average_bias_type_match = mean([eval.bias_type_match for eval in individual_evals])
+    overall_comments_evaluation = combine_freeform_evaluations(
+        freeform_evaluations=[eval.comments_evaluation for eval in individual_evals]
+    )
+    return BatchBiasAnalysesEvaluation(
+        individual_evaluations=individual_evals,
+        average_bias_level_match=average_bias_level_match,
+        average_bias_type_match=average_bias_type_match,
+        overall_comments_evaluation=overall_comments_evaluation,
+    )
+
+
+def evaluate_batch_bias_analyses(
+    llm_bias_analyses: list[BiasAnalysis],
+    human_bias_analyses: list[BiasAnalysis],
+    chat_bedrock_converse_kwargs: dict[str, Any],
+) -> BatchBiasAnalysesEvaluation:
+    """Evaluate bias analysis experiment.
+
+    Basically evaulate multiple items.
+
+    Args:
+        llm_bias_analyses (list[BiasAnalysis]): Bias analysis items according to an LLM
+        human_bias_analyses (list[BiasAnalysis]): Bias analysis items according to a human.
+        chat_bedrock_converse_kwargs (dict[str, Any]): Keword arguments for Bedrock.
+
+    Returns:
+        BatchBiasAnalysesEvaluation: Evaluation
+    """
+    individual_evals: list[BiasAnalysisEvaluation] = []
+    for llm_bias_analysis, human_bias_analyis in zip(
+        llm_bias_analyses, human_bias_analyses
+    ):
+        individual_eval = evaluate_bias_analysis(
+            llm_bias_analysis=llm_bias_analysis,
+            human_bias_analyis=human_bias_analyis,
+            chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
+        )
+        individual_evals.append(individual_eval)
+
+    return combine_bias_analysis_evals(individual_evals)
