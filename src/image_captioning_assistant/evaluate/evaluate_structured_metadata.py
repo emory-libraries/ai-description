@@ -94,17 +94,27 @@ class BatchStructuredMetadataEvaluation(BaseModel):
         ..., description="Overall evaluation of bias analysis"
     )
 
-    def overall(self):
+    def overall(
+        self,
+        description_weight: int = 1,
+        transcription_weight: int = 1,
+        names_weight: int = 1,
+        date_weight: int = 1,
+        location_weight: int = 1,
+        publication_info_weight: int = 1,
+        contextual_info_weight: int = 1,
+        bias_weight: int = 1,
+    ):
         return mean(
             [
-                self.mean_transcription_evaluation,
-                self.mean_names_evaluation,
-                self.mean_date_evaluation,
-                self.mean_location_evaluation,
-                self.mean_publication_info_evaluation,
-                self.mean_contextual_info_evaluation,
-                self.overall_description_evaluation.overall(),
-                self.overall_bias_analysis_evaluation.overall(),
+                description_weight * self.overall_description_evaluation.overall(),
+                transcription_weight * self.mean_transcription_evaluation,
+                names_weight * self.mean_names_evaluation,
+                date_weight * self.mean_date_evaluation,
+                location_weight * self.mean_location_evaluation,
+                publication_info_weight * self.mean_publication_info_evaluation,
+                contextual_info_weight * self.mean_contextual_info_evaluation,
+                bias_weight * self.overall_bias_analysis_evaluation.overall(),
             ]
         )
 
