@@ -33,9 +33,15 @@ class BiasType(str, Enum):
 class BiasAnalysis(BaseModel):
     """Potential bias present in an image."""
 
-    bias_type: BiasType = Field(..., description="The type of bias exibited by the image")
-    bias_level: BiasLevel = Field(..., description="The level of bias exibited by the image")
-    comments: str = Field(..., description="Freeform commentary on the bias recognized in the image")
+    bias_type: BiasType = Field(
+        ..., description="The type of bias exibited by the image"
+    )
+    bias_level: BiasLevel = Field(
+        ..., description="The level of bias exibited by the image"
+    )
+    comments: str = Field(
+        ..., description="Freeform commentary on the bias recognized in the image"
+    )
 
 
 class StructuredMetadata(BaseModel):
@@ -44,11 +50,25 @@ class StructuredMetadata(BaseModel):
     This is the metadata requested for items in the Langmuir collection.
     """
 
-    description: str = Field(..., description="A description of the contents of an image")
-    transcription: str = Field(..., description="A transcription of any text in the image")
-    names: list[str] = Field(..., description="The names of any people or groups recognized in the image")
-    date: str = Field(..., description="The approximate date the image may have been taken")
-    location: str = Field(..., description="The approximate location where the image may have been taken")
+    description: str = Field(
+        ..., description="A description of the contents of an image"
+    )
+    transcription: str = Field(
+        ..., description="A transcription of any text in the image"
+    )
+    names: list[str] = Field(
+        ..., description="The names of any people or groups recognized in the image"
+    )
+    date: str = Field(
+        ..., description="The approximate date the image may have been taken"
+    )
+    location: str = Field(
+        ..., description="The approximate location where the image may have been taken"
+    )
     publication_info: str = Field(..., description="Any known publication information")
-    contextual_info: str = Field(..., description="Any known contextual information around the image")
-    bias_analysis: BiasAnalysis = Field(..., description="An analysis of bias present in the image")
+    contextual_info: str = Field(
+        ..., description="Any known contextual information around the image"
+    )
+    bias_analysis: BiasAnalysis = Field(
+        ..., description="An analysis of bias present in the image"
+    )
