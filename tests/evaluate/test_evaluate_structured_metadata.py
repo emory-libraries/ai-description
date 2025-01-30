@@ -2,9 +2,9 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from image_captioning_assistant.data.data_classes import (
-    BiasAnalysis,
     BiasLevel,
     BiasType,
+    PotentialBias,
     StructuredMetadata,
 )
 from image_captioning_assistant.evaluate.evaluate_structured_metadata import (
@@ -22,7 +22,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         "image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_freeform_response"
     )
     @patch(
-        "image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_bias_analysis"
+        "image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_potential_biases"
     )
     @patch(
         "image_captioning_assistant.evaluate.evaluate_structured_metadata.ChatBedrockConverse"
@@ -40,14 +40,9 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
 
         # Mock the evaluate_bias_analysis function
         mock_evaluate_bias.return_value = BiasAnalysisEvaluation(
-            bias_type_match=0.8,
-            bias_level_match=0.7,
-            comments_evaluation=FreeformResponseEvaluation(
-                faithfulness_and_consistency=0.9,
-                completeness=0.8,
-                verbosity=0.7,
-                clarity=0.6,
-            ),
+            bias_type_alignment=0.8,
+            bias_level_alignment=0.7,
+            comments_alignment=0.5,
         )
 
         # Mock the ChatBedrockConverse.invoke method
@@ -65,35 +60,35 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         )
 
         # Create sample input data
-        llm_bias_analysis = BiasAnalysis(
-            bias_type=BiasType.ableist,
+        llm_bias_analysis = PotentialBias(
+            bias_type=BiasType.ability,
             bias_level=BiasLevel.high,
             comments="LLM Comment",
         )
         llm_metadata = StructuredMetadata(
             description="LLM description",
             transcription="LLM transcription",
-            names=["LLM Name 1", "LLM Name 2"],
+            people_and_groups=["LLM Name 1", "LLM Name 2"],
             date="2023-01-01",
             location="LLM Location",
             publication_info="LLM Publication Info",
             contextual_info="LLM Contextual Info",
-            bias_analysis=llm_bias_analysis,
+            potential_biases=[llm_bias_analysis],
         )
-        human_bias_analysis = BiasAnalysis(
-            bias_type=BiasType.ableist,
+        human_bias_analysis = PotentialBias(
+            bias_type=BiasType.ability,
             bias_level=BiasLevel.high,
             comments="Human comment",
         )
         human_metadata = StructuredMetadata(
             description="Human description",
             transcription="Human transcription",
-            names=["Human Name 1", "Human Name 2"],
+            people_and_groups=["Human Name 1", "Human Name 2"],
             date="2023-01-01",
             location="Human Location",
             publication_info="Human Publication Info",
             contextual_info="Human Contextual Info",
-            bias_analysis=human_bias_analysis,
+            potential_biases=[human_bias_analysis],
         )
 
         chat_bedrock_kwargs = {"model": "anthropic.claude-3-5-sonnet-20240620-v1:0"}
@@ -119,21 +114,9 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         self.assertEqual(result.description_evaluation.verbosity, 0.7)
         self.assertEqual(result.description_evaluation.clarity, 0.6)
 
-        self.assertEqual(result.bias_analysis_evaluation.bias_type_match, 0.8)
-        self.assertEqual(result.bias_analysis_evaluation.bias_level_match, 0.7)
-        self.assertEqual(
-            result.bias_analysis_evaluation.comments_evaluation.faithfulness_and_consistency,
-            0.9,
-        )
-        self.assertEqual(
-            result.bias_analysis_evaluation.comments_evaluation.completeness, 0.8
-        )
-        self.assertEqual(
-            result.bias_analysis_evaluation.comments_evaluation.verbosity, 0.7
-        )
-        self.assertEqual(
-            result.bias_analysis_evaluation.comments_evaluation.clarity, 0.6
-        )
+        self.assertEqual(result.bias_analysis_evaluation.bias_type_alignment, 0.8)
+        self.assertEqual(result.bias_analysis_evaluation.bias_level_alignment, 0.7)
+        self.assertEqual(result.bias_analysis_evaluation.comments_alignment, 0.5)
 
         # Assert that the mocked functions were called with correct arguments
         mock_evaluate_freeform.assert_called_once_with(
@@ -143,8 +126,8 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         )
 
         mock_evaluate_bias.assert_called_once_with(
-            llm_bias_analysis=llm_bias_analysis,
-            human_bias_analysis=human_bias_analysis,
+            llm_potential_biases=[llm_bias_analysis],
+            human_potential_biases=[human_bias_analysis],
             chat_bedrock_converse_kwargs=chat_bedrock_kwargs,
         )
         mock_chat_bedrock.assert_called_once_with(**chat_bedrock_kwargs)

@@ -1,6 +1,7 @@
 """Data classes used throughout the metadata generation process."""
 
 from enum import Enum
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -24,14 +25,18 @@ class BiasType(str, Enum):
     """Different types of bias."""
 
     gender: str = "gender"
-    racial: str = "racial"
-    cultural: str = "cultural"
-    ableist: str = "ableist"
+    race: str = "race"
+    culture: str = "culture"
+    ability: str = "ability"
+    sexual_orientation: str = "sexual orientation"
+    body_shape: str = "body_shape"
+    age: str = "age"
+    violence: str = "violence"
     other: str = "other"
 
 
-class BiasAnalysis(BaseModel):
-    """Potential bias present in an image."""
+class PotentialBias(BaseModel):
+    """A potential bias present in an image."""
 
     bias_type: BiasType = Field(
         ..., description="The type of bias exibited by the image"
@@ -42,6 +47,9 @@ class BiasAnalysis(BaseModel):
     comments: str = Field(
         ..., description="Freeform commentary on the bias recognized in the image"
     )
+
+
+BiasAnalysis = List[PotentialBias]
 
 
 class StructuredMetadata(BaseModel):
@@ -56,7 +64,7 @@ class StructuredMetadata(BaseModel):
     transcription: str = Field(
         ..., description="A transcription of any text in the image"
     )
-    names: list[str] = Field(
+    people_and_groups: list[str] = Field(
         ..., description="The names of any people or groups recognized in the image"
     )
     date: str = Field(
@@ -69,6 +77,6 @@ class StructuredMetadata(BaseModel):
     contextual_info: str = Field(
         ..., description="Any known contextual information around the image"
     )
-    bias_analysis: BiasAnalysis = Field(
-        ..., description="An analysis of bias present in the image"
+    potential_biases: BiasAnalysis = Field(
+        ..., description="A list of any potential biases present in the image"
     )

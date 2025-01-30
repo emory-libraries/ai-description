@@ -11,8 +11,8 @@ from image_captioning_assistant.data.data_classes import StructuredMetadata
 from image_captioning_assistant.evaluate.evaluate_bias_analysis import (
     BatchBiasAnalysesEvaluation,
     BiasAnalysisEvaluation,
-    combine_bias_analysis_evals,
-    evaluate_bias_analysis,
+    combine_potential_bias_evals,
+    evaluate_potential_biases,
 )
 from image_captioning_assistant.evaluate.evaluate_freeform_description import (
     BatchFreeformResponseEvaluation,
@@ -143,9 +143,9 @@ def evaluate_structured_metadata(
         )
     )
     # Evaluate bias
-    bias_analysis_evaluation: BiasAnalysisEvaluation = evaluate_bias_analysis(
-        llm_bias_analysis=llm_structured_metadata.bias_analysis,
-        human_bias_analysis=human_structured_metadata.bias_analysis,
+    bias_analysis_evaluation: BiasAnalysisEvaluation = evaluate_potential_biases(
+        llm_potential_biases=llm_structured_metadata.potential_biases,
+        human_potential_biases=human_structured_metadata.potential_biases,
         chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
     )
     # Build structured LLM client
@@ -210,7 +210,7 @@ def combine_structured_metadata_evaluations(
     mean_transcription_evaluation = mean(
         [eval.transcription_evaluation for eval in metadata_evaluations]
     )
-    overall_bias_analysis_evaluation = combine_bias_analysis_evals(
+    overall_bias_analysis_evaluation = combine_potential_bias_evals(
         [eval.bias_analysis_evaluation for eval in metadata_evaluations]
     )
     overall_description_evaluation = combine_freeform_evaluations(
