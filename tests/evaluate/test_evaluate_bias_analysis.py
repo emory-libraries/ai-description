@@ -26,18 +26,18 @@ class TestEvaluateBiasAnalysis(unittest.TestCase):
         expected_evaluation = BiasAnalysisEvaluation(
             bias_level_alignment=1.0,
             bias_type_alignment=0.3,
-            comments_alignment=0.4,
+            explanation_alignment=0.4,
         )
         mock_structured_llm.invoke.return_value = expected_evaluation
         llm_bias_analysis = PotentialBias(
             bias_type=BiasType.race,
             bias_level=BiasLevel.high,
-            comments="Water fountain and a sign above it that says 'whites'",
+            explanation="Water fountain and a sign above it that says 'whites'",
         )
         human_bias_analysis = PotentialBias(
             bias_type=BiasType.race,
             bias_level=BiasLevel.high,
-            comments="A water fountain and a sign above it tha reads 'whites'",
+            explanation="A water fountain and a sign above it tha reads 'whites'",
         )
         potential_bias_evaluation = evaluate_potential_biases(
             llm_potential_biases=[llm_bias_analysis],

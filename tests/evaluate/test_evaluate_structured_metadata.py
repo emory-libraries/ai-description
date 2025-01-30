@@ -42,7 +42,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         mock_evaluate_bias.return_value = BiasAnalysisEvaluation(
             bias_type_alignment=0.8,
             bias_level_alignment=0.7,
-            comments_alignment=0.5,
+            explanation_alignment=0.5,
         )
 
         # Mock the ChatBedrockConverse.invoke method
@@ -63,7 +63,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         llm_bias_analysis = PotentialBias(
             bias_type=BiasType.ability,
             bias_level=BiasLevel.high,
-            comments="LLM Comment",
+            explanation="LLM Comment",
         )
         llm_metadata = StructuredMetadata(
             description="LLM description",
@@ -78,7 +78,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         human_bias_analysis = PotentialBias(
             bias_type=BiasType.ability,
             bias_level=BiasLevel.high,
-            comments="Human comment",
+            explanation="Human comment",
         )
         human_metadata = StructuredMetadata(
             description="Human description",
@@ -116,7 +116,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
 
         self.assertEqual(result.bias_analysis_evaluation.bias_type_alignment, 0.8)
         self.assertEqual(result.bias_analysis_evaluation.bias_level_alignment, 0.7)
-        self.assertEqual(result.bias_analysis_evaluation.comments_alignment, 0.5)
+        self.assertEqual(result.bias_analysis_evaluation.explanation_alignment, 0.5)
 
         # Assert that the mocked functions were called with correct arguments
         mock_evaluate_freeform.assert_called_once_with(

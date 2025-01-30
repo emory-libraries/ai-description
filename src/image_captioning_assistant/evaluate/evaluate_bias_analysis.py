@@ -24,7 +24,7 @@ class BiasAnalysisEvaluation(BaseModel):
     bias_level_alignment: float = Field(
         ..., description="Score from 0-1 evaluating alignment of bias levels"
     )
-    comments_alignment: float = Field(
+    explanation_alignment: float = Field(
         ..., description="Score from 0-1 evaluating alignment of comments"
     )
 
@@ -41,7 +41,7 @@ class BatchBiasAnalysesEvaluation(BaseModel):
     average_bias_type_alignment: float = Field(
         ..., description="Average bias type alignment across all items"
     )
-    average_comments_alignment: float = Field(
+    average_explanation_alignment: float = Field(
         ..., description="Average alignment of comments across all items"
     )
 
@@ -49,13 +49,13 @@ class BatchBiasAnalysesEvaluation(BaseModel):
         self,
         bias_level_weight: int = 1,
         bias_type_weight: int = 1,
-        comments_weight: int = 1,
+        explanation_weight: int = 1,
     ):
         return mean(
             [
                 bias_level_weight * self.average_bias_level_alignment,
                 bias_type_weight * self.average_bias_type_alignment,
-                comments_weight * self.average_comments_alignment,
+                explanation_weight * self.average_explanation_alignment,
             ]
         )
 
@@ -77,14 +77,14 @@ def combine_potential_bias_evals(
     average_bias_type_alignment = mean(
         [eval.bias_type_alignment for eval in individual_evals]
     )
-    average_comments_alignment = mean(
-        [eval.comments_alignment for eval in individual_evals]
+    average_explanation_alignment = mean(
+        [eval.explanation_alignment for eval in individual_evals]
     )
     return BatchBiasAnalysesEvaluation(
         individual_evaluations=individual_evals,
         average_bias_level_alignment=average_bias_level_alignment,
         average_bias_type_alignment=average_bias_type_alignment,
-        average_comments_alignment=average_comments_alignment,
+        average_explanation_alignment=average_explanation_alignment,
     )
 
 

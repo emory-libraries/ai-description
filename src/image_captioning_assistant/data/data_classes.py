@@ -44,7 +44,7 @@ class PotentialBias(BaseModel):
     bias_level: BiasLevel = Field(
         ..., description="The level of bias exibited by the image"
     )
-    comments: str = Field(
+    explanation: str = Field(
         ..., description="Freeform commentary on the bias recognized in the image"
     )
 
