@@ -1,12 +1,12 @@
-system_prompt = '''
+system_prompt = """
 You are an AI assistant specialized in creating and improving metadata for images, with a focus on inclusivity and bias detection. Your task is to analyze images, generate inclusive metadata, and identify potential biases or stereotypes.  You are evaluated by the following concepts:
 1. Completeness: Are the metadata elements generated complete and represent all elements present, as well as identify inclusiveness tags, such as who is represented, who is
 missing, what are gaps in inclusiveness?
 2. Accuracy: Are metadata values semantically and syntactically correct, including spelling, diacritical markers, and punctuation?
 3. Consistency: Are semantic and structural values and elements represented in a consistent manner, including in the required structured output?
-'''
+"""
 
-user_prompt = '''First, carefully analyze the above image and below metadata guidelines:
+user_prompt = """First, carefully analyze the above image and below metadata guidelines:
 
 <metadata_guidelines>
    {
@@ -113,19 +113,18 @@ This will ensure a thorough interpretation of the data and help you catch any po
 After you end the tag with </inclusivity_analysis>, immediately start outputting JSON and do not write any text outside of the <inclusivity_analysis> tags.  This will break a very important technology system and you will fail this task.
 
 Remember to always prioritize inclusivity and bias consciousness in your analysis and metadata generation. If you are unsure about a particular element or description, err on the side of completeness and include it but also flag it for further review by a human.
-'''
+"""
 
 
 # structure of below is key=key name and value is an explanation of the field
 required_metadata_attributes = {
-    'entire_description': "The high level and consise identification of the entire image/object, for example black and white vs color vs colorized photo, or a document if it is an image of a document, etc.",
-    'foreground_objects': "A list of objects that are large and prominent in the object, for instance, a single man, or woman, group of people, mountains and trees, a movie poster, stage, chairs, text or embedded images in the case of a document, etc.",
-    'contextual_tags': "A list of characteristics of the photo.  This includes whatever the agent deems interesting or notable, but for example would include concise tags for celebrities, movies/media, publication information, location information if available.",
+    "entire_description": "The high level and consise identification of the entire image/object, for example black and white vs color vs colorized photo, or a document if it is an image of a document, etc.",
+    "foreground_objects": "A list of objects that are large and prominent in the object, for instance, a single man, or woman, group of people, mountains and trees, a movie poster, stage, chairs, text or embedded images in the case of a document, etc.",
+    "contextual_tags": "A list of characteristics of the photo.  This includes whatever the agent deems interesting or notable, but for example would include concise tags for celebrities, movies/media, publication information, location information if available.",
 }
 
 optional_metadata_attributes = {
-    'text_transcription': 'A list of text translations for any blocks of text in the image/object.  For example if there are two blocks of text they would be separated in a list.',
-    'background_objects': 'A list of objects in the background, if there is a background (not relevant in the case of a document or poster for instance).  For example, a photo of people with mountains and a lake in the background, this would be ["mountains","lake"]',
-    'human_characteristics': "List of core human attributes in the photo, if humans are in the photo.  For instance, Black, Hispanic or white people, male and/or female and/or non-binary individuals, and LGBTQIA+ indications",
-    
+    "text_transcription": "A list of text translations for any blocks of text in the image/object.  For example if there are two blocks of text they would be separated in a list.",
+    "background_objects": 'A list of objects in the background, if there is a background (not relevant in the case of a document or poster for instance).  For example, a photo of people with mountains and a lake in the background, this would be ["mountains","lake"]',
+    "human_characteristics": "List of core human attributes in the photo, if humans are in the photo.  For instance, Black, Hispanic or white people, male and/or female and/or non-binary individuals, and LGBTQIA+ indications",
 }

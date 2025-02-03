@@ -6,6 +6,10 @@ dependencies = [
     "boto3==1.36.2",
     "langchain-aws==0.2.11",
     "loguru==0.7.3",
+    "pandas==2.2.3",
     "pydantic==2.10.5",
-    "sqlalchemy==2.0.36"
+    "pymysql==1.1.1",
+    "python-dotenv==1.0.1",
+    "sqlalchemy==2.0.36",
+    "tqdm==4.67.1",
 ]

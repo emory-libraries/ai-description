@@ -1,7 +1,6 @@
 """ECS worker script."""
 
 import contextlib
-import json
 import logging
 import os
 import sys
@@ -137,13 +136,15 @@ def read_json_zip(download_path: Path) -> pd.DataFrame:
         if tmp_path:
             try:
                 # Load dataframe
-                return pd.DataFrame()
+                return pd.DataFrame(tmp_path)
 
             except Exception as e:
                 logger.error(f"Unexpected error processing files: {str(e)}")
                 return pd.DataFrame()
         else:
-            logger.error("Failed to create temporary directory for the unzipped content")
+            logger.error(
+                "Failed to create temporary directory for the unzipped content"
+            )
             return pd.DataFrame()
 
 
@@ -151,7 +152,7 @@ def process_job(
     job_id: str,
     s3_bucket: str,
     results_bucket: str,
-    dynamodb_table: str,
+    aurora_table: str,
 ) -> None:
     """Process job.
 
@@ -159,7 +160,7 @@ def process_job(
         job_id (str): ID of the job - in practice this is a filename.
         s3_bucket (str): Bucket where input file is stored.
         results_bucket (str): Bucket where output file will be stored.
-        dynamodb_table (str): DynamoDB table where job status is tracked.
+        aurora_table (str): Aurora DB table where job status is tracked.
     """
     # Use a dedicated data directory in the container
     data_dir = Path("/app/data")
@@ -201,12 +202,15 @@ def process_job(
 
         # Update DynamoDB with status and S3 path
         with error_handler("status update", job_id):
-            table = dynamodb.Table(dynamodb_table)
+            table = dynamodb.Table(aurora_table)
             table.update_item(
                 Key={"job_id": job_id},
                 UpdateExpression="SET #s = :s, #p = :p",
                 ExpressionAttributeNames={"#s": "status", "#p": "result_path"},
-                ExpressionAttributeValues={":s": "COMPLETED", ":p": f"s3://{results_bucket}/{results_filename}"},
+                ExpressionAttributeValues={
+                    ":s": "COMPLETED",
+                    ":p": f"s3://{results_bucket}/{results_filename}",
+                },
             )
             logger.info("Updated job status and result path in DynamoDB")
 
@@ -224,7 +228,7 @@ def main() -> None:
             job_id=JOB_ID,
             s3_bucket=S3_BUCKET,
             results_bucket=RESULTS_BUCKET,
-            dynamodb_table=DYNAMODB_TABLE,
+            aurora_table=DYNAMODB_TABLE,
         )
     except Exception:
         # Any unhandled exceptions will be caught here

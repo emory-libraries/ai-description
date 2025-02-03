@@ -1,8 +1,8 @@
 from loguru import logger
 from sqlalchemy.sql import select
 
-from image_captioning_assistant.aurora_db.client import AuroraServerlessClient
-from image_captioning_assistant.aurora_db.models import image_metadata, job
+from image_captioning_assistant.db.client import AuroraServerlessClient
+from image_captioning_assistant.db.models import image_metadata, job
 
 
 class DatabaseOperations:
