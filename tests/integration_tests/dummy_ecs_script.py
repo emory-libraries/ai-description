@@ -186,7 +186,7 @@ def process_job(
             input_df = read_json_zip(download_path)
             logger.info("Processing items in zip file")
             # PROCESS HERE
-            results = None
+            results = input_df.progress_map(None)
             # Write to local temp file
             logger.debug("Writing results temporarily to CSV")
             results.to_csv(result_path, index=False)
