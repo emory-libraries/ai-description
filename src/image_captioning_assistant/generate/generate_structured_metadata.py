@@ -1,7 +1,7 @@
 """Generate structured metadata for an image."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from langchain_aws import ChatBedrockConverse
 from loguru import logger

@@ -1,11 +1,11 @@
 """Generate bias analysis for an image."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from langchain_aws import ChatBedrockConverse
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 from image_captioning_assistant.data.data_classes import BiasAnalysis
 from image_captioning_assistant.generate.utils import (

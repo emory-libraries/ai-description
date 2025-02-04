@@ -1,10 +1,10 @@
-from typing import Any
 import argparse
 from pathlib import Path
+from typing import Any
 
 from image_captioning_assistant.generate.generate_bias_analysis import (
-    generate_bias_analysis,
     BiasAnalysis,
+    generate_bias_analysis,
 )
 
 
