@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from loguru import logger
+from sqlalchemy.exc import NoResultFound
 
 from image_captioning_assistant.data.db.config import Config
 from image_captioning_assistant.data.db.database_manager import DatabaseManager
@@ -11,7 +12,7 @@ from image_captioning_assistant.data.db.utils import create_tables_if_not_exist
 
 def create_document_metadata(
     db_manager: DatabaseManager,
-    job_id: int,
+    batch_job_name: str,
     document_id: str,
     description: Optional[str] = None,
     transcription: Optional[str] = None,
@@ -20,11 +21,10 @@ def create_document_metadata(
     location: Optional[str] = None,
     publication_info: Optional[str] = None,
     contextual_info: Optional[str] = None,
-    bias_id: Optional[int] = None,
 ):
     with db_manager.get_writer_db() as db:
         new_metadata = DocumentMetadata(
-            job_id=job_id,
+            batch_job_name=batch_job_name,
             document_id=document_id,
             description=description,
             transcription=transcription,
@@ -33,7 +33,6 @@ def create_document_metadata(
             location=location,
             publication_info=publication_info,
             contextual_info=contextual_info,
-            bias_id=bias_id,
         )
         db.add(new_metadata)
         db.commit()
@@ -59,6 +58,21 @@ def get_document_metadata_by_document_id(db_manager: DatabaseManager, document_i
         )
 
 
+def get_document_metadata_by_id_and_job(
+    db_manager: DatabaseManager, document_id: str, batch_job_name: str
+):
+    with db_manager.get_reader_db() as db:
+        try:
+            return (
+                db.query(DocumentMetadata)
+                .filter(DocumentMetadata.document_id == document_id)
+                .filter(DocumentMetadata.batch_job_name == batch_job_name)
+                .one()
+            )
+        except NoResultFound:
+            return None
+
+
 def update_document_metadata(
     db_manager: DatabaseManager,
     metadata_id: int,
@@ -69,7 +83,6 @@ def update_document_metadata(
     location: Optional[str] = None,
     publication_info: Optional[str] = None,
     contextual_info: Optional[str] = None,
-    bias_id: Optional[int] = None,
 ):
     with db_manager.get_writer_db() as db:
         metadata = (
@@ -92,8 +105,6 @@ def update_document_metadata(
                 metadata.publication_info = publication_info
             if contextual_info is not None:
                 metadata.contextual_info = contextual_info
-            if bias_id is not None:
-                metadata.bias_id = bias_id
             db.commit()
             db.refresh(metadata)
         return metadata
@@ -110,6 +121,20 @@ def delete_document_metadata(db_manager: DatabaseManager, metadata_id: int):
             db.delete(metadata)
             db.commit()
         return metadata
+
+
+def delete_document_metadata_by_id_and_job(
+    db_manager: DatabaseManager, document_id: str, batch_job_name: str
+):
+    with db_manager.get_writer_db() as db:
+        deleted_count = (
+            db.query(DocumentMetadata)
+            .filter(DocumentMetadata.document_id == document_id)
+            .filter(DocumentMetadata.batch_job_name == batch_job_name)
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+        return deleted_count
 
 
 if __name__ == "__main__":
@@ -132,7 +157,7 @@ if __name__ == "__main__":
     logger.info("Creating document metadata")
     new_metadata = create_document_metadata(
         db_manager,
-        job_id=1,
+        batch_job_name="job1",
         document_id="doc123",
         description="Sample document",
         transcription="This is a sample transcription",

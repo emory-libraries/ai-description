@@ -37,6 +37,26 @@ def update_document(db_manager: DatabaseManager, document_id: str, new_image_id:
         return document
 
 
+def put_document(db_manager: DatabaseManager, document_id: str, image_id: str):
+    with db_manager.get_writer_db() as db:
+        document = (
+            db.query(Document).filter(Document.document_id == document_id).first()
+        )
+        if document:
+            # Update existing document
+            document.image_id = image_id
+            logger.info(f"Updated existing document: Document ID: {document_id}")
+        else:
+            # Create new document
+            document = Document(document_id=document_id, image_id=image_id)
+            db.add(document)
+            logger.info(f"Created new document: Document ID: {document_id}")
+
+        db.commit()
+        db.refresh(document)
+        return document
+
+
 def delete_document(db_manager: DatabaseManager, document_id: str):
     with db_manager.get_writer_db() as db:
         document = (

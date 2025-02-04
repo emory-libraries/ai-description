@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from image_captioning_assistant.aws.get_secret import get_secret
+from image_captioning_assistant.aws.secrets_manager import get_secret
 
 
 @dataclass

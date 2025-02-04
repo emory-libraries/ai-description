@@ -4,13 +4,13 @@ from loguru import logger
 
 from image_captioning_assistant.data.db.config import Config
 from image_captioning_assistant.data.db.database_manager import DatabaseManager
-from image_captioning_assistant.data.db.models import Job
+from image_captioning_assistant.data.db.models import BatchJob
 from image_captioning_assistant.data.db.utils import create_tables_if_not_exist
 
 
 def create_job(start_time: datetime, status: str):
     with db_manager.get_writer_db() as db:
-        new_job = Job(start_time=start_time, status=status)
+        new_job = BatchJob(start_time=start_time, status=status)
         db.add(new_job)
         db.commit()
         db.refresh(new_job)
@@ -19,17 +19,17 @@ def create_job(start_time: datetime, status: str):
 
 def get_job(job_id: int):
     with db_manager.get_reader_db() as db:
-        return db.query(Job).filter(Job.job_id == job_id).first()
+        return db.query(BatchJob).filter(BatchJob.job_id == job_id).first()
 
 
 def get_n_jobs(n: int):
     with db_manager.get_reader_db() as db:
-        return db.query(Job).order_by(Job.job_id.desc()).limit(n).all()
+        return db.query(BatchJob).order_by(BatchJob.job_id.desc()).limit(n).all()
 
 
 def update_job(job_id: int, status: str, end_time: datetime):
     with db_manager.get_writer_db() as db:
-        job = db.query(Job).filter(Job.job_id == job_id).first()
+        job = db.query(BatchJob).filter(BatchJob.job_id == job_id).first()
         if job:
             job.status = status
             job.end_time = end_time
@@ -40,7 +40,7 @@ def update_job(job_id: int, status: str, end_time: datetime):
 
 def delete_job(job_id: int):
     with db_manager.get_writer_db() as db:
-        job = db.query(Job).filter(Job.job_id == job_id).first()
+        job = db.query(BatchJob).filter(BatchJob.job_id == job_id).first()
         if job:
             db.delete(job)
             db.commit()
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     logger.info(f"Updated job: {updated_job.job_id}, New Status: {updated_job.status}")
 
     logger.info("\nRetrieving last 5 jobs")
-    last_five_jobs = get_n_jobs(10)
+    last_five_jobs = get_n_jobs(5)
     for job in last_five_jobs:
         logger.info(
             f"Job ID: {job.job_id}, Status: {job.status}, Start Time: {job.start_time}"

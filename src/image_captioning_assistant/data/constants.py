@@ -28,30 +28,3 @@ class BiasType(str, Enum):
     age: str = "age"
     violence: str = "violence"
     other: str = "other"
-
-
-JOB_TABLE = "job"
-JOB_ID = "job_id"
-START_TIME = "start_time"
-STATUS = "status"
-END_TIME = "end_time"
-
-DOCUMENT_TABLE = "document"
-DOCUMENT_ID = "document_id"
-IMAGE_ID = "image_id"
-
-METADATA_TABLE = "metadata"
-METADATA_ID = "metadata_id"
-DESCRIPTION = "description"
-TRANSCRIPTION = "transcription"
-PEOPLE_AND_GROUPS = "people_and_groups"
-DATE = "date"
-LOCATION = "location"
-PUBLICATION_INFO = "publication_info"
-CONTEXTUAL_INFO = "contextual_info"
-
-BIAS_TABLE = "bias"
-BIAS_ID = "bias_id"
-BIAS_TYPE = "bias_type"
-BIAS_LEVEL = "bias_level"
-EXPLANATION = "explanation"

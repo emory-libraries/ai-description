@@ -4,24 +4,26 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class Job(Base):
-    __tablename__ = "job"
-    job_id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime)
-    status = Column(String(50))
-    end_time = Column(DateTime)
-
-
 class Document(Base):
     __tablename__ = "document"
     document_id = Column(String(100), primary_key=True)
     image_id = Column(String(100))
 
 
+class BatchJob(Base):
+    __tablename__ = "batch_job"
+    batch_job_name = Column(String(100), primary_key=True)
+    s3_bucket = Column(String(50))
+    s3_prefix = Column(String(50))
+    start_time = Column(DateTime)
+    status = Column(String(50))
+    end_time = Column(DateTime)
+
+
 class DocumentMetadata(Base):
     __tablename__ = "document_metadata"
     metadata_id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey("job.job_id"))
+    batch_job_name = Column(Integer, ForeignKey("batch_job.batch_job_name"))
     document_id = Column(String(100), ForeignKey("document.document_id"))
     description = Column(String(500))
     transcription = Column(String(1000))
@@ -36,7 +38,7 @@ class DocumentMetadata(Base):
 class DocumentBias(Base):
     __tablename__ = "document_bias"
     bias_id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey("job.job_id"))
+    batch_job_name = Column(Integer, ForeignKey("batch_job.batch_job_name"))
     document_id = Column(String(100))
     bias_type = Column(String(500))
     bias_level = Column(String(1000))
