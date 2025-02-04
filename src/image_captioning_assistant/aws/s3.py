@@ -1,5 +1,6 @@
 from typing import Any
 
+from botocore.exceptions import ClientError
 import boto3
 from loguru import logger
 
@@ -42,3 +43,28 @@ def load_image_bytes(
         Key=s3_key,
     )["Body"].read()
     return image_bytes
+
+
+
+def copy_s3_object(
+    source_bucket: str, source_key: str, dest_bucket: str, dest_key: str
+):
+    """Copy an object from one S3 location to another."""
+    s3_client = boto3.client('s3')
+    
+    try:
+        # Construct the source dictionary
+        copy_source = {
+            'Bucket': source_bucket,
+            'Key': source_key
+        }
+        
+        # Copy the object
+        s3_client.copy_object(CopySource=copy_source, Bucket=dest_bucket, Key=dest_key)
+        
+        print(f"Object copied from s3://{source_bucket}/{source_key} to s3://{dest_bucket}/{dest_key}")
+        return True
+    
+    except ClientError as e:
+        print(f"Error copying object: {e}")
+        return False
