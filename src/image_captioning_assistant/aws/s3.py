@@ -20,7 +20,7 @@ def list_contents_of_folder(
     """
     if not prefix.endswith("/"):
         prefix += "/"
-
+    logger.info(f"s3_client_kwargs: {s3_client_kwargs}")
     client = boto3.client("s3", **s3_client_kwargs)
     response = client.list_objects(
         Bucket=bucket,

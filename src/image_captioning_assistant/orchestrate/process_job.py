@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from botocore.config import Config
 from loguru import logger
+from tqdm import tqdm
 
 from image_captioning_assistant.aws.s3 import list_contents_of_folder, load_image_bytes
 from image_captioning_assistant.data.db.database_manager import DatabaseManager
@@ -11,7 +14,7 @@ from image_captioning_assistant.data.db.tables.document_bias import (
 from image_captioning_assistant.data.db.tables.document_metadata import (
     create_document_metadata,
     delete_document_metadata_by_id_and_job,
-    get_document_metadata_by_document_id_and_job,
+    get_document_metadata_by_id_and_job,
 )
 from image_captioning_assistant.generate.generate_structured_metadata import (
     StructuredMetadata,
@@ -37,21 +40,34 @@ def process_job(
         aws_region (str): Region where services are located.
         skip_completed (bool): Whether or not to skip processing items
             with existing results under the same job name.
+
+    boto3.client("s3", **{"region_name":"us-east-1", "config": Config({})})
     """
     s3_kwargs = {
         "config": Config(
-            {
-                "s3": {"addressing_style": "virtual"},
-                "signature_version": "s3v4",
-            }
+            s3={"addressing_style": "virtual"},
+            signature_version="s3v4",
         ),
         "region_name": aws_region,
     }
-    for image_key in list_contents_of_folder(s3_bucket, s3_prefix, s3_kwargs):
+    for image_key in tqdm(
+        list_contents_of_folder(
+            bucket=s3_bucket, prefix=s3_prefix, s3_client_kwargs=s3_kwargs
+        )
+    ):
         try:
+            if Path(image_key).suffix.lower() not in [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+            ]:
+                logger.info(f"Skipping {image_key} - not a recognized image")
+                continue
             document_id = image_key  # TODO: FIX ME
             # See if there are results already
-            completed_row = get_document_metadata_by_document_id_and_job(
+            completed_row = get_document_metadata_by_id_and_job(
                 db_manager=db_manager,
                 document_id=document_id,
                 batch_job_name=batch_job_name,
@@ -81,10 +97,14 @@ def process_job(
             )
             # For now assume one file one document
             img_bytes = load_image_bytes(s3_bucket, image_key, s3_kwargs)
-
+            # Define kwargs at each loop because generate_structured_metadata involves popping
+            llm_kwargs = {
+                "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+                "region_name": aws_region,
+            }
             metadata: StructuredMetadata = generate_structured_metadata(
                 img_bytes_list=[img_bytes],
-                llm_kwargs={"model": "anthropic.claude-3-5-sonnet-20240620-v1:0"},
+                llm_kwargs=llm_kwargs,
                 img_context="These belong to the Langmuir collection",
             )
             # Write each potential bias to DB

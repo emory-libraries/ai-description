@@ -1,10 +1,8 @@
 """Generate structured metadata for an image."""
 
-from pathlib import Path
 from typing import Any
 
 from langchain_aws import ChatBedrockConverse
-from loguru import logger
 
 from image_captioning_assistant.data.data_classes import StructuredMetadata
 from image_captioning_assistant.generate.utils import (
