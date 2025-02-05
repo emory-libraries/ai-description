@@ -27,13 +27,7 @@ def process_folder(
     # Iterate through files in the folder
     for file_path in folder_path.iterdir():
         # Check if the file is an image (based on extension)
-        if file_path.is_file() and file_path.suffix.lower() in [
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".bmp",
-        ]:
+        if file_path.is_file():
             try:
                 # Load the image bytes
                 with open(file_path, "rb") as img_file:
