@@ -56,15 +56,6 @@ def process_job(
         )
     ):
         try:
-            if Path(image_key).suffix.lower() not in [
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".gif",
-                ".bmp",
-            ]:
-                logger.info(f"Skipping {image_key} - not a recognized image")
-                continue
             document_id = image_key  # TODO: FIX ME
             # See if there are results already
             completed_row = get_document_metadata_by_id_and_job(
