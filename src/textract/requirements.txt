@@ -1,0 +1,7 @@
+boto3
+aiobotocore
+loguru
+pandas
+pdf2image
+pydantic
+pydantic_settings
