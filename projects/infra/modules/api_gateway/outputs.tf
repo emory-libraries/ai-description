@@ -1,0 +1,9 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
+# API Gateway outputs
+
+output "api_endpoint" {
+  description = "The URL of the API Gateway endpoint"
+  value       = "${aws_api_gateway_deployment.api_deployment.invoke_url}${var.stage_name}/"
+}

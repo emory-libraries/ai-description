@@ -1,11 +1,12 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import unittest
 from unittest.mock import MagicMock, patch
 
 from image_captioning_assistant.data.data_classes import PotentialBias
 from image_captioning_assistant.data.db.database_manager import DatabaseManager
-from image_captioning_assistant.generate.generate_structured_metadata import (
-    StructuredMetadata,
-)
+from image_captioning_assistant.generate.generate_structured_metadata import StructuredMetadata
 from image_captioning_assistant.orchestrate.process_job import process_job
 
 
@@ -21,23 +22,13 @@ class TestProcessJob(unittest.TestCase):
 
     @patch("image_captioning_assistant.orchestrate.process_job.list_contents_of_folder")
     @patch("image_captioning_assistant.orchestrate.process_job.load_image_bytes")
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.generate_structured_metadata"
-    )
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.get_document_metadata_by_id_and_job"
-    )
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.delete_document_metadata_by_id_and_job"
-    )
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.clear_document_bias_by_job_and_document"
-    )
+    @patch("image_captioning_assistant.orchestrate.process_job.generate_structured_metadata")
+    @patch("image_captioning_assistant.orchestrate.process_job.get_document_metadata_by_id_and_job")
+    @patch("image_captioning_assistant.orchestrate.process_job.delete_document_metadata_by_id_and_job")
+    @patch("image_captioning_assistant.orchestrate.process_job.clear_document_bias_by_job_and_document")
     @patch("image_captioning_assistant.orchestrate.process_job.put_document")
     @patch("image_captioning_assistant.orchestrate.process_job.create_document_bias")
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.create_document_metadata"
-    )
+    @patch("image_captioning_assistant.orchestrate.process_job.create_document_metadata")
     def test_process_job_normal_flow(
         self,
         mock_create_metadata,
@@ -88,9 +79,7 @@ class TestProcessJob(unittest.TestCase):
         mock_clear_bias.assert_not_called()
 
     @patch("image_captioning_assistant.orchestrate.process_job.list_contents_of_folder")
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.get_document_metadata_by_id_and_job"
-    )
+    @patch("image_captioning_assistant.orchestrate.process_job.get_document_metadata_by_id_and_job")
     def test_process_job_skip_completed(self, mock_get_metadata, mock_list_contents):
         # Setup
         mock_list_contents.return_value = ["image1.jpg"]
@@ -113,12 +102,8 @@ class TestProcessJob(unittest.TestCase):
 
     @patch("image_captioning_assistant.orchestrate.process_job.list_contents_of_folder")
     @patch("image_captioning_assistant.orchestrate.process_job.load_image_bytes")
-    @patch(
-        "image_captioning_assistant.orchestrate.process_job.generate_structured_metadata"
-    )
-    def test_process_job_exception_handling(
-        self, mock_generate_metadata, mock_load_image, mock_list_contents
-    ):
+    @patch("image_captioning_assistant.orchestrate.process_job.generate_structured_metadata")
+    def test_process_job_exception_handling(self, mock_generate_metadata, mock_load_image, mock_list_contents):
         # Setup
         mock_list_contents.return_value = ["image1.jpg"]
         mock_load_image.side_effect = Exception("Test exception")
