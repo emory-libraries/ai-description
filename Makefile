@@ -161,7 +161,7 @@ terraformDestroy: terraformFmtValidate checkAwsCredentials
 # 	$(eval TF_OUTPUTS := $(shell cd terraform && terraform output -json))
 # 	@UPLOADS_BUCKET_NAME=$(shell echo '$(TF_OUTPUTS)' | jq -r '.uploads_bucket_name.value') \
 # 	RESULTS_BUCKET_NAME=$(shell echo '$(TF_OUTPUTS)' | jq -r '.results_bucket_name.value') \
-# 	JOBS_TABLE_NAME=$(shell echo '$(TF_OUTPUTS)' | jq -r '.jobs_table_name.value') \
+# 	WORKS_TABLE_NAME=$(shell echo '$(TF_OUTPUTS)' | jq -r '.works_table_name.value') \
 # 	JOB_ID=$(JOB_ID) \
 # 	python3 $(PROJECT_DIR)/projects/infra/modules/ecs/src/main.py
 

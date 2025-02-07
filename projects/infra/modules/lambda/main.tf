@@ -56,13 +56,13 @@ resource "null_resource" "create_dist_dirs" {
 # Lambda function configurations
 locals {
   lambda = {
-    uploads = {
-      source_dir  = "${path.module}/src/functions/uploads"
-      description = "Processes new file uploads"
+    create_job = {
+      source_dir  = "${path.module}/src/functions/create_job"
+      description = "Create new batch job"
       timeout     = 30
       environment = {
-        UPLOADS_BUCKET_NAME = var.uploads_bucket_name
-        JOBS_TABLE_NAME     = var.jobs_table_name
+        WORKS_TABLE_NAME = var.works_table_name
+        SQS_QUEUE_URL    = var.sqs_queue_url
       }
     }
     jobs = {
@@ -70,7 +70,7 @@ locals {
       description = "Manages job status tracking and updates"
       timeout     = 15
       environment = {
-        JOBS_TABLE_NAME = var.jobs_table_name
+        WORKS_TABLE_NAME = var.works_table_name
       }
     }
     results = {
@@ -79,7 +79,7 @@ locals {
       timeout     = 30
       environment = {
         RESULTS_BUCKET_NAME = var.results_bucket_name
-        JOBS_TABLE_NAME     = var.jobs_table_name
+        WORKS_TABLE_NAME    = var.works_table_name
       }
     }
     ecs = {
@@ -143,9 +143,10 @@ resource "aws_lambda_function" "functions" {
     }
   }
 
-  package_type = each.key == "predict" ? "Image" : "Zip"
-  image_uri    = each.key == "predict" ? "${aws_ecr_repository.predict_lambda.repository_url}:latest" : null
-  filename     = each.key == "predict" ? null : data.archive_file.function_zips[each.key].output_path
-  handler      = each.key == "predict" ? null : "index.handler"
-  runtime      = each.key == "predict" ? null : "python3.12"
+  package_type     = each.key == "predict" ? "Image" : "Zip"
+  image_uri        = each.key == "predict" ? "${aws_ecr_repository.predict_lambda.repository_url}:latest" : null
+  filename         = each.key == "predict" ? null : data.archive_file.function_zips[each.key].output_path
+  handler          = each.key == "predict" ? null : "index.handler"
+  runtime          = each.key == "predict" ? null : "python3.12"
+  source_code_hash = each.key == "predict" ? null : filebase64sha256("${each.value.source_dir}/index.py")
 }

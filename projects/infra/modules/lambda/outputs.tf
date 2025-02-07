@@ -24,10 +24,10 @@ output "start_ecs_task_lambda_arn" {
 output "lambda" {
   description = "The names of the Lambda functions"
   value = {
-    uploads = aws_lambda_function.functions["uploads"].arn
-    jobs    = aws_lambda_function.functions["jobs"].arn
-    results = aws_lambda_function.functions["results"].arn
-    predict = aws_lambda_function.functions["predict"].arn
+    create_job = aws_lambda_function.functions["create_job"].arn
+    jobs       = aws_lambda_function.functions["jobs"].arn
+    results    = aws_lambda_function.functions["results"].arn
+    predict    = aws_lambda_function.functions["predict"].arn
   }
 }
 

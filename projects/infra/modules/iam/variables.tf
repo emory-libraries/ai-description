@@ -27,3 +27,8 @@ variable "db_credentials_secret_arn" {
   description = "ARN of the Aurora database credentials secret"
   type        = string
 }
+
+variable "sqs_works_queue_arn" {
+  description = "ARN of the SQS works queue"
+  type        = string
+}

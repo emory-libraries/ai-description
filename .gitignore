@@ -20,6 +20,7 @@ backend.tfvars
 # General
 .DS_Store
 *.env*
+*.venv
 *repomix*
 *.zip
 
@@ -33,3 +34,4 @@ __pycache__/
 .mypy_cache
 .pytest_cache
 .vscode
+*.egg-info

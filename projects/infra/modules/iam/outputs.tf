@@ -27,3 +27,8 @@ output "a2i_role_arn" {
   description = "ARN of the A2I workflow role"
   value       = aws_iam_role.a2i_role.arn
 }
+
+output "api_gateway_cloudwatch_role_arn" {
+  description = "ARN of the API Gateway CloudWatch role"
+  value       = aws_iam_role.api_gateway_cloudwatch_role.arn
+}

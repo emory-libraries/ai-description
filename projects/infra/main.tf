@@ -25,6 +25,12 @@ provider "aws" {
   }
 }
 
+# Global settings
+module "global_settings" {
+  source              = "./modules/global_settings"
+  cloudwatch_role_arn = module.iam.api_gateway_cloudwatch_role_arn
+}
+
 # VPC module
 module "vpc" {
   source = "./modules/vpc"
@@ -64,6 +70,7 @@ module "iam" {
   uploads_bucket_arn        = module.s3.uploads_bucket_arn
   results_bucket_arn        = module.s3.results_bucket_arn
   db_credentials_secret_arn = module.rds.credentials_secret_arn
+  sqs_works_queue_arn       = module.sqs.queue_arn
 }
 
 # ECS module for Fargate tasks
@@ -74,7 +81,7 @@ module "ecs" {
   cluster_name              = "ai-description-${var.deployment_name}"
   uploads_bucket_name       = module.s3.uploads_bucket_name
   results_bucket_name       = module.s3.results_bucket_name
-  jobs_table_name           = module.dynamodb.jobs_table_name
+  works_table_name          = module.dynamodb.works_table_name
   vpc_id                    = module.vpc.vpc_id
   subnet_ids                = module.vpc.private_subnet_ids
   task_execution_role_arn   = module.iam.ecs_task_execution_role_arn
@@ -84,6 +91,19 @@ module "ecs" {
   db_host                   = module.rds.cluster_endpoint
 }
 
+# SQS queue for "works"
+module "sqs" {
+  source     = "./modules/sqs"
+  queue_name = "works-queue-${var.deployment_name}"
+
+  # Optional args
+  delay_seconds              = 5
+  max_message_size           = 2048
+  message_retention_seconds  = 86400 # 1 day
+  receive_wait_time_seconds  = 10
+  visibility_timeout_seconds = 60
+}
+
 # Lambda functions for API endpoints and starting ECS tasks
 module "lambda" {
   source = "./modules/lambda"
@@ -91,7 +111,8 @@ module "lambda" {
   deployment_name         = var.deployment_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
   results_bucket_name     = module.s3.results_bucket_name
-  jobs_table_name         = module.dynamodb.jobs_table_name
+  works_table_name        = module.dynamodb.works_table_name
+  sqs_queue_url           = module.sqs.queue_url
   base_lambda_role_arn    = module.iam.base_lambda_role_arn
   ecs_cluster_name        = module.ecs.cluster_name
   ecs_task_definition_arn = module.ecs.task_definition_arn
@@ -115,6 +136,7 @@ module "api_gateway" {
   deployment_name = var.deployment_name
   lambda          = module.lambda.lambda
   stage_name      = var.stage_name
+  depends_on      = [module.global_settings]
 }
 
 # VPC Endpoint for S3

@@ -13,8 +13,13 @@ variable "results_bucket_name" {
   type        = string
 }
 
-variable "jobs_table_name" {
+variable "works_table_name" {
   description = "Name of the DynamoDB jobs table"
+  type        = string
+}
+
+variable "sqs_queue_url" {
+  description = "URL of SQS queue"
   type        = string
 }
 

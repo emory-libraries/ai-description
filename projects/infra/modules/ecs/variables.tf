@@ -28,7 +28,7 @@ variable "results_bucket_name" {
   type        = string
 }
 
-variable "jobs_table_name" {
+variable "works_table_name" {
   description = "Name of the DynamoDB table"
   type        = string
 }

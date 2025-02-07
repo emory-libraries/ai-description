@@ -3,7 +3,7 @@
 
 # DynamoDB outputs
 
-output "jobs_table_name" {
+output "works_table_name" {
   description = "The name of the DynamoDB jobs table"
   value       = aws_dynamodb_table.jobs.name
 }

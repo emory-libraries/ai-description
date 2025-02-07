@@ -18,9 +18,9 @@ output "results_bucket_name" {
   value       = module.s3.results_bucket_name
 }
 
-output "jobs_table_name" {
+output "works_table_name" {
   description = "The name of the DynamoDB table"
-  value       = module.dynamodb.jobs_table_name
+  value       = module.dynamodb.works_table_name
 }
 
 output "ecs_cluster_name" {
@@ -31,10 +31,10 @@ output "ecs_cluster_name" {
 output "lambda_function_names" {
   description = "The names of the Lambda functions"
   value = {
-    uploads = module.lambda.lambda["uploads"]
-    jobs    = module.lambda.lambda["jobs"]
-    results = module.lambda.lambda["results"]
-    ecs     = module.lambda.start_ecs_task_lambda_arn
+    create_job = module.lambda.lambda["create_job"]
+    jobs       = module.lambda.lambda["jobs"]
+    results    = module.lambda.lambda["results"]
+    ecs        = module.lambda.start_ecs_task_lambda_arn
   }
 }
 

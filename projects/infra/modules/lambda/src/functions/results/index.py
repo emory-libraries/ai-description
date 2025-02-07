@@ -21,7 +21,7 @@ S3_CONFIG = Config(
         "signature_version": "s3v4",
     }
 )
-JOBS_TABLE_NAME = os.environ["JOBS_TABLE_NAME"]
+WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "*",
@@ -32,7 +32,7 @@ CORS_HEADERS = {
 # Initialize AWS clients globally
 s3 = boto3.client("s3", region_name=AWS_REGION, config=S3_CONFIG)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-table = dynamodb.Table(JOBS_TABLE_NAME)
+table = dynamodb.Table(WORKS_TABLE_NAME)
 
 # Set up logging
 logger = logging.getLogger()

@@ -15,7 +15,7 @@ from botocore.exceptions import ClientError
 
 # Constants
 AWS_REGION = os.environ["AWS_REGION"]
-JOBS_TABLE_NAME = os.environ["JOBS_TABLE_NAME"]
+WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "*",
@@ -25,7 +25,7 @@ CORS_HEADERS = {
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-table = dynamodb.Table(JOBS_TABLE_NAME)
+table = dynamodb.Table(WORKS_TABLE_NAME)
 
 # Set up logging
 logger = logging.getLogger()

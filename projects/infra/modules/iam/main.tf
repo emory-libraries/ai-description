@@ -103,7 +103,11 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "dynamodb:UpdateItem",
           "dynamodb:Scan",
           "ecs:RunTask",
-          "iam:PassRole"
+          "iam:PassRole",
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
         ]
         Resource = [
           var.uploads_bucket_arn,
@@ -112,6 +116,7 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "${var.results_bucket_arn}/*",
           "arn:aws:dynamodb:*:*:table/*",
           "arn:aws:ecs:*:*:task-definition/*",
+          var.sqs_works_queue_arn,
           aws_iam_role.ecs_task_execution_role.arn,
           aws_iam_role.ecs_task_role.arn
         ]
@@ -222,4 +227,27 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
       }
     ]
   })
+}
+
+# API Gateway
+resource "aws_iam_role" "api_gateway_cloudwatch_role" {
+  name = "api_gateway_cloudwatch_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+  role       = aws_iam_role.api_gateway_cloudwatch_role.name
 }

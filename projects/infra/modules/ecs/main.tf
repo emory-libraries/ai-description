@@ -50,8 +50,8 @@ resource "aws_ecs_task_definition" "task" {
         { name = "AWS_REGION", value = data.aws_region.current.name },
         { name = "UPLOADS_BUCKET_NAME", value = var.uploads_bucket_name },
         { name = "RESULTS_BUCKET_NAME", value = var.results_bucket_name },
-        { name = "JOBS_TABLE_NAME", value = var.jobs_table_name },
-        { name = "DB_HOST", value = var.db_host },
+        { name = "WORKS_TABLE_NAME", value = var.works_table_name },
+        # { name = "DB_HOST", value = var.db_host },
         { name = "DB_NAME", value = "appdb" },
       ]
       secrets = [
