@@ -26,10 +26,10 @@ locals {
         "POST" = var.lambda["create_job"]
       }
     }
-    "jobs" = {
-      path_part = "jobs"
+    "job_progress" = {
+      path_part = "job_progress"
       methods = {
-        "GET" = var.lambda["jobs"]
+        "GET" = var.lambda["job_progress"]
       }
     }
     "results" = {

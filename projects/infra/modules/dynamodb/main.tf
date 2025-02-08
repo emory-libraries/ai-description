@@ -3,8 +3,8 @@
 
 # DynamoDB module
 
-resource "aws_dynamodb_table" "jobs" {
-  name         = "jobs-table-${var.deployment_name}"
+resource "aws_dynamodb_table" "works" {
+  name         = "works-table-${var.deployment_name}"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "job_name"
   range_key    = "work_id"

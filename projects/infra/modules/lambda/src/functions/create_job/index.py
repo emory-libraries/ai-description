@@ -39,8 +39,8 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
         works: list[dict[str, str]] = body["works"]
         table = dynamodb.Table(WORKS_TABLE_NAME)
         for work in works:
-            work_id = work["work_id"]
-            s3_uris = work["s3_uris"]
+            work_id: str = work["work_id"]
+            s3_uris: str = work["s3_uris"]
             # Add work item to SQS queue
             sqs_message = {
                 "job_name": job_name,
@@ -57,7 +57,7 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 "job_name": job_name,
                 "work_id": work_id,
                 "s3_uris": s3_uris,
-                "status": "IN_QUEUE",
+                "work_status": "IN_QUEUE",
             }
             table.put_item(Item=ddb_work_item)
             logger.debug(f"Successfully added job={job_name} work={work_id} to DynamoDB")

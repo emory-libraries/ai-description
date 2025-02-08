@@ -3,7 +3,7 @@
 
 # IAM variables
 
-variable "jobs_table_arn" {
+variable "works_table_arn" {
   description = "ARN of the DynamoDB table"
   type        = string
 }

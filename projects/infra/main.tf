@@ -66,7 +66,7 @@ module "iam" {
   source = "./modules/iam"
 
   deployment_name           = var.deployment_name
-  jobs_table_arn            = module.dynamodb.jobs_table_arn
+  works_table_arn           = module.dynamodb.works_table_arn
   uploads_bucket_arn        = module.s3.uploads_bucket_arn
   results_bucket_arn        = module.s3.results_bucket_arn
   db_credentials_secret_arn = module.rds.credentials_secret_arn

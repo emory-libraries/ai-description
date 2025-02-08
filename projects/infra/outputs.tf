@@ -31,10 +31,10 @@ output "ecs_cluster_name" {
 output "lambda_function_names" {
   description = "The names of the Lambda functions"
   value = {
-    create_job = module.lambda.lambda["create_job"]
-    jobs       = module.lambda.lambda["jobs"]
-    results    = module.lambda.lambda["results"]
-    ecs        = module.lambda.start_ecs_task_lambda_arn
+    create_job   = module.lambda.lambda["create_job"]
+    job_progress = module.lambda.lambda["job_progress"]
+    results      = module.lambda.lambda["results"]
+    ecs          = module.lambda.start_ecs_task_lambda_arn
   }
 }
 

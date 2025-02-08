@@ -101,6 +101,7 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
+          "dynamodb:Query",
           "dynamodb:Scan",
           "ecs:RunTask",
           "iam:PassRole",
@@ -191,7 +192,7 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
           "dynamodb:PutItem",
           "dynamodb:UpdateItem"
         ]
-        Resource = [var.jobs_table_arn]
+        Resource = [var.works_table_arn]
       },
       {
         Effect = "Allow"

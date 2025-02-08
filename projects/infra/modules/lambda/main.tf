@@ -65,8 +65,8 @@ locals {
         SQS_QUEUE_URL    = var.sqs_queue_url
       }
     }
-    jobs = {
-      source_dir  = "${path.module}/src/functions/jobs"
+    job_progress = {
+      source_dir  = "${path.module}/src/functions/job_progress"
       description = "Manages job status tracking and updates"
       timeout     = 15
       environment = {
