@@ -30,25 +30,10 @@ output "ecs_cluster_name" {
 
 output "lambda_function_names" {
   description = "The names of the Lambda functions"
-  value = {
-    create_job   = module.lambda.lambda["create_job"]
-    job_progress = module.lambda.lambda["job_progress"]
-    results      = module.lambda.lambda["results"]
-    ecs          = module.lambda.start_ecs_task_lambda_arn
-  }
+  value       = module.lambda.function_names
 }
 
 output "results_bucket_arn" {
   description = "The ARN of the S3 bucket for results"
   value       = module.s3.results_bucket_arn
-}
-
-output "database_endpoint" {
-  description = "Aurora database endpoint"
-  value       = module.rds.cluster_endpoint
-}
-
-output "database_credentials_secret_arn" {
-  description = "ARN of database credentials in Secrets Manager"
-  value       = module.rds.credentials_secret_arn
 }

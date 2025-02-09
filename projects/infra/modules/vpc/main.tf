@@ -8,6 +8,8 @@ locals {
   vpc_id     = local.create_vpc ? aws_vpc.main[0].id : data.aws_vpc.existing[0].id
 }
 
+data "aws_region" "current" {}
+
 data "aws_vpc" "existing" {
   count = local.create_vpc ? 0 : 1
   id    = var.vpc_id
@@ -178,4 +180,58 @@ resource "aws_route_table_association" "public" {
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public[0].id
+}
+
+
+# ECR API VPC Endpoint
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+}
+
+# ECR DKR VPC Endpoint
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+}
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "vpc-endpoints-sg-${var.deployment_name}"
+  description = "Security group for VPC endpoints"
+  vpc_id      = local.vpc_id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  tags = {
+    Name = "vpc-endpoints-sg-${var.deployment_name}"
+  }
+}
+
+# VPC Endpoint for S3
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = local.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = concat(
+    local.create_vpc ? [aws_route_table.public[0].id] : (
+      data.aws_route_tables.public[0].ids
+    ),
+    local.create_vpc ? [aws_route_table.private[0].id] : (
+      data.aws_route_tables.private[0].ids
+    )
+  )
 }

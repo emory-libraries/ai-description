@@ -1,16 +1,18 @@
 FROM python:3.12-slim
 
 # # Set the working directory inside the container
-# WORKDIR /app
+WORKDIR /app
 
 # # Copy lib directory containing source code and package config
 # COPY lib/ ./lib/
 
 # # Install package and dependencies from lib directory
 # RUN pip install --no-cache-dir ./lib/
+RUN python -m pip install boto3
+
 
 # # Copy the processing script into the container
-# COPY projects/infra/modules/ecs/src/main.py .
+COPY main.py .
 
 # # Ensure the data directory exists
 # RUN mkdir -p /app/data

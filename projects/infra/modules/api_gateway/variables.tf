@@ -18,3 +18,8 @@ variable "deployment_name" {
   description = "Unique name of deployment"
   type        = string
 }
+
+variable "cloudwatch_role_arn" {
+  description = "ARN of Cloudwatch role"
+  type        = string
+}

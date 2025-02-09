@@ -5,38 +5,6 @@
 
 data "aws_region" "current" {}
 
-# Create S3 bucket for Lambda code (keep this for other functions)
-resource "aws_s3_bucket" "lambda_code" {
-  bucket = "lambda-code-${var.deployment_name}"
-}
-
-# Create ECR repository for predict Lambda
-resource "aws_ecr_repository" "predict_lambda" {
-  name         = "predict-lambda-${var.deployment_name}"
-  force_delete = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-# Build and push Docker image for predict Lambda
-resource "null_resource" "predict_lambda_image" {
-  triggers = {
-    python_file = filemd5("${path.module}/src/functions/predict/index.py")
-    dockerfile  = filemd5("${path.module}/src/functions/predict/Dockerfile")
-    src_hash    = sha1(join("", [for f in fileset("${path.root}/../src", "**") : filesha1("${path.root}/../src/${f}")]))
-  }
-
-  provisioner "local-exec" {
-    command = <<EOF
-      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${aws_ecr_repository.predict_lambda.repository_url}
-      cd ${path.root}/..
-      docker build -t ${aws_ecr_repository.predict_lambda.repository_url}:latest -f infra/modules/lambda/src/functions/predict/Dockerfile .
-      docker push ${aws_ecr_repository.predict_lambda.repository_url}:latest
-    EOF
-  }
-}
 
 # Create dist directories for other functions
 resource "null_resource" "create_dist_dirs" {
@@ -73,17 +41,8 @@ locals {
         WORKS_TABLE_NAME = var.works_table_name
       }
     }
-    results = {
-      source_dir  = "${path.module}/src/functions/results"
-      description = "Handles retrieval and delivery of processing results"
-      timeout     = 30
-      environment = {
-        RESULTS_BUCKET_NAME = var.results_bucket_name
-        WORKS_TABLE_NAME    = var.works_table_name
-      }
-    }
-    ecs = {
-      source_dir  = "${path.module}/src/functions/ecs"
+    run_ecs_task = {
+      source_dir  = "${path.module}/src/functions/run_ecs_task"
       description = "Manages ECS task operations for processing jobs"
       timeout     = 30
       environment = {
@@ -94,12 +53,14 @@ locals {
         TASK_EXECUTION_ROLE_ARN = var.task_execution_role_arn
       }
     }
-    predict = {
-      source_dir  = "${path.module}/src/functions/predict"
-      description = "Real-time endpoint for item to skill matching"
+    results = {
+      source_dir  = "${path.module}/src/functions/get_results"
+      description = "Handles retrieval and delivery of processing results"
       timeout     = 30
-      memory_size = 2048
-      environment = {}
+      environment = {
+        RESULTS_BUCKET_NAME = var.results_bucket_name
+        WORKS_TABLE_NAME    = var.works_table_name
+      }
     }
   }
 }
@@ -117,7 +78,6 @@ data "archive_file" "function_zips" {
 # Create Lambda functions
 resource "aws_lambda_function" "functions" {
   depends_on = [
-    null_resource.predict_lambda_image,
     data.archive_file.function_zips
   ]
 
@@ -137,16 +97,16 @@ resource "aws_lambda_function" "functions" {
 
   # Use container image for predict Lambda, ZIP for others
   dynamic "image_config" {
-    for_each = each.key == "predict" ? [1] : []
+    for_each = []
     content {
       command = ["index.handler"]
     }
   }
 
-  package_type     = each.key == "predict" ? "Image" : "Zip"
-  image_uri        = each.key == "predict" ? "${aws_ecr_repository.predict_lambda.repository_url}:latest" : null
-  filename         = each.key == "predict" ? null : data.archive_file.function_zips[each.key].output_path
-  handler          = each.key == "predict" ? null : "index.handler"
-  runtime          = each.key == "predict" ? null : "python3.12"
-  source_code_hash = each.key == "predict" ? null : filebase64sha256("${each.value.source_dir}/index.py")
+  package_type     = "Zip"
+  image_uri        = null
+  filename         = data.archive_file.function_zips[each.key].output_path
+  handler          = "index.handler"
+  runtime          = "python3.12"
+  source_code_hash = filebase64sha256("${each.value.source_dir}/index.py")
 }

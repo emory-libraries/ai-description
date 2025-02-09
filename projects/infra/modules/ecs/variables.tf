@@ -52,12 +52,12 @@ variable "stage_name" {
   type        = string
 }
 
-variable "db_credentials_secret_arn" {
-  description = "ARN of the database credentials secret"
+variable "centralized_log_group_name" {
+  description = "Name of the centralized CloudWatch Log Group"
   type        = string
 }
 
-variable "db_host" {
-  description = "Aurora database host endpoint"
+variable "sqs_queue_url" {
+  description = "URL of SQS queue"
   type        = string
 }

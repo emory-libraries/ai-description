@@ -13,11 +13,6 @@ output "task_definition_arn" {
   value       = aws_ecs_task_definition.task.arn
 }
 
-output "security_group_ids" {
-  description = "List of security group IDs for ECS tasks"
-  value       = [aws_security_group.ecs_service_sg.id]
-}
-
 output "subnet_ids" {
   description = "List of subnet IDs for ECS tasks"
   value       = var.subnet_ids

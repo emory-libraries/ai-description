@@ -103,8 +103,6 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "dynamodb:UpdateItem",
           "dynamodb:Query",
           "dynamodb:Scan",
-          "ecs:RunTask",
-          "iam:PassRole",
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
@@ -116,8 +114,26 @@ resource "aws_iam_policy" "service_lambda_policy" {
           var.results_bucket_arn,
           "${var.results_bucket_arn}/*",
           "arn:aws:dynamodb:*:*:table/*",
-          "arn:aws:ecs:*:*:task-definition/*",
           var.sqs_works_queue_arn,
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:ListTasks",
+          "ecs:RunTask"
+        ]
+        Resource = [
+          "arn:aws:ecs:*:*:cluster/*",
+          "arn:aws:ecs:*:*:container-instance/*",
+          "arn:aws:ecs:*:*:task-definition/*",
+          "arn:aws:ecs:*:*:task/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = [
           aws_iam_role.ecs_task_execution_role.arn,
           aws_iam_role.ecs_task_role.arn
         ]
@@ -126,7 +142,7 @@ resource "aws_iam_policy" "service_lambda_policy" {
   })
 }
 
-# Policy Attachments
+# Lambda Policy Attachments
 resource "aws_iam_role_policy_attachment" "base_lambda_base_policy" {
   role       = aws_iam_role.base_lambda_role.name
   policy_arn = aws_iam_policy.base_lambda_policy.arn
@@ -178,9 +194,11 @@ resource "aws_iam_role" "ecs_task_role" {
   })
 }
 
-resource "aws_iam_role_policy" "ecs_task_policy" {
-  name = "ecs-task-policy-${var.deployment_name}"
-  role = aws_iam_role.ecs_task_role.id
+# ECS Task Policy
+resource "aws_iam_policy" "ecs_task_policy" {
+  name        = "ecs-task-policy-${var.deployment_name}"
+  path        = "/"
+  description = "IAM policy for ECS tasks"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -215,13 +233,6 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
         Resource = ["arn:aws:logs:*:*:*"]
       },
       {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [var.db_credentials_secret_arn]
-      },
-      {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
         Resource = ["*"] # Any Bedrock model can be invoked
@@ -230,7 +241,13 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
   })
 }
 
-# API Gateway
+# ECS Task Role-Poliy Attachment
+resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
+  policy_arn = aws_iam_policy.ecs_task_policy.arn
+  role       = aws_iam_role.ecs_task_role.name
+}
+
+# API Gateway Role
 resource "aws_iam_role" "api_gateway_cloudwatch_role" {
   name = "api_gateway_cloudwatch_role"
 
@@ -248,7 +265,33 @@ resource "aws_iam_role" "api_gateway_cloudwatch_role" {
   })
 }
 
+# API Gateway Role-Policy Attachment
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
   role       = aws_iam_role.api_gateway_cloudwatch_role.name
+}
+
+# VPC Endpoint policy
+resource "aws_vpc_endpoint_policy" "s3_policy" {
+  vpc_endpoint_id = var.vpc_s3_endpoint_id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowS3Access"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = [
+          var.uploads_bucket_arn,
+          "${var.uploads_bucket_arn}/*",
+          var.results_bucket_arn,
+          "${var.results_bucket_arn}/*"
+        ]
+      }
+    ]
+  })
 }

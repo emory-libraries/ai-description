@@ -23,12 +23,12 @@ variable "deployment_name" {
   type        = string
 }
 
-variable "db_credentials_secret_arn" {
-  description = "ARN of the Aurora database credentials secret"
+variable "sqs_works_queue_arn" {
+  description = "ARN of the SQS works queue"
   type        = string
 }
 
-variable "sqs_works_queue_arn" {
-  description = "ARN of the SQS works queue"
+variable "vpc_s3_endpoint_id" {
+  description = "The ID of the VPC's S3 endpoint"
   type        = string
 }

@@ -27,16 +27,12 @@ output "private_subnet_ids" {
   )
 }
 
-output "public_route_table_ids" {
-  description = "List of IDs of public route tables"
-  value = local.create_vpc ? [aws_route_table.public[0].id] : (
-    data.aws_route_tables.public[0].ids
-  )
+output "vpc_s3_endpoint_id" {
+  description = "The ID of the VPC's S3 endpoint"
+  value       = aws_vpc_endpoint.s3.id
 }
 
-output "private_route_table_ids" {
-  description = "List of IDs of private route tables"
-  value = local.create_vpc ? [aws_route_table.private[0].id] : (
-    data.aws_route_tables.private[0].ids
-  )
+output "vpc_security_group_ids" {
+  description = "The IDs of the VPC's security group"
+  value       = [aws_security_group.vpc_endpoints.id]
 }

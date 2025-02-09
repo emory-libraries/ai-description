@@ -42,15 +42,8 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
             work_id: str = work["work_id"]
             s3_uris: str = work["s3_uris"]
             # Add work item to SQS queue
-            sqs_message = {
-                "job_name": job_name,
-                "work_id": work_id,
-                "s3_uris": s3_uris
-            }
-            sqs.send_message(
-                QueueUrl=SQS_QUEUE_URL,
-                MessageBody=json.dumps(sqs_message)
-            )
+            sqs_message = {"job_name": job_name, "work_id": work_id, "s3_uris": s3_uris}
+            sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(sqs_message))
             logger.debug(f"Successfully added job={job_name} work={work_id} to SQS")
             # Put pending work item in DynamoDB
             ddb_work_item = {

@@ -16,22 +16,3 @@ output "function_names" {
     for k, v in aws_lambda_function.functions : k => v.function_name
   }
 }
-
-output "start_ecs_task_lambda_arn" {
-  value = aws_lambda_function.functions["ecs"].arn
-}
-
-output "lambda" {
-  description = "The names of the Lambda functions"
-  value = {
-    create_job   = aws_lambda_function.functions["create_job"].arn
-    job_progress = aws_lambda_function.functions["job_progress"].arn
-    results      = aws_lambda_function.functions["results"].arn
-    predict      = aws_lambda_function.functions["predict"].arn
-  }
-}
-
-output "predict_ecr_repository_url" {
-  description = "URL of the ECR repository for predict Lambda"
-  value       = aws_ecr_repository.predict_lambda.repository_url
-}

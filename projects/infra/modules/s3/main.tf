@@ -111,22 +111,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_lifecycle" {
   }
 }
 
-# S3 Event Notifications
-resource "aws_s3_bucket_notification" "uploads_notification" {
-  depends_on = [aws_lambda_permission.allow_s3_invoke]
-
-  bucket = aws_s3_bucket.uploads.id
-  lambda_function {
-    lambda_function_arn = var.start_ecs_task_lambda_arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-}
-
-# Lambda permission for S3
-resource "aws_lambda_permission" "allow_s3_invoke" {
-  statement_id  = "AllowS3InvokeLambda"
-  function_name = var.start_ecs_task_lambda_arn
-  action        = "lambda:InvokeFunction"
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.uploads.arn
+# Create S3 bucket for Lambda code (keep this for other functions)
+resource "aws_s3_bucket" "lambda_code" {
+  bucket = "lambda-code-${var.deployment_name}"
 }
