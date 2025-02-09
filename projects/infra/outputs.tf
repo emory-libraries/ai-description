@@ -13,11 +13,6 @@ output "uploads_bucket_name" {
   value       = module.s3.uploads_bucket_name
 }
 
-output "results_bucket_name" {
-  description = "The name of the S3 bucket for results"
-  value       = module.s3.results_bucket_name
-}
-
 output "works_table_name" {
   description = "The name of the DynamoDB table"
   value       = module.dynamodb.works_table_name

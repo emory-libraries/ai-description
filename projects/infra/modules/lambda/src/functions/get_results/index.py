@@ -14,7 +14,6 @@ from botocore.exceptions import ClientError
 
 # Constants
 AWS_REGION = os.environ["AWS_REGION"]
-RESULTS_BUCKET_NAME = os.environ["RESULTS_BUCKET_NAME"]
 S3_CONFIG = Config(
     {
         "s3": {"addressing_style": "virtual"},
@@ -57,16 +56,10 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
 
         if item and item["status"] == "COMPLETED":
             # Generate a presigned URL for the results
-            basename, _ = os.path.splitext(job_id)
-            presigned_url = s3.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": RESULTS_BUCKET_NAME, "Key": f"{basename}-result.csv"},
-                ExpiresIn=3600,
-            )
             logger.info(f"Generated presigned URL for job_id {job_id}")
             return {
                 "statusCode": 200,
-                "body": json.dumps({"job_id": job_id, "download_url": presigned_url}),
+                "body": json.dumps({"job_id": job_id}),
                 "headers": CORS_HEADERS,
             }
         else:

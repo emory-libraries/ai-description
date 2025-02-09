@@ -103,7 +103,6 @@ module "ecs" {
   works_table_name           = module.dynamodb.works_table_name
   centralized_log_group_name = module.cloudwatch.cloudwatch_log_group_name
   uploads_bucket_name        = module.s3.uploads_bucket_name
-  results_bucket_name        = module.s3.results_bucket_name
   sqs_queue_url              = module.sqs.queue_url
   vpc_id                     = module.vpc.vpc_id
   subnet_ids                 = module.vpc.private_subnet_ids
@@ -128,7 +127,6 @@ module "lambda" {
   subnet_ids              = module.vpc.private_subnet_ids
   works_table_name        = module.dynamodb.works_table_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
-  results_bucket_name     = module.s3.results_bucket_name
   base_lambda_role_arn    = module.iam.base_lambda_role_arn
   task_execution_role_arn = module.iam.ecs_task_execution_role_arn
   ecs_cluster_name        = module.ecs.cluster_name

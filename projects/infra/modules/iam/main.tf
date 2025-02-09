@@ -96,25 +96,39 @@ resource "aws_iam_policy" "service_lambda_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:Query",
-          "dynamodb:Scan",
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ]
         Resource = [
+          var.sqs_works_queue_arn,
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+        ]
+        Resource = [
           var.uploads_bucket_arn,
           "${var.uploads_bucket_arn}/*",
           var.results_bucket_arn,
           "${var.results_bucket_arn}/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+        ]
+        Resource = [
           "arn:aws:dynamodb:*:*:table/*",
-          var.sqs_works_queue_arn,
         ]
       },
       {
@@ -206,9 +220,21 @@ resource "aws_iam_policy" "ecs_task_policy" {
       {
         Effect = "Allow"
         Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          var.sqs_works_queue_arn,
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
         ]
         Resource = [var.works_table_arn]
       },

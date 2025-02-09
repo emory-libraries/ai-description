@@ -183,7 +183,7 @@ resource "aws_route_table_association" "public" {
 }
 
 
-# ECR API VPC Endpoint
+# VPC Endpoint for ECR API
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
@@ -193,10 +193,45 @@ resource "aws_vpc_endpoint" "ecr_api" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
 }
 
-# ECR DKR VPC Endpoint
+# VPC Endpoint for ECR DKR
 resource "aws_vpc_endpoint" "ecr_dkr" {
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+}
+
+# VPC Endpoint for S3
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = local.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = concat(
+    local.create_vpc ? [aws_route_table.public[0].id] : (
+      data.aws_route_tables.public[0].ids
+    ),
+    local.create_vpc ? [aws_route_table.private[0].id] : (
+      data.aws_route_tables.private[0].ids
+    )
+  )
+}
+
+# VPC Endpoint for ECS
+resource "aws_vpc_endpoint" "ecs" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+}
+
+# VPC Endpoint for Cloudwatch
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
@@ -219,19 +254,4 @@ resource "aws_security_group" "vpc_endpoints" {
   tags = {
     Name = "vpc-endpoints-sg-${var.deployment_name}"
   }
-}
-
-# VPC Endpoint for S3
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = local.vpc_id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids = concat(
-    local.create_vpc ? [aws_route_table.public[0].id] : (
-      data.aws_route_tables.public[0].ids
-    ),
-    local.create_vpc ? [aws_route_table.private[0].id] : (
-      data.aws_route_tables.private[0].ids
-    )
-  )
 }

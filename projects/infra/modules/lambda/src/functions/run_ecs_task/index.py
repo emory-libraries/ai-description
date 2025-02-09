@@ -41,25 +41,30 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
             }
 
         # If no task is running, start a new one
+        network_configuration = {
+            "awsvpcConfiguration": {
+                "subnets": SUBNET_IDS,
+                "securityGroups": SECURITY_GROUP_IDS,
+                "assignPublicIp": "ENABLED",
+            }
+        }
+        overrides = {
+            "containerOverrides": [
+                {
+                    "name": "processing-container",
+                    "environment": [{"name": "JOB_ID"}],
+                }
+            ]
+        }
+        logger.info(f"Network configuration: {json.dumps(network_configuration, indent=4)}")
+        logger.info(f"Overrides: {json.dumps(overrides, indent=4)}")
+        logger.info(f"Running task")
         response = ecs_client.run_task(
             cluster=ECS_CLUSTER_NAME,
             taskDefinition=ECS_TASK_DEFINITION_ARN,
             launchType="FARGATE",
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": SUBNET_IDS,
-                    "securityGroups": SECURITY_GROUP_IDS,
-                    "assignPublicIp": "ENABLED",
-                }
-            },
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": "processing-container",
-                        "environment": [{"name": "JOB_ID"}],
-                    }
-                ]
-            },
+            networkConfiguration=network_configuration,
+            overrides=overrides,
         )
         message = f"ECS task {response['tasks'][0]['taskArn']} started successfully"
         logger.info(message)

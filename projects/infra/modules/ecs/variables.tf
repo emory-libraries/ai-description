@@ -23,11 +23,6 @@ variable "uploads_bucket_name" {
   type        = string
 }
 
-variable "results_bucket_name" {
-  description = "Name of the S3 bucket for results"
-  type        = string
-}
-
 variable "works_table_name" {
   description = "Name of the DynamoDB table"
   type        = string

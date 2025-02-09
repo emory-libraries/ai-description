@@ -8,12 +8,17 @@ import os
 import sys
 
 import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 AWS_REGION = os.environ["AWS_REGION"]
-UPLOADS_BUCKET_NAME = os.environ["UPLOADS_BUCKET_NAME"]
-RESULTS_BUCKET_NAME = os.environ["RESULTS_BUCKET_NAME"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
+UPLOADS_BUCKET_NAME = os.environ["UPLOADS_BUCKET_NAME"]
+S3_CONFIG = Config(
+    s3={"addressing_style": "virtual"},
+    signature_version="s3v4",
+)
 
 # Set up logging
 logger = logging.getLogger()
@@ -24,10 +29,30 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+s3 = boto3.client("s3", config=S3_CONFIG, region_name=AWS_REGION)
+sqs = boto3.client("sqs", region_name=AWS_REGION)
+dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+table = dynamodb.Table(WORKS_TABLE_NAME)
+
+def update_dynamodb_status(job_name, work_id, status):
+    try:
+        table.update_item(
+            Key={
+                'job_name': job_name,
+                'work_id': work_id
+            },
+            UpdateExpression="SET work_status = :status",
+            ExpressionAttributeValues={
+                ':status': status
+            }
+        )
+        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
+    except ClientError as e:
+        logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
+
 
 def process_sqs_messages():
     # Create SQS client
-    sqs = boto3.client("sqs", region_name=AWS_REGION)
 
     while True:
         # Receive message from SQS queue
@@ -47,28 +72,36 @@ def process_sqs_messages():
             break
 
         for message in response["Messages"]:
-            # Process the message
-            logger.info(f"Message Body: {message['Body']}")
-
-            # If the message body is JSON, you can parse and print it more nicely
             try:
-                body = json.loads(message["Body"])
-                logger.info(f"Parsed Message Body: {json.dumps(body, indent=2)}")
-            except json.JSONDecodeError:
-                pass  # Not JSON, already printed as string
 
-            logger.info(f"Message ID: {message['MessageId']}")
-            logger.info(f"Receipt Handle: {message['ReceiptHandle']}")
-            logger.info("Attributes:")
-            for key, value in message.get("Attributes", {}).items():
-                print(f"  {key}: {value}")
-            logger.info("Message Attributes:")
-            for key, value in message.get("MessageAttributes", {}).items():
-                logger.info(f"  {key}: {value['StringValue']}")
-            logger.info("\n")
+                # Parse the message body
+                message_body = json.loads(message['Body'])
+                job_name = message_body['job_name']
+                work_id = message_body['work_id']
 
-            # Delete the message from the queue
-            sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
+                # Update work_status for the item in DynamoDB to "PROCESSING"
+                update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
+
+                # Processing the message will eventually go here
+                logger.info(f"Message Body: {message_body}")
+                logger.info(f"Job name: {job_name}")
+                logger.info(f"Work ID: {work_id}")
+
+                # Update work_status for the item in DynamoDB to "READY FOR REVIEW"
+                update_dynamodb_status(job_name=job_name, work_id=work_id, status="READY FOR REVIEW")
+
+                # Delete the message from the queue
+                sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
+            except Exception as exc:
+                logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
+
+                # Parse the message body
+                message_body = json.loads(message['Body'])
+                job_name = message_body['job_name']
+                work_id = message_body['work_id']
+
+                # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
+                update_dynamodb_status(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
 
 
 if __name__ == "__main__":

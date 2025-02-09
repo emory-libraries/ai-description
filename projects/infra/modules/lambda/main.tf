@@ -58,8 +58,7 @@ locals {
       description = "Handles retrieval and delivery of processing results"
       timeout     = 30
       environment = {
-        RESULTS_BUCKET_NAME = var.results_bucket_name
-        WORKS_TABLE_NAME    = var.works_table_name
+        WORKS_TABLE_NAME = var.works_table_name
       }
     }
   }

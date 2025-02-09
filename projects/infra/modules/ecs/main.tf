@@ -93,9 +93,8 @@ resource "aws_ecs_task_definition" "task" {
       environment = [
         { name = "AWS_REGION", value = data.aws_region.current.name },
         { name = "UPLOADS_BUCKET_NAME", value = var.uploads_bucket_name },
-        { name = "RESULTS_BUCKET_NAME", value = var.results_bucket_name },
         { name = "WORKS_TABLE_NAME", value = var.works_table_name },
-        { name = "SQS_QUEUE_URL", value = var.works_table_name },
+        { name = "SQS_QUEUE_URL", value = var.sqs_queue_url },
       ]
       logConfiguration = {
         logDriver = "awslogs"

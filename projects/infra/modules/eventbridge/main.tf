@@ -4,7 +4,7 @@ resource "aws_cloudwatch_metric_alarm" "queue_not_empty" {
   evaluation_periods  = "1"
   metric_name         = "ApproximateNumberOfMessagesVisible"
   namespace           = "AWS/SQS"
-  period              = "60"
+  period              = "30"
   statistic           = "Sum"
   threshold           = "0"
   alarm_description   = "This alarm triggers when there are messages in the queue"
