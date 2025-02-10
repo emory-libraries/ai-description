@@ -1,15 +1,44 @@
-[project]
-name = "image-captioning-assistant"
-version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "boto3==1.36.2",
-    "langchain-aws==0.2.11",
-    "load_dotenv==0.1.0",
-    "loguru==0.7.3",
-    "pandas==2.2.3",
-    "pydantic==2.10.5",
-    "psycopg2-binary==2.9.10",
-    "sqlalchemy==2.0.36",
-    "tqdm==4.67.1",
+[tool.bandit]
+exclude_dirs = [
+    "test",
+    "scripts",
+    ".venv",
+    "cdk.out"
 ]
+skips = [
+    "B101",
+    "B104",
+    "B108",
+    "B110",
+    "B403",
+    "B608"
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+force_alphabetical_sort_within_sections = true
+known_first_party = ["item_mapping_toolkit"]
+default_section = "THIRDPARTY"
+
+[tool.ruff]
+lint.select = ["D"]
+lint.pydocstyle.convention = "google"
+lint.ignore = ["D104", "D417", "D411", "D410"]
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_incomplete_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+strict_optional = true
+show_error_codes = true
+explicit_package_bases = true

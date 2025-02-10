@@ -1,11 +1,13 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import os
 import sys
 
 from csv_mock_db_manager import CSVMockDatabaseManager
 from dotenv import load_dotenv
-from loguru import logger
-
 from image_captioning_assistant.orchestrate.process_job import process_job
+from loguru import logger
 
 logger.remove()
 logger.add(sink=sys.stderr, level="INFO")

@@ -1,28 +1,20 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import unittest
 from unittest.mock import Mock, patch
 
-from image_captioning_assistant.data.data_classes import (
-    BiasLevel,
-    BiasType,
-    PotentialBias,
-)
-from image_captioning_assistant.evaluate.evaluate_bias_analysis import (
-    BiasAnalysisEvaluation,
-    evaluate_potential_biases,
-)
+from image_captioning_assistant.data.data_classes import BiasLevel, BiasType, PotentialBias
+from image_captioning_assistant.evaluate.evaluate_bias_analysis import BiasAnalysisEvaluation, evaluate_potential_biases
 
 
 class TestEvaluateBiasAnalysis(unittest.TestCase):
 
-    @patch(
-        "image_captioning_assistant.evaluate.evaluate_bias_analysis.ChatBedrockConverse"
-    )
+    @patch("image_captioning_assistant.evaluate.evaluate_bias_analysis.ChatBedrockConverse")
     def test_evaluate_structured_metadata(self, mock_chat_bedrock):
         # Set up the mock
         mock_structured_llm = Mock()
-        mock_chat_bedrock.return_value.with_structured_output.return_value = (
-            mock_structured_llm
-        )
+        mock_chat_bedrock.return_value.with_structured_output.return_value = mock_structured_llm
         expected_evaluation = BiasAnalysisEvaluation(
             bias_level_alignment=1.0,
             bias_type_alignment=0.3,
@@ -48,12 +40,8 @@ class TestEvaluateBiasAnalysis(unittest.TestCase):
             },
         )
         # Verify that the mock was called correctly
-        mock_chat_bedrock.assert_called_once_with(
-            model="anthropic.claude-3-5-sonnet-20240620-v1:0", temperature=0.0
-        )
-        mock_chat_bedrock.return_value.with_structured_output.assert_called_once_with(
-            BiasAnalysisEvaluation
-        )
+        mock_chat_bedrock.assert_called_once_with(model="anthropic.claude-3-5-sonnet-20240620-v1:0", temperature=0.0)
+        mock_chat_bedrock.return_value.with_structured_output.assert_called_once_with(BiasAnalysisEvaluation)
         mock_structured_llm.invoke.assert_called_once()
 
         # Assertions

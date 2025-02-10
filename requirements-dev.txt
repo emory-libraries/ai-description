@@ -1,0 +1,4 @@
+-e ./lib
+ipykernel
+httpx
+pre-commit

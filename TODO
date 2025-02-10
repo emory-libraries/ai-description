@@ -1,0 +1,20 @@
+Python package:
+    - Remove print statements for loguru logging statements
+        - Initialize logger in __init__.py file
+    - Check function annotations -- need types for all parameters and return types
+        - mypy pre-commit hook found 61 errors across 19 files
+    - Add """Description.""" to top of each .py file
+    - Refactor naming, a bit too long
+        - Update tests here too to match any changes in repo structure/naming
+    - Combine textract + image_captioning_assistant together
+        - Design patterns are completely different here
+
+UI:
+    - Add code
+
+Terraform:
+    - Integrate with UI and Python package
+    - Make it better
+
+General:
+    - Update pre-commit hooks to ignore certain folders like /tests
