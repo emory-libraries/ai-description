@@ -1,0 +1,157 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: white;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.input-group {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 400px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px 0 0 4px;
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+.button.login {
+  width: 200px;
+  margin: auto;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.content-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+}
+
+.image-container, .metadata-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  max-width: 50%;
+}
+
+.image-container {
+  padding-right: 20px;
+}
+
+.metadata-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  max-width: 50%;
+  border-left: 1px solid #ddd;
+  padding-left: 40px;
+}
+
+.metadata-content {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.metadata-content h3 {
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.metadata-content ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.metadata-content li {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.metadata-content p {
+  text-align: center;
+}
+
+.message {
+  text-align: center;
+  font-size: 18px;
+  color: #333;
+  margin: auto;
+}
+
+.message.error {
+  color: #dc3545;
+}
+
+.container.authenticated {
+  justify-content: flex-start;
+}
+
+.container.authenticated:not(.has-content) {
+  justify-content: center;
+}
+
+.container.authenticated:not(.has-content) .input-group {
+  margin-top: auto;
+  margin-bottom: auto;
+}
