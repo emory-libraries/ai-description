@@ -52,3 +52,8 @@ variable "sqs_queue_url" {
   description = "URL of SQS queue"
   type        = string
 }
+
+variable "ecr_processor_repository_url" {
+  description = "URL of ECR repository for processor image"
+  type        = string
+}

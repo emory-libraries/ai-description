@@ -27,3 +27,8 @@ variable "vpc_s3_endpoint_id" {
   description = "The ID of the VPC's S3 endpoint"
   type        = string
 }
+
+variable "ecr_processor_repository_name" {
+  description = "Name of ECR repository for processor image"
+  type        = string
+}

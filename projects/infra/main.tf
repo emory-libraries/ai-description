@@ -40,6 +40,14 @@ module "vpc" {
   vpc_id          = var.vpc_id
 }
 
+# ECR module
+module "ecr" {
+  source = "./modules/ecr"
+
+  deployment_name = var.deployment_name
+  stage_name      = var.stage_name
+}
+
 # DynamoDB module for job metadata storage
 module "dynamodb" {
   source = "./modules/dynamodb"
@@ -75,19 +83,22 @@ module "iam" {
     module.sqs,
     module.s3,
     module.vpc,
+    module.ecr,
   ]
 
-  deployment_name     = var.deployment_name
-  works_table_arn     = module.dynamodb.works_table_arn
-  uploads_bucket_arn  = module.s3.uploads_bucket_arn
-  sqs_works_queue_arn = module.sqs.queue_arn
-  vpc_s3_endpoint_id  = module.vpc.vpc_s3_endpoint_id
+  deployment_name               = var.deployment_name
+  works_table_arn               = module.dynamodb.works_table_arn
+  uploads_bucket_arn            = module.s3.uploads_bucket_arn
+  sqs_works_queue_arn           = module.sqs.queue_arn
+  vpc_s3_endpoint_id            = module.vpc.vpc_s3_endpoint_id
+  ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
 }
 
 # ECS module for Fargate tasks
 module "ecs" {
   source = "./modules/ecs"
   depends_on = [
+    module.ecr,
     module.dynamodb,
     module.cloudwatch,
     module.s3,
@@ -96,16 +107,17 @@ module "ecs" {
     module.iam,
   ]
 
-  deployment_name            = var.deployment_name
-  stage_name                 = var.stage_name
-  cluster_name               = "ai-description-${var.deployment_name}"
-  works_table_name           = module.dynamodb.works_table_name
-  centralized_log_group_name = module.cloudwatch.cloudwatch_log_group_name
-  uploads_bucket_name        = module.s3.uploads_bucket_name
-  sqs_queue_url              = module.sqs.queue_url
-  vpc_id                     = module.vpc.vpc_id
-  task_execution_role_arn    = module.iam.ecs_task_execution_role_arn
-  task_role_arn              = module.iam.ecs_task_role_arn
+  deployment_name              = var.deployment_name
+  stage_name                   = var.stage_name
+  cluster_name                 = "ai-description-${var.deployment_name}"
+  ecr_processor_repository_url = module.ecr.ecr_processor_repository_url
+  works_table_name             = module.dynamodb.works_table_name
+  centralized_log_group_name   = module.cloudwatch.cloudwatch_log_group_name
+  uploads_bucket_name          = module.s3.uploads_bucket_name
+  sqs_queue_url                = module.sqs.queue_url
+  vpc_id                       = module.vpc.vpc_id
+  task_execution_role_arn      = module.iam.ecs_task_execution_role_arn
+  task_role_arn                = module.iam.ecs_task_role_arn
 }
 
 # Lambda functions for API endpoints and starting ECS tasks

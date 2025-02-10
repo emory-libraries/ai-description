@@ -150,6 +150,28 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr_policy" {
 }
 
 
+resource "aws_ecr_repository_policy" "processor_policy" {
+  repository = var.ecr_processor_repository_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPullForECSTaskExecutionRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.ecs_task_execution_role.arn
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
 # ECS Task Role
 resource "aws_iam_role" "ecs_task_role" {
   name = "ecs-task-role-${var.deployment_name}"

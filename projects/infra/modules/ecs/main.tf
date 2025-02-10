@@ -19,21 +19,10 @@ locals {
 
 data "aws_region" "current" {}
 
-# ECR Repository for Docker images
-resource "aws_ecr_repository" "processor" {
-  name                 = "processor-repo-${var.deployment_name}"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = var.stage_name == "dev"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
 # Push latest image
 resource "null_resource" "push_image" {
   triggers = {
-    ecr_repository_url = aws_ecr_repository.processor.repository_url
+    ecr_repository_url = var.ecr_processor_repository_url
     combined_src_hash  = local.combined_src_hash
   }
 
@@ -41,9 +30,9 @@ resource "null_resource" "push_image" {
     command    = <<EOF
       set -ex
       echo "Starting Docker build and push process"
-      aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${aws_ecr_repository.processor.repository_url}
-      sudo docker build -t ${aws_ecr_repository.processor.repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
-      sudo docker push ${aws_ecr_repository.processor.repository_url}:${local.image_tag} || exit 1
+      aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
+      sudo docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
+      sudo docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
     on_failure = fail
@@ -74,7 +63,7 @@ resource "aws_ecs_task_definition" "task" {
   container_definitions = jsonencode([
     {
       name      = "processing-container"
-      image     = "${aws_ecr_repository.processor.repository_url}:${local.image_tag}"
+      image     = "${var.ecr_processor_repository_url}:${local.image_tag}"
       cpu       = 1024
       memory    = 2048
       essential = true
