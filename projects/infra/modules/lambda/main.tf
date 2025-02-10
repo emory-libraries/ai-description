@@ -48,14 +48,22 @@ locals {
       environment = {
         ECS_CLUSTER_NAME        = var.ecs_cluster_name
         ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
-        ECS_SUBNET_IDS          = join(",", var.subnet_ids)
-        ECS_SECURITY_GROUP_IDS  = join(",", var.security_group_ids)
+        ECS_SUBNET_IDS          = join(",", var.private_subnet_ids)
+        ECS_SECURITY_GROUP_IDS  = join(",", [var.ecs_security_group_id, var.vpc_security_group_id])
         TASK_EXECUTION_ROLE_ARN = var.task_execution_role_arn
       }
     }
-    results = {
+    get_results = {
       source_dir  = "${path.module}/src/functions/get_results"
-      description = "Handles retrieval and delivery of processing results"
+      description = "Retrieve results for a work in a job"
+      timeout     = 30
+      environment = {
+        WORKS_TABLE_NAME = var.works_table_name
+      }
+    }
+    update_results = {
+      source_dir  = "${path.module}/src/functions/update_results"
+      description = "Updates results for a work in a job"
       timeout     = 30
       environment = {
         WORKS_TABLE_NAME = var.works_table_name

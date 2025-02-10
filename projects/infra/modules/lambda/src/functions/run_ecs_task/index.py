@@ -45,7 +45,7 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
             "awsvpcConfiguration": {
                 "subnets": SUBNET_IDS,
                 "securityGroups": SECURITY_GROUP_IDS,
-                "assignPublicIp": "ENABLED",
+                "assignPublicIp": "DISABLED",
             }
         }
         overrides = {

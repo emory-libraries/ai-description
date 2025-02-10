@@ -12,8 +12,3 @@ output "uploads_bucket_arn" {
   description = "The ARN of the S3 bucket for uploads"
   value       = aws_s3_bucket.uploads.arn
 }
-
-output "results_bucket_arn" {
-  description = "The ARN of the S3 bucket for results"
-  value       = aws_s3_bucket.results.arn
-}

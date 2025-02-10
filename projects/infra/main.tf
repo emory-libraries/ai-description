@@ -60,7 +60,7 @@ module "sqs" {
   visibility_timeout_seconds = 60
 }
 
-# S3 module for uploads and results buckets
+# S3 module for uploads bucket
 module "s3" {
   source = "./modules/s3"
 
@@ -80,7 +80,6 @@ module "iam" {
   deployment_name     = var.deployment_name
   works_table_arn     = module.dynamodb.works_table_arn
   uploads_bucket_arn  = module.s3.uploads_bucket_arn
-  results_bucket_arn  = module.s3.results_bucket_arn
   sqs_works_queue_arn = module.sqs.queue_arn
   vpc_s3_endpoint_id  = module.vpc.vpc_s3_endpoint_id
 }
@@ -105,7 +104,6 @@ module "ecs" {
   uploads_bucket_name        = module.s3.uploads_bucket_name
   sqs_queue_url              = module.sqs.queue_url
   vpc_id                     = module.vpc.vpc_id
-  subnet_ids                 = module.vpc.private_subnet_ids
   task_execution_role_arn    = module.iam.ecs_task_execution_role_arn
   task_role_arn              = module.iam.ecs_task_role_arn
 }
@@ -124,14 +122,15 @@ module "lambda" {
 
   deployment_name         = var.deployment_name
   sqs_queue_url           = module.sqs.queue_url
-  subnet_ids              = module.vpc.private_subnet_ids
+  private_subnet_ids      = module.vpc.private_subnet_ids
   works_table_name        = module.dynamodb.works_table_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
   base_lambda_role_arn    = module.iam.base_lambda_role_arn
   task_execution_role_arn = module.iam.ecs_task_execution_role_arn
   ecs_cluster_name        = module.ecs.cluster_name
   ecs_task_definition_arn = module.ecs.task_definition_arn
-  security_group_ids      = module.vpc.vpc_security_group_ids
+  ecs_security_group_id   = module.vpc.ecs_security_group_id
+  vpc_security_group_id   = module.vpc.vpc_security_group_id
 }
 
 # API Gateway configuration

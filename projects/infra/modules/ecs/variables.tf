@@ -33,10 +33,6 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "subnet_ids" {
-  type = list(string)
-}
-
 variable "deployment_name" {
   description = "Unique name of deployment"
   type        = string

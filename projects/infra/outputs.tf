@@ -27,8 +27,3 @@ output "lambda_function_names" {
   description = "The names of the Lambda functions"
   value       = module.lambda.function_names
 }
-
-output "results_bucket_arn" {
-  description = "The ARN of the S3 bucket for results"
-  value       = module.s3.results_bucket_arn
-}

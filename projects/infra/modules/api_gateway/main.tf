@@ -35,7 +35,8 @@ locals {
     "results" = {
       path_part = "results"
       methods = {
-        "GET" = var.lambda["results"]
+        "GET" = var.lambda["get_results"]
+        "PUT" = var.lambda["update_results"]
       }
     }
   }

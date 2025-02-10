@@ -183,6 +183,49 @@ resource "aws_route_table_association" "public" {
 }
 
 
+# Security Group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "vpc-endpoints-sg-${var.deployment_name}"
+  description = "Security group for VPC endpoints"
+  vpc_id      = local.vpc_id
+
+  # Allow all outbound traffic by default
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "vpc-endpoints-sg-${var.deployment_name}"
+  }
+}
+
+# Security Group for ECS Tasks
+resource "aws_security_group" "ecs_service_sg" {
+  name        = "ecs-service-sg-${var.deployment_name}"
+  description = "Security group for ECS tasks"
+  vpc_id      = local.vpc_id
+  # Allow all outbound traffic by default
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group_rule" "vpc_endpoints_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.vpc_endpoints.id
+  source_security_group_id = aws_security_group.ecs_service_sg.id
+  description              = "Allow HTTPS inbound from ECS tasks"
+}
+
 # VPC Endpoint for ECR API
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = local.vpc_id
@@ -236,22 +279,4 @@ resource "aws_vpc_endpoint" "logs" {
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
-}
-
-# Security group for VPC endpoints
-resource "aws_security_group" "vpc_endpoints" {
-  name        = "vpc-endpoints-sg-${var.deployment_name}"
-  description = "Security group for VPC endpoints"
-  vpc_id      = local.vpc_id
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  tags = {
-    Name = "vpc-endpoints-sg-${var.deployment_name}"
-  }
 }

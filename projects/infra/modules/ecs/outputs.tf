@@ -12,8 +12,3 @@ output "task_definition_arn" {
   description = "The ARN of the ECS task definition"
   value       = aws_ecs_task_definition.task.arn
 }
-
-output "subnet_ids" {
-  description = "List of subnet IDs for ECS tasks"
-  value       = var.subnet_ids
-}

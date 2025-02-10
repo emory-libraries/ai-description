@@ -4,8 +4,9 @@
 # ECS module
 
 locals {
+  project_root_path = "${path.root}/../.."
   ecs_src_path      = "${path.module}/src"
-  package_src_path  = "${path.root}/../../lib/image_captioning_assistant"
+  package_src_path  = "${local.project_root_path}/lib/image_captioning_assistant"
   ecs_src_files     = fileset(local.ecs_src_path, "**")
   package_src_files = fileset(local.package_src_path, "**")
   ecs_src_hash      = sha256(join("", [for f in local.ecs_src_files : filesha256("${local.ecs_src_path}/${f}")]))
@@ -41,7 +42,7 @@ resource "null_resource" "push_image" {
       set -ex
       echo "Starting Docker build and push process"
       aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${aws_ecr_repository.processor.repository_url}
-      sudo docker build -t ${aws_ecr_repository.processor.repository_url}:${local.image_tag} ${local.ecs_src_path} || exit 1
+      sudo docker build -t ${aws_ecr_repository.processor.repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
       sudo docker push ${aws_ecr_repository.processor.repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
@@ -52,19 +53,6 @@ resource "null_resource" "push_image" {
 # ECS Cluster
 resource "aws_ecs_cluster" "cluster" {
   name = var.cluster_name
-}
-
-# Security Group for ECS Tasks
-resource "aws_security_group" "ecs_service_sg" {
-  name        = "ecs-service-sg-${var.deployment_name}"
-  description = "Security group for ECS tasks"
-  vpc_id      = var.vpc_id
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
 # ECS Task Definition using Fargate with increased ephemeral storage
@@ -106,17 +94,4 @@ resource "aws_ecs_task_definition" "task" {
       }
     }
   ])
-}
-
-resource "aws_security_group" "vpc_endpoints" {
-  name        = "vpc-endpoints-${var.deployment_name}"
-  description = "Security group for VPC endpoints"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_service_sg.id]
-  }
 }

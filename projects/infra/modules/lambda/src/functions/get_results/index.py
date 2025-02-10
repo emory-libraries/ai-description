@@ -6,20 +6,15 @@
 import json
 import logging
 import os
-from typing import Any, Dict
+from decimal import Decimal
+from typing import Any
 
 import boto3
-from botocore.config import Config
+from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import ClientError
 
 # Constants
 AWS_REGION = os.environ["AWS_REGION"]
-S3_CONFIG = Config(
-    {
-        "s3": {"addressing_style": "virtual"},
-        "signature_version": "s3v4",
-    }
-)
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -29,7 +24,6 @@ CORS_HEADERS = {
 }
 
 # Initialize AWS clients globally
-s3 = boto3.client("s3", region_name=AWS_REGION, config=S3_CONFIG)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
@@ -37,49 +31,75 @@ table = dynamodb.Table(WORKS_TABLE_NAME)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+deserializer = TypeDeserializer()
 
-def handler(event: Any, context: Any) -> Dict[str, Any]:
+
+class DecimalEncoder(json.JSONEncoder):
+    """Handle Decimal type serialization."""
+
+    def default(self, obj: Any) -> Any:
+        """Default method."""
+        if isinstance(obj, Decimal):
+            return str(obj)
+        return super(DecimalEncoder, self).default(obj)
+
+
+def deserialize_dynamodb_item(raw_data: dict[str, Any] | list[dict[str, Any]]) -> Any:
+    """Deserialize DynamoDB data to native Python types."""
+    if isinstance(raw_data, list):
+        return [deserialize_dynamodb_item(item) for item in raw_data]
+
+    if not isinstance(raw_data, dict):
+        return raw_data
+
+    deserialized_data = {}
+    for key, value in raw_data.items():
+        if isinstance(value, dict):
+            try:
+                deserialized_data[key] = deserializer.deserialize(value)
+            except (TypeError, ValueError):
+                deserialized_data[key] = deserialize_dynamodb_item(value)
+        else:
+            deserialized_data[key] = value
+
+    return deserialized_data
+
+
+def create_response(status_code: int, body: Any) -> dict[str, Any]:
+    """Create a standardized API response."""
+    return {
+        "statusCode": status_code,
+        "body": json.dumps(body, cls=DecimalEncoder),
+        "headers": CORS_HEADERS,
+    }
+
+
+def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler."""
     try:
-        job_id = event["queryStringParameters"].get("job_id")
+        job_name = event["queryStringParameters"].get("job_name")
+        if not job_name:
+            logger.error("Missing 'job_name' in query parameters")
+            return create_response(400, {"error": "Missing 'job_id' parameter"})
 
-        if not job_id:
-            logger.error("Missing job_id in query parameters")
-            return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "Missing job_id parameter"}),
-                "headers": CORS_HEADERS,
-            }
+        work_id = event["queryStringParameters"].get("work_id")
+        if not work_id:
+            logger.error("Missing 'work_id' in query parameters")
+            return create_response(400, {"error": "Missing 'work_id' parameter"})
 
-        response = table.get_item(Key={"job_id": job_id})
+        response = table.get_item(Key={"job_name": job_name, "work_id": work_id})
         item = response.get("Item")
+        if item:
+            deserialized_item = deserialize_dynamodb_item(item)
+            return create_response(200, {"item": deserialized_item})
 
-        if item and item["status"] == "COMPLETED":
-            # Generate a presigned URL for the results
-            logger.info(f"Generated presigned URL for job_id {job_id}")
-            return {
-                "statusCode": 200,
-                "body": json.dumps({"job_id": job_id}),
-                "headers": CORS_HEADERS,
-            }
         else:
-            logger.warning(f"Results not available for job_id {job_id}")
-            return {
-                "statusCode": 404,
-                "body": json.dumps({"error": "Results not available"}),
-                "headers": CORS_HEADERS,
-            }
+            logger.warning(f"Results not available for job_name={job_name} and work_id={work_id}")
+            return create_response(404, {"error": "Results not available"})
+
     except ClientError as e:
         logger.error(f"AWS service error: {e}")
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": "Internal server error"}),
-            "headers": CORS_HEADERS,
-        }
+        return create_response(500, {"error": "Internal server error"})
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": "Internal server error"}),
-            "headers": CORS_HEADERS,
-        }
+        return create_response(500, {"error": "Internal server error"})

@@ -21,49 +21,6 @@ resource "aws_iam_role" "base_lambda_role" {
   })
 }
 
-# A2I Role
-resource "aws_iam_role" "a2i_role" {
-  name        = "a2i-role-${var.deployment_name}"
-  description = "Role for A2I workflow"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "sagemaker.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-# A2I Policy
-resource "aws_iam_role_policy" "a2i_policy" {
-  name = "a2i-policy-${var.deployment_name}"
-  role = aws_iam_role.a2i_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "${var.results_bucket_arn}/*",
-          var.results_bucket_arn
-        ]
-      }
-    ]
-  })
-}
-
 # Base Lambda Policy (common permissions)
 resource "aws_iam_policy" "base_lambda_policy" {
   name = "base-lambda-policy-${var.deployment_name}"
@@ -109,13 +66,10 @@ resource "aws_iam_policy" "service_lambda_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:PutObject",
         ]
         Resource = [
           var.uploads_bucket_arn,
           "${var.uploads_bucket_arn}/*",
-          var.results_bucket_arn,
-          "${var.results_bucket_arn}/*",
         ]
       },
       {
@@ -190,6 +144,11 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy_attach" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
 
 # ECS Task Role
 resource "aws_iam_role" "ecs_task_role" {
@@ -242,11 +201,9 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:PutObject"
         ]
         Resource = [
           "${var.uploads_bucket_arn}/*",
-          "${var.results_bucket_arn}/*"
         ]
       },
       {
@@ -309,13 +266,10 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
         Principal = "*"
         Action = [
           "s3:GetObject",
-          "s3:PutObject"
         ]
         Resource = [
           var.uploads_bucket_arn,
           "${var.uploads_bucket_arn}/*",
-          var.results_bucket_arn,
-          "${var.results_bucket_arn}/*"
         ]
       }
     ]

@@ -13,11 +13,6 @@ variable "uploads_bucket_arn" {
   type        = string
 }
 
-variable "results_bucket_arn" {
-  description = "ARN of the S3 bucket for results"
-  type        = string
-}
-
 variable "deployment_name" {
   description = "Unique name of deployment"
   type        = string

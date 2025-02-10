@@ -63,54 +63,6 @@ resource "aws_s3_bucket_public_access_block" "logs_public_access_block" {
   restrict_public_buckets = true
 }
 
-# Results bucket
-resource "aws_s3_bucket" "results" {
-  bucket = "ai-description-results-${var.deployment_name}"
-}
-
-resource "aws_s3_bucket_versioning" "results_versioning" {
-  bucket = aws_s3_bucket.results.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "results_encryption" {
-  bucket = aws_s3_bucket.results.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "results_public_access_block" {
-  bucket = aws_s3_bucket.results.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "results_lifecycle" {
-  bucket = aws_s3_bucket.results.id
-
-  rule {
-    id     = "archive_old_results"
-    status = "Enabled"
-
-    transition {
-      days          = 30
-      storage_class = "GLACIER"
-    }
-
-    expiration {
-      days = 90
-    }
-  }
-}
-
 # Create S3 bucket for Lambda code (keep this for other functions)
 resource "aws_s3_bucket" "lambda_code" {
   bucket = "lambda-code-${var.deployment_name}"

@@ -33,14 +33,19 @@ variable "ecs_task_definition_arn" {
   type        = string
 }
 
-variable "subnet_ids" {
+variable "private_subnet_ids" {
   description = "List of subnet IDs for ECS tasks"
   type        = list(string)
 }
 
-variable "security_group_ids" {
-  description = "List of security group IDs for ECS tasks"
-  type        = list(string)
+variable "vpc_security_group_id" {
+  description = "Aecurity group ID for VPC"
+  type        = string
+}
+
+variable "ecs_security_group_id" {
+  description = "Security group IDs for ECS task"
+  type        = string
 }
 
 variable "task_execution_role_arn" {

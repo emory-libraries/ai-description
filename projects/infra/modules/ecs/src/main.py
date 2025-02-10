@@ -34,17 +34,13 @@ sqs = boto3.client("sqs", region_name=AWS_REGION)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
+
 def update_dynamodb_status(job_name, work_id, status):
     try:
         table.update_item(
-            Key={
-                'job_name': job_name,
-                'work_id': work_id
-            },
+            Key={"job_name": job_name, "work_id": work_id},
             UpdateExpression="SET work_status = :status",
-            ExpressionAttributeValues={
-                ':status': status
-            }
+            ExpressionAttributeValues={":status": status},
         )
         logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
     except ClientError as e:
@@ -75,9 +71,9 @@ def process_sqs_messages():
             try:
 
                 # Parse the message body
-                message_body = json.loads(message['Body'])
-                job_name = message_body['job_name']
-                work_id = message_body['work_id']
+                message_body = json.loads(message["Body"])
+                job_name = message_body["job_name"]
+                work_id = message_body["work_id"]
 
                 # Update work_status for the item in DynamoDB to "PROCESSING"
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
@@ -96,9 +92,9 @@ def process_sqs_messages():
                 logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
 
                 # Parse the message body
-                message_body = json.loads(message['Body'])
-                job_name = message_body['job_name']
-                work_id = message_body['work_id']
+                message_body = json.loads(message["Body"])
+                job_name = message_body["job_name"]
+                work_id = message_body["work_id"]
 
                 # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
