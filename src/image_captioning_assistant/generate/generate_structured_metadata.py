@@ -15,38 +15,38 @@ from image_captioning_assistant.generate.utils import (
 import image_captioning_assistant.generate.prompts as p
 
 
-# def generate_structured_metadata(
-#     img_bytes_list: list[bytes],
-#     llm_kwargs: dict[str, Any],
-#     img_context: str,
-# ) -> StructuredMetadata:
-#     """Generate structured metadata for an image.
+def generate_structured_metadata(
+    img_bytes_list: list[bytes],
+    llm_kwargs: dict[str, Any],
+    img_context: str,
+) -> StructuredMetadata:
+    """Generate structured metadata for an image.
 
-#     Args:
-#         img_bytes_list (list[bytes]): Image bytes - may include multiple (front and back)
-#         llm_kwargs (dict[str, Any]): Keyword args for LLM
-#         img_context (str): Additional freeform context to help the LLM.
+    Args:
+        img_bytes_list (list[bytes]): Image bytes - may include multiple (front and back)
+        llm_kwargs (dict[str, Any]): Keyword args for LLM
+        img_context (str): Additional freeform context to help the LLM.
 
-#     Raises:
-#         ValueError: Error when model ID does not include nova or claude
+    Raises:
+        ValueError: Error when model ID does not include nova or claude
 
-#     Returns:
-#         StructuredMetadata: Structured metadata for image.
-#     """
-#     text_prompt = (
-#         "Task: Review one or more images and generate structured metadata for it. "
-#         f"Here is some additional information that might help: {img_context}"
-#     )
-#     model_name = llm_kwargs.pop("model")
-#     if "nova" in model_name:
-#         prompt = format_prompt_for_nova(text_prompt, img_bytes_list)
-#     elif "claude" in model_name:
-#         prompt = format_prompt_for_claude(text_prompt, img_bytes_list)
-#     else:
-#         raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
-#     llm = ChatBedrockConverse(model=model_name, **llm_kwargs)
-#     structured_llm = llm.with_structured_output(StructuredMetadata)
-#     return structured_llm.invoke(prompt)
+    Returns:
+        StructuredMetadata: Structured metadata for image.
+    """
+    text_prompt = (
+        "Task: Review one or more images and generate structured metadata for it. "
+        f"Here is some additional information that might help: {img_context}"
+    )
+    model_name = llm_kwargs.pop("model")
+    if "nova" in model_name:
+        prompt = format_prompt_for_nova(text_prompt, img_bytes_list)
+    elif "claude" in model_name:
+        prompt = format_prompt_for_claude(text_prompt, img_bytes_list)
+    else:
+        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
+    llm = ChatBedrockConverse(model=model_name, **llm_kwargs)
+    structured_llm = llm.with_structured_output(StructuredMetadata)
+    return structured_llm.invoke(prompt)
 
 def get_request_body(modelId, image_data, image_data_back=None):
     # Create the message with text and image
