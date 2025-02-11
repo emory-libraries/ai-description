@@ -8,13 +8,6 @@ resource "aws_s3_bucket" "uploads" {
   bucket = "ai-description-uploads-${var.deployment_name}"
 }
 
-resource "aws_s3_bucket_versioning" "uploads_versioning" {
-  bucket = aws_s3_bucket.uploads.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_server_side_encryption_configuration" "uploads_encryption" {
   bucket = aws_s3_bucket.uploads.id
   rule {
@@ -36,13 +29,6 @@ resource "aws_s3_bucket_public_access_block" "uploads_public_access_block" {
 # Logs bucket
 resource "aws_s3_bucket" "logs" {
   bucket = lower("ai-description-poc-logs-${var.deployment_name}")
-}
-
-resource "aws_s3_bucket_versioning" "logs_versioning" {
-  bucket = aws_s3_bucket.logs.id
-  versioning_configuration {
-    status = "Enabled"
-  }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "logs_encryption" {

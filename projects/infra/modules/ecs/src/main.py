@@ -2,6 +2,7 @@
 # Terms and the SOW between the parties dated 2025.
 
 """ECS worker script for processing batch jobs."""
+
 import json
 import logging
 import os

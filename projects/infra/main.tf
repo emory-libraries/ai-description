@@ -48,14 +48,14 @@ module "ecr" {
   stage_name      = var.stage_name
 }
 
-# DynamoDB module for job metadata storage
+# DynamoDB module
 module "dynamodb" {
   source = "./modules/dynamodb"
 
   deployment_name = var.deployment_name
 }
 
-# SQS module for "works" queue
+# SQS module
 module "sqs" {
   source     = "./modules/sqs"
   queue_name = "works-queue-${var.deployment_name}"
@@ -68,14 +68,14 @@ module "sqs" {
   visibility_timeout_seconds = 60
 }
 
-# S3 module for uploads bucket
+# S3 module
 module "s3" {
   source = "./modules/s3"
 
   deployment_name = var.deployment_name
 }
 
-# Base IAM module for core roles
+# IAM module
 module "iam" {
   source = "./modules/iam"
   depends_on = [
@@ -94,7 +94,7 @@ module "iam" {
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
 }
 
-# ECS module for Fargate tasks
+# ECS module
 module "ecs" {
   source = "./modules/ecs"
   depends_on = [
@@ -120,7 +120,7 @@ module "ecs" {
   task_role_arn                = module.iam.ecs_task_role_arn
 }
 
-# Lambda functions for API endpoints and starting ECS tasks
+# Lambda module
 module "lambda" {
   source = "./modules/lambda"
   depends_on = [
@@ -142,10 +142,10 @@ module "lambda" {
   ecs_cluster_name        = module.ecs.cluster_name
   ecs_task_definition_arn = module.ecs.task_definition_arn
   ecs_security_group_id   = module.vpc.ecs_security_group_id
-  vpc_security_group_id   = module.vpc.vpc_security_group_id
+  vpc_security_group_id   = module.vpc.vpc_endpoints_security_group_id
 }
 
-# API Gateway configuration
+# API Gateway module
 module "api_gateway" {
   source     = "./modules/api_gateway"
   depends_on = [module.lambda, module.iam]
@@ -156,7 +156,7 @@ module "api_gateway" {
   cloudwatch_role_arn = module.iam.api_gateway_cloudwatch_role_arn
 }
 
-# Eventbridge module
+# EventBridge module
 module "eventbridge" {
   source     = "./modules/eventbridge"
   depends_on = [module.sqs, module.lambda]

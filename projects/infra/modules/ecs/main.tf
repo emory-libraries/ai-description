@@ -3,6 +3,8 @@
 
 # ECS module
 
+data "aws_region" "current" {}
+
 locals {
   project_root_path = "${path.root}/../.."
   ecs_src_path      = "${path.module}/src"
@@ -15,10 +17,6 @@ locals {
   image_tag         = substr(local.combined_src_hash, 0, 8) # Using first 8 characters of the hash for brevity
 }
 
-
-
-data "aws_region" "current" {}
-
 # Push latest image
 resource "null_resource" "push_image" {
   triggers = {
@@ -30,9 +28,9 @@ resource "null_resource" "push_image" {
     command    = <<EOF
       set -ex
       echo "Starting Docker build and push process"
-      aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
-      sudo docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
-      sudo docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
+      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
+      docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
+      docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
     on_failure = fail

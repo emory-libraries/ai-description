@@ -32,12 +32,12 @@ output "vpc_s3_endpoint_id" {
   value       = aws_vpc_endpoint.s3.id
 }
 
-output "vpc_security_group_id" {
-  description = "The ID of the VPC's security group"
-  value       = aws_security_group.vpc_endpoints.id
-}
-
 output "ecs_security_group_id" {
   description = "ID of ECS Security Group"
   value       = aws_security_group.ecs_service_sg.id
+}
+
+output "vpc_endpoints_security_group_id" {
+  description = "ID of VPC Endpoints Security Group"
+  value       = aws_security_group.vpc_endpoints.id
 }

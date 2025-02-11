@@ -45,26 +45,6 @@ data "aws_subnets" "private" {
   }
 }
 
-data "aws_route_tables" "public" {
-  count  = local.create_vpc ? 0 : 1
-  vpc_id = var.vpc_id
-
-  filter {
-    name   = "tag:Tier"
-    values = ["Public"]
-  }
-}
-
-data "aws_route_tables" "private" {
-  count  = local.create_vpc ? 0 : 1
-  vpc_id = var.vpc_id
-
-  filter {
-    name   = "tag:Tier"
-    values = ["Private"]
-  }
-}
-
 # Create VPC if needed
 resource "aws_vpc" "main" {
   count = local.create_vpc ? 1 : 0
@@ -182,32 +162,26 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public[0].id
 }
 
-
-# Security Group for VPC endpoints
+# Security Groups
 resource "aws_security_group" "vpc_endpoints" {
   name        = "vpc-endpoints-sg-${var.deployment_name}"
   description = "Security group for VPC endpoints"
   vpc_id      = local.vpc_id
 
-  # Allow all outbound traffic by default
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "vpc-endpoints-sg-${var.deployment_name}"
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_service_sg.id]
+    description     = "Allow HTTPS from ECS tasks"
   }
 }
 
-# Security Group for ECS Tasks
 resource "aws_security_group" "ecs_service_sg" {
   name        = "ecs-service-sg-${var.deployment_name}"
   description = "Security group for ECS tasks"
   vpc_id      = local.vpc_id
-  # Allow all outbound traffic by default
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -216,62 +190,14 @@ resource "aws_security_group" "ecs_service_sg" {
   }
 }
 
-resource "aws_security_group_rule" "vpc_endpoints_ingress" {
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.vpc_endpoints.id
-  source_security_group_id = aws_security_group.ecs_service_sg.id
-  description              = "Allow HTTPS inbound from ECS tasks"
-}
-
-# VPC Endpoint for ECR API
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id              = local.vpc_id
-  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-}
-
-# VPC Endpoint for ECR DKR
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id              = local.vpc_id
-  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-}
-
-# VPC Endpoint for S3
+# VPC Endpoints
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids = concat(
-    local.create_vpc ? [aws_route_table.public[0].id] : (
-      data.aws_route_tables.public[0].ids
-    ),
-    local.create_vpc ? [aws_route_table.private[0].id] : (
-      data.aws_route_tables.private[0].ids
-    )
-  )
+  route_table_ids   = local.create_vpc ? [aws_route_table.private[0].id] : []
 }
 
-# VPC Endpoint for ECS
-resource "aws_vpc_endpoint" "ecs" {
-  vpc_id              = local.vpc_id
-  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecs"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-}
-
-# VPC Endpoint for Cloudwatch
 resource "aws_vpc_endpoint" "logs" {
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"

@@ -1,3 +1,5 @@
+# EventBridge variables
+
 variable "deployment_name" {
   description = "Unique name of deployment"
   type        = string

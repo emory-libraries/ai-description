@@ -1,4 +1,5 @@
-# Define Dead Letter Queue
+# SQS module
+
 resource "aws_sqs_queue" "work_queue_dlq" {
   name                       = "${var.queue_name}-dlq"
   delay_seconds              = var.delay_seconds
