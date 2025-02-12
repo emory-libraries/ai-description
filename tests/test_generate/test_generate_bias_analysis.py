@@ -1,26 +1,18 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import unittest
 from typing import List
 from unittest.mock import MagicMock, patch
 
-from image_captioning_assistant.data.data_classes import (
-    BiasAnalysis,
-    BiasLevel,
-    BiasType,
-    PotentialBias,
-)
-from image_captioning_assistant.generate.generate_bias_analysis import (
-    generate_bias_analysis,
-)
+from image_captioning_assistant.data.data_classes import BiasAnalysis, BiasLevel, BiasType, PotentialBias
+from image_captioning_assistant.generate.generate_bias_analysis import generate_bias_analysis
 
 
 class TestGenerateBiasAnalysis(unittest.TestCase):
 
-    @patch(
-        "image_captioning_assistant.generate.generate_bias_analysis.ChatBedrockConverse"
-    )
-    @patch(
-        "image_captioning_assistant.generate.generate_bias_analysis.format_prompt_for_nova"
-    )
+    @patch("image_captioning_assistant.generate.generate_bias_analysis.ChatBedrockConverse")
+    @patch("image_captioning_assistant.generate.generate_bias_analysis.format_prompt_for_nova")
     def test_generate_bias_analysis_nova(self, mock_format_prompt, mock_chatbedrock):
         # Setup
         img_bytes_list = [b"image1", b"image2"]
@@ -50,12 +42,8 @@ class TestGenerateBiasAnalysis(unittest.TestCase):
         mock_llm.with_structured_output.assert_called_once_with(BiasAnalysis)
         self.assertEqual(result, expected_result)
 
-    @patch(
-        "image_captioning_assistant.generate.generate_bias_analysis.ChatBedrockConverse"
-    )
-    @patch(
-        "image_captioning_assistant.generate.generate_bias_analysis.format_prompt_for_claude"
-    )
+    @patch("image_captioning_assistant.generate.generate_bias_analysis.ChatBedrockConverse")
+    @patch("image_captioning_assistant.generate.generate_bias_analysis.format_prompt_for_claude")
     def test_generate_bias_analysis_claude(self, mock_format_prompt, mock_chatbedrock):
         # Setup
         img_bytes_list = [b"image1", b"image2"]

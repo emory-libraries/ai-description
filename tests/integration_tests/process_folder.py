@@ -1,11 +1,11 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import argparse
 from pathlib import Path
 from typing import Any
 
-from image_captioning_assistant.generate.generate_bias_analysis import (
-    BiasAnalysis,
-    generate_bias_analysis,
-)
+from image_captioning_assistant.generate.generate_bias_analysis import BiasAnalysis, generate_bias_analysis
 
 
 def process_folder(

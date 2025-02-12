@@ -1,35 +1,25 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 import unittest
 from unittest.mock import MagicMock, patch
 
-from image_captioning_assistant.data.data_classes import (
-    BiasLevel,
-    BiasType,
-    PotentialBias,
-    StructuredMetadata,
-)
+from image_captioning_assistant.data.data_classes import BiasLevel, BiasType, PotentialBias, StructuredMetadata
 from image_captioning_assistant.evaluate.evaluate_structured_metadata import (
     BiasAnalysisEvaluation,
+    evaluate_structured_metadata,
     FreeformResponseEvaluation,
     PartialStructuredMetadataEvaluation,
     StructuredMetadataEvaluation,
-    evaluate_structured_metadata,
 )
 
 
 class TestEvaluateStructuredMetadata(unittest.TestCase):
 
-    @patch(
-        "image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_freeform_response"
-    )
-    @patch(
-        "image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_potential_biases"
-    )
-    @patch(
-        "image_captioning_assistant.evaluate.evaluate_structured_metadata.ChatBedrockConverse"
-    )
-    def test_evaluate_structured_metadata(
-        self, mock_chat_bedrock, mock_evaluate_bias, mock_evaluate_freeform
-    ):
+    @patch("image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_freeform_response")
+    @patch("image_captioning_assistant.evaluate.evaluate_structured_metadata.evaluate_potential_biases")
+    @patch("image_captioning_assistant.evaluate.evaluate_structured_metadata.ChatBedrockConverse")
+    def test_evaluate_structured_metadata(self, mock_chat_bedrock, mock_evaluate_bias, mock_evaluate_freeform):
         # Mock the evaluate_freeform_response function
         mock_evaluate_freeform.return_value = FreeformResponseEvaluation(
             faithfulness_and_consistency=0.9,
@@ -55,9 +45,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
             publication_info_evaluation=0.5,
             contextual_info_evaluation=0.4,
         )
-        mock_chat_bedrock.return_value.with_structured_output.return_value.invoke = (
-            mock_invoke
-        )
+        mock_chat_bedrock.return_value.with_structured_output.return_value.invoke = mock_invoke
 
         # Create sample input data
         llm_bias_analysis = PotentialBias(
@@ -94,9 +82,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         chat_bedrock_kwargs = {"model": "anthropic.claude-3-5-sonnet-20240620-v1:0"}
 
         # Call the function
-        result = evaluate_structured_metadata(
-            llm_metadata, human_metadata, chat_bedrock_kwargs
-        )
+        result = evaluate_structured_metadata(llm_metadata, human_metadata, chat_bedrock_kwargs)
 
         # Assert the result
         self.assertIsInstance(result, StructuredMetadataEvaluation)
@@ -107,9 +93,7 @@ class TestEvaluateStructuredMetadata(unittest.TestCase):
         self.assertEqual(result.publication_info_evaluation, 0.5)
         self.assertEqual(result.contextual_info_evaluation, 0.4)
 
-        self.assertEqual(
-            result.description_evaluation.faithfulness_and_consistency, 0.9
-        )
+        self.assertEqual(result.description_evaluation.faithfulness_and_consistency, 0.9)
         self.assertEqual(result.description_evaluation.completeness, 0.8)
         self.assertEqual(result.description_evaluation.verbosity, 0.7)
         self.assertEqual(result.description_evaluation.clarity, 0.6)
