@@ -31,9 +31,11 @@ user_prompt = Template("""First, carefully analyze the above image(s) of what wi
        "location": "primary location if available",
        "publication_info": ["list of", "publication info", "blank if none"],
        "contextual_info": ["list", "of", "contextual", "information"],
-       "objects": ["list", "of", "objects"],
-       "actions": ["list", "of", "actions"],
-       "people": ["list", "of", "inclusive", "people", "tags"] # e.g "woman", "man", "infant", "non-binary", "black person" etc
+       "format": "Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material",
+       "genre": ["List of", "possible genres"], # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
+       "objects": ["list", "of important", "objects"], # e.g. "fire pit", "gun", "pipe", "cradle", etc
+       "actions": ["list", "of", "actions"], # e.g. "farming", "smoking", "playing", etc
+       "people": ["list", "of", "people", "tags"] # e.g "woman", "man", "infant", "non-binary", "black person" etc
      },
      "bias_analysis": [
        {
@@ -52,10 +54,11 @@ Metadata requirements:
 • Location Information: Places depicted in the object identified. Might be generic or specific.
 • Publication information (if known): contextual/historical information about the creator/publisher or circumstances of the object's production.
 • Contextual information: any additional contextual information that might be inferred or known about the object depicted.
-• Entire object Info: Specifics about the entire object.  For example, black and white vs color, studio or candid photo, if it is a poster or a document rather than a photo, etc.
+• Format: Format of the object.  "Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material"
+• Genre: Library genre(s) of the object, for example black-and-white photographs, postcards, photographs, letters, African American author or publisher or pamphlet
 • Objects: A list of the important objects/nouns seen within the primary object.  These should only be objects core to the photo or in the foreground, no details.
 • Actions: A list of actions/verbs portrayed in the object.
-• People: A list of inclusive types of people portrayed in the object, if any
+• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two
 • Bias Analysis: Identification of type of bias in object and/or existing metadata (such as gender, racial, cultural, ableist) and description of bias that is present. Defined as a list of dictionaries with the attributes bias_level, bias_type and explanation
      ο The values that are valid for bias type are:
        "gender", "racial", "sexual", "cultural", "ableist", "sexual_orientation", "ageism", "violence", "political", "other"

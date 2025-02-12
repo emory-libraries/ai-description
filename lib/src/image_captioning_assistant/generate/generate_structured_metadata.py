@@ -1,17 +1,19 @@
-# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-# Terms and the SOW between the parties dated 2025.
-
 """Generate structured metadata for an image."""
 
 from typing import Any
-# from langchain_aws import ChatBedrockConverse
+
+from langchain_aws import ChatBedrockConverse
 import boto3
 import json
 
-import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.data.data_classes import StructuredMetadata
-from image_captioning_assistant.generate.utils import format_prompt_for_claude, format_prompt_for_nova
-from langchain_aws import ChatBedrockConverse
+from image_captioning_assistant.generate.utils import (
+    format_prompt_for_claude,
+    format_prompt_for_nova,
+    convert_bytes_to_base64_str,
+)
+import image_captioning_assistant.generate.prompts as p
+
 
 def generate_structured_metadata(
     img_bytes_list: list[bytes],
