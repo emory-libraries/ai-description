@@ -143,11 +143,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy_attach" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
-# Attach base ECS execution policy
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_cloudwatch_policy_attach" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-}
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
