@@ -1,4 +1,4 @@
-# CloudWatch Alarms module
+# EventBridge module
 
 # Alarm for SQS queue not empty
 resource "aws_cloudwatch_metric_alarm" "sqs_not_empty" {
