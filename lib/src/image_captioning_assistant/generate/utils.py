@@ -1,5 +1,6 @@
 import base64
-
+import json
+import image_captioning_assistant.generate.prompts as p
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
     """Convert bytes to Base64 encoding.
@@ -30,6 +31,16 @@ def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = 
         with open(image_path_back, "rb") as image_file_back:
             image_list.append(image_file_back.read())
     return image_list
+
+def extract_json_and_cot_from_text(text):
+    # split chain of thought
+    cot, text = text.split(p.COT_TAG_END)
+    try:
+        return (cot.replace(p.COT_TAG,''), json.loads(text.strip()))
+    except json.JSONDecodeError:
+        print("Could not decode")
+        print(text)
+        raise json.JSONDecodeError
 
 def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes]) -> list[dict]:
     """Format prompt for Anthropic Claude LLM.

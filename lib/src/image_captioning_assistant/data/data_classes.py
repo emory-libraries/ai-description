@@ -58,7 +58,7 @@ class Metadata(BaseModel):
         ...,
         description="Date of creation (circa dates or ranges acceptable)"
     )
-    location_information: str = Field(
+    location: str = Field(
         ...,
         description="Geographic context of depicted content"
     )
@@ -93,7 +93,6 @@ class Metadata(BaseModel):
     people: List[str] = Field(
         ...,
         description="Visible human subjects using specific descriptors",
-        examples=["Black woman", "White male child"]
     )
 
 class BiasAnalysisEntry(BaseModel):
@@ -121,7 +120,7 @@ class BiasAnalysisEntry(BaseModel):
 BiasAnalysis = List[BiasAnalysisEntry]
 
 class StructuredMetadata(BaseModel):
-    object_detail_and_bias_analysis: str = Field(..., description="Step by step reasoning process")
+    # object_detail_and_bias_analysis: str = Field(..., description="Step by step reasoning process")
     metadata: Metadata = Field(..., description="Metadata")
     bias_analysis: BiasAnalysis = Field(
         ...,
