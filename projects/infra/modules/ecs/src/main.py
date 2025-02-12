@@ -49,11 +49,10 @@ def update_dynamodb_status(job_name, work_id, status):
 
 
 def process_sqs_messages():
-    # Create SQS client
-
+    """Process SQS messages."""
     while True:
         # Receive message from SQS queue
-        logging.info("Retrieving message from SQS queue")
+        logging.info("Retrieving messages from SQS queue")
         response = sqs.receive_message(
             QueueUrl=SQS_QUEUE_URL,
             AttributeNames=["All"],
@@ -62,6 +61,7 @@ def process_sqs_messages():
             VisibilityTimeout=30,
             WaitTimeSeconds=0,
         )
+        logging.info("Retrieved messages from SQS queue")
 
         # Check if there are any messages
         if "Messages" not in response:
@@ -75,14 +75,15 @@ def process_sqs_messages():
                 message_body = json.loads(message["Body"])
                 job_name = message_body["job_name"]
                 work_id = message_body["work_id"]
+                logger.info(f"Message Body: {message_body}")
+                logger.info(f"Job name: {job_name}")
+                logger.info(f"Work ID: {work_id}")
 
                 # Update work_status for the item in DynamoDB to "PROCESSING"
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
 
                 # Processing the message will eventually go here
-                logger.info(f"Message Body: {message_body}")
-                logger.info(f"Job name: {job_name}")
-                logger.info(f"Work ID: {work_id}")
+                logging.info(f"This is where message processing will happen")
 
                 # Update work_status for the item in DynamoDB to "READY FOR REVIEW"
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="READY FOR REVIEW")

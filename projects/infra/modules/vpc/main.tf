@@ -193,6 +193,17 @@ resource "aws_vpc_endpoint" "s3" {
   }
 }
 
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id            = local.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : [aws_route_table.private[0].id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-dynamodb-endpoint"
+  }
+}
+
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
@@ -219,6 +230,19 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   }
 }
 
+resource "aws_vpc_endpoint" "sqs" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.sqs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-sqs-endpoint"
+  }
+}
+
 resource "aws_vpc_endpoint" "logs" {
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
@@ -229,5 +253,18 @@ resource "aws_vpc_endpoint" "logs" {
 
   tags = {
     Name = "${var.deployment_prefix}-logs-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "cloudwatch" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.monitoring"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-cloudwatch-endpoint"
   }
 }

@@ -10,4 +10,4 @@ app_name = "ai-description"
 stage_name = "dev"
 
 # Deployment name (ENTER HERE OR REQUIRED TO INPUT BEFORE DEPLOYMENT)
-# deployment_name = ""
+deployment_name = "nt-isngd"

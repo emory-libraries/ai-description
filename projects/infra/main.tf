@@ -173,9 +173,10 @@ module "api_gateway" {
 # EventBridge module
 module "eventbridge" {
   source     = "./modules/eventbridge"
-  depends_on = [module.sqs, module.lambda]
+  depends_on = [module.sqs, module.lambda, module.ecs]
 
   deployment_prefix       = local.deployment_prefix
   sqs_works_queue_name    = module.sqs.queue_name
   run_ecs_task_lambda_arn = module.lambda.function_arns["run_ecs_task"]
+  ecs_cluster_name        = module.ecs.cluster_name
 }

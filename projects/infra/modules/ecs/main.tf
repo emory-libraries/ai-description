@@ -40,6 +40,11 @@ resource "null_resource" "push_image" {
 # ECS Cluster
 resource "aws_ecs_cluster" "cluster" {
   name = "${var.deployment_prefix}-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 # ECS Task Definition using Fargate with increased ephemeral storage
