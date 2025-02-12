@@ -9,13 +9,13 @@ variable "lambda" {
 }
 
 variable "stage_name" {
-  description = "Deployment stage name for environment"
+  description = "Deployment stage name for the environment"
   type        = string
   default     = "dev"
 }
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
   type        = string
 }
 

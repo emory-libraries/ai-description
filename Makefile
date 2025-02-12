@@ -70,7 +70,7 @@ installPythonRequirements:
 
 ## Install TypeScript dependencies for development
 installTypeScriptRequirements:
-	npm install --prefix $(PROJECT_DIR)/frontend
+	npm install --prefix $(PROJECT_DIR)/projects/frontend
 
 
 ## Install Python and TypeScript dependencies for development
@@ -141,7 +141,7 @@ terraformApply: terraformFmtValidate checkAwsCredentials
 ## Destroy Terraform infrastructure
 terraformDestroy: terraformFmtValidate checkAwsCredentials
 	@echo "Destroying Terraform infrastructure..."
-	@terraform -chdir=$(PROJECT_DIR)/projects/infra destroy -auto-approve -var-file="$(PROJECT_DIR)/dev.tfvars"
+	@terraform -chdir=$(PROJECT_DIR)/projects/infra destroy -auto-approve -var-file="$(PROJECT_DIR)/dev.tfvars" 
 
 
 ## Run data ingest locally - TODO: ADD THESE
