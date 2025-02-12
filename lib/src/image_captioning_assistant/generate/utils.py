@@ -1,6 +1,3 @@
-# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-# Terms and the SOW between the parties dated 2025.
-
 import base64
 
 
@@ -15,6 +12,24 @@ def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
     """
     return base64.b64encode(img_bytes).decode("utf-8")
 
+def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = None) -> tuple:
+    """
+    Encode the front image and optionally the back image of a ticket.
+
+    Args:
+        image_path (str): Path to the front image file.
+        image_path_back (str, optional): Path to the back image file. Defaults to None.
+
+    Returns:
+        list: A list containing the base64 encoded strings of the front and back images (if provided).
+    """
+    image_list = []
+    with open(image_path, "rb") as image_file:
+        image_list.append(image_file.read())
+    if image_path_back:
+        with open(image_path_back, "rb") as image_file_back:
+            image_list.append(image_file_back.read())
+    return image_list
 
 def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes]) -> list[dict]:
     """Format prompt for Anthropic Claude LLM.
