@@ -3,14 +3,14 @@
 # Alarm for SQS queue not empty
 resource "aws_cloudwatch_metric_alarm" "sqs_not_empty" {
   alarm_name          = "${var.deployment_prefix}-sqs-not-empty"
+  alarm_description   = "Alarm when SQS queue is not empty"
+  metric_name         = "ApproximateNumberOfMessagesVisible"
   comparison_operator = "GreaterThanThreshold"
   threshold           = "0"
   statistic           = "Sum"
   evaluation_periods  = "1"
   period              = "60"
-  metric_name         = "ApproximateNumberOfMessagesVisible"
   namespace           = "AWS/SQS"
-  alarm_description   = "Alarm when SQS queue is not empty"
   dimensions = {
     QueueName = var.sqs_works_queue_name
   }
@@ -19,14 +19,14 @@ resource "aws_cloudwatch_metric_alarm" "sqs_not_empty" {
 # Alarm for ECS cluster idle
 resource "aws_cloudwatch_metric_alarm" "ecs_running" {
   alarm_name          = "${var.deployment_prefix}-ecs-running"
+  alarm_description   = "Alarm when ECS cluster has a running task"
+  metric_name         = "TaskCount"
   comparison_operator = "GreaterThanThreshold"
   threshold           = "0"
   statistic           = "Sum"
   evaluation_periods  = "1"
   period              = "60"
-  metric_name         = "TaskCount"
   namespace           = "ECS/ContainerInsights"
-  alarm_description   = "Alarm when ECS cluster has a running task"
   dimensions = {
     ClusterName = var.ecs_cluster_name
   }
