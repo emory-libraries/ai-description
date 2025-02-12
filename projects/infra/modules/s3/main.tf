@@ -3,9 +3,14 @@
 
 # S3 module
 
+locals {
+  force_destroy = var.stage_name == "dev" ? true : false
+}
+
 # Uploads bucket
 resource "aws_s3_bucket" "uploads" {
-  bucket = "ai-description-uploads-${var.deployment_name}"
+  bucket        = "${var.global_deployment_prefix}-uploads"
+  force_destroy = local.force_destroy
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "uploads_encryption" {
@@ -28,7 +33,8 @@ resource "aws_s3_bucket_public_access_block" "uploads_public_access_block" {
 
 # Logs bucket
 resource "aws_s3_bucket" "logs" {
-  bucket = lower("ai-description-poc-logs-${var.deployment_name}")
+  bucket        = "${var.global_deployment_prefix}-logs"
+  force_destroy = local.force_destroy
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "logs_encryption" {
@@ -49,7 +55,8 @@ resource "aws_s3_bucket_public_access_block" "logs_public_access_block" {
   restrict_public_buckets = true
 }
 
-# Create S3 bucket for Lambda code (keep this for other functions)
+# Lambda code bucket
 resource "aws_s3_bucket" "lambda_code" {
-  bucket = "lambda-code-${var.deployment_name}"
+  bucket        = "${var.global_deployment_prefix}-lambda-code"
+  force_destroy = local.force_destroy
 }

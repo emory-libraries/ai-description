@@ -39,12 +39,12 @@ resource "null_resource" "push_image" {
 
 # ECS Cluster
 resource "aws_ecs_cluster" "cluster" {
-  name = var.cluster_name
+  name = "${var.deployment_prefix}-cluster"
 }
 
 # ECS Task Definition using Fargate with increased ephemeral storage
 resource "aws_ecs_task_definition" "task" {
-  family                   = "processing-task-${var.deployment_name}"
+  family                   = "${var.deployment_prefix}-processing-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "1024" # 1 vCPU
@@ -60,7 +60,7 @@ resource "aws_ecs_task_definition" "task" {
   # Container definitions
   container_definitions = jsonencode([
     {
-      name      = "processing-container"
+      name      = "${var.deployment_prefix}-processing-container"
       image     = "${var.ecr_processor_repository_url}:${local.image_tag}"
       cpu       = 1024
       memory    = 2048
@@ -76,7 +76,7 @@ resource "aws_ecs_task_definition" "task" {
         options = {
           awslogs-group         = var.centralized_log_group_name
           awslogs-region        = data.aws_region.current.name
-          awslogs-stream-prefix = "ecs-processing-task"
+          awslogs-stream-prefix = "${var.deployment_prefix_logs}/processing-logs"
         }
       }
     }

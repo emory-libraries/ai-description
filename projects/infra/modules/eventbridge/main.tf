@@ -1,7 +1,7 @@
 # EventBridge module
 
 resource "aws_cloudwatch_metric_alarm" "queue_not_empty" {
-  alarm_name          = "sqs-queue-not-empty-${var.deployment_name}"
+  alarm_name          = "${var.deployment_prefix}-sqs-queue-not-empty"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
   metric_name         = "ApproximateNumberOfMessagesVisible"
@@ -17,7 +17,7 @@ resource "aws_cloudwatch_metric_alarm" "queue_not_empty" {
 }
 
 resource "aws_cloudwatch_event_rule" "sqs_not_empty" {
-  name        = "sqs-not-empty-${var.deployment_name}"
+  name        = "${var.deployment_prefix}-sqs-not-empty"
   description = "Trigger when SQS queue is not empty"
 
   event_pattern = jsonencode({

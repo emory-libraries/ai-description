@@ -3,7 +3,7 @@
 
 # CloudWatch variables
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix_logs" {
+  description = "Unique name of the deployment for logs"
   type        = string
 }

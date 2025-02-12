@@ -141,7 +141,7 @@ terraformApply: terraformFmtValidate checkAwsCredentials
 ## Destroy Terraform infrastructure
 terraformDestroy: terraformFmtValidate checkAwsCredentials
 	@echo "Destroying Terraform infrastructure..."
-	@terraform -chdir=$(PROJECT_DIR)/projects/infra destroy -auto-approve -var-file="$(PROJECT_DIR)/dev.tfvars"
+	@terraform -chdir=$(PROJECT_DIR)/projects/infra destroy -auto-approve -var-file="$(PROJECT_DIR)/dev.tfvars" 
 
 
 ## Run data ingest locally - TODO: ADD THESE

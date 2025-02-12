@@ -54,7 +54,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name = "vpc-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-vpc"
   }
 }
 
@@ -67,7 +67,7 @@ resource "aws_subnet" "private" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name = "private-${count.index + 1}-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-private-${count.index + 1}"
     Tier = "Private"
   }
 }
@@ -81,7 +81,7 @@ resource "aws_subnet" "public" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name = "public-${count.index + 1}-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-public-${count.index + 1}"
     Tier = "Public"
   }
 }
@@ -93,78 +93,60 @@ resource "aws_internet_gateway" "main" {
   vpc_id = local.vpc_id
 
   tags = {
-    Name = "igw-${var.deployment_name}"
-  }
-}
-
-# NAT Gateway
-resource "aws_eip" "nat" {
-  count  = local.create_vpc ? 1 : 0
-  domain = "vpc"
-}
-
-resource "aws_nat_gateway" "main" {
-  count = local.create_vpc ? 1 : 0
-
-  allocation_id = aws_eip.nat[0].id
-  subnet_id     = aws_subnet.public[0].id
-
-  tags = {
-    Name = "nat-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-igw"
   }
 }
 
 # Route Tables
 resource "aws_route_table" "private" {
-  count = local.create_vpc ? 1 : 0
+  count = local.create_vpc ? length(var.azs) : 0
 
   vpc_id = local.vpc_id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[0].id
-  }
-
   tags = {
-    Name = "private-rt-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-private-rt-${count.index + 1}"
     Tier = "Private"
   }
 }
 
 resource "aws_route_table" "public" {
-  count = local.create_vpc ? 1 : 0
+  count = local.create_vpc ? length(var.azs) : 0
 
   vpc_id = local.vpc_id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main[0].id
-  }
-
   tags = {
-    Name = "public-rt-${var.deployment_name}"
+    Name = "${var.deployment_prefix}-public-rt-${count.index + 1}"
     Tier = "Public"
   }
 }
 
-# Route Table Associations
-resource "aws_route_table_association" "private" {
+# Internet Gateway route for public subnets
+resource "aws_route" "public_igw" {
   count = local.create_vpc ? length(var.azs) : 0
 
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[0].id
+  route_table_id         = aws_route_table.public[count.index].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.main[0].id
+}
+
+# Route Table Associations
+resource "aws_route_table_association" "private" {
+  count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.private[0].ids)
+
+  subnet_id      = local.create_vpc ? aws_subnet.private[count.index].id : data.aws_subnets.private[0].ids[count.index]
+  route_table_id = local.create_vpc ? aws_route_table.private[count.index].id : aws_route_table.private[count.index % length(aws_route_table.private)].id
 }
 
 resource "aws_route_table_association" "public" {
-  count = local.create_vpc ? length(var.azs) : 0
+  count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.public[0].ids)
 
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public[0].id
+  subnet_id      = local.create_vpc ? aws_subnet.public[count.index].id : data.aws_subnets.public[0].ids[count.index]
+  route_table_id = local.create_vpc ? aws_route_table.public[count.index].id : aws_route_table.public[count.index % length(aws_route_table.public)].id
 }
 
 # Security Groups
 resource "aws_security_group" "vpc_endpoints" {
-  name        = "vpc-endpoints-sg-${var.deployment_name}"
+  name        = "${var.deployment_prefix}-vpc-endpoints-sg"
   description = "Security group for VPC endpoints"
   vpc_id      = local.vpc_id
 
@@ -175,18 +157,27 @@ resource "aws_security_group" "vpc_endpoints" {
     security_groups = [aws_security_group.ecs_service_sg.id]
     description     = "Allow HTTPS from ECS tasks"
   }
+
+  tags = {
+    Name = "${var.deployment_prefix}-vpc-endpoints-sg"
+  }
 }
 
 resource "aws_security_group" "ecs_service_sg" {
-  name        = "ecs-service-sg-${var.deployment_name}"
+  name        = "${var.deployment_prefix}-ecs-service-sg"
   description = "Security group for ECS tasks"
   vpc_id      = local.vpc_id
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow ECS tasks to egress on port 443 (HTTPS)"
+  }
+
+  tags = {
+    Name = "${var.deployment_prefix}-ecs-service-sg"
   }
 }
 
@@ -195,7 +186,37 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.create_vpc ? [aws_route_table.private[0].id] : []
+  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : [aws_route_table.private[0].id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-s3-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-ecr-api-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-ecr-dkr-endpoint"
+  }
 }
 
 resource "aws_vpc_endpoint" "logs" {
@@ -205,4 +226,8 @@ resource "aws_vpc_endpoint" "logs" {
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-logs-endpoint"
+  }
 }

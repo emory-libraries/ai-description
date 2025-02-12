@@ -25,40 +25,50 @@ provider "aws" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+  account_id               = data.aws_caller_identity.current.account_id
+  deployment_prefix        = lower("${var.app_name}-${var.stage_name}-${var.deployment_name}")
+  deployment_prefix_logs   = lower("${var.app_name}/${var.stage_name}/${var.deployment_name}")
+  global_deployment_prefix = lower("${var.app_name}-${var.stage_name}-${var.deployment_name}-${local.account_id}")
+}
+
 # CloudWatch module
 module "cloudwatch" {
   source = "./modules/cloudwatch"
 
-  deployment_name = var.deployment_name
+  deployment_prefix_logs = local.deployment_prefix_logs
 }
 
 # VPC module
 module "vpc" {
   source = "./modules/vpc"
 
-  deployment_name = var.deployment_name
-  vpc_id          = var.vpc_id
+  deployment_prefix = local.deployment_prefix
+  vpc_id            = var.vpc_id
 }
 
 # ECR module
 module "ecr" {
   source = "./modules/ecr"
 
-  deployment_name = var.deployment_name
-  stage_name      = var.stage_name
+  deployment_prefix = local.deployment_prefix
+  stage_name        = var.stage_name
 }
 
 # DynamoDB module
 module "dynamodb" {
   source = "./modules/dynamodb"
 
-  deployment_name = var.deployment_name
+  deployment_prefix = local.deployment_prefix
 }
 
 # SQS module
 module "sqs" {
-  source     = "./modules/sqs"
-  queue_name = "works-queue-${var.deployment_name}"
+  source = "./modules/sqs"
+
+  deployment_prefix = local.deployment_prefix
 
   # Optional args
   delay_seconds              = 5
@@ -72,7 +82,9 @@ module "sqs" {
 module "s3" {
   source = "./modules/s3"
 
-  deployment_name = var.deployment_name
+  deployment_prefix        = local.deployment_prefix
+  global_deployment_prefix = local.global_deployment_prefix
+  stage_name               = var.stage_name
 }
 
 # IAM module
@@ -86,11 +98,13 @@ module "iam" {
     module.ecr,
   ]
 
-  deployment_name               = var.deployment_name
+  deployment_prefix             = local.deployment_prefix
   works_table_arn               = module.dynamodb.works_table_arn
   uploads_bucket_arn            = module.s3.uploads_bucket_arn
   sqs_works_queue_arn           = module.sqs.queue_arn
   vpc_s3_endpoint_id            = module.vpc.vpc_s3_endpoint_id
+  vpc_ecr_api_endpoint_id       = module.vpc.vpc_ecr_api_endpoint_id
+  vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_ecr_dkr_endpoint_id
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
 }
 
@@ -107,9 +121,9 @@ module "ecs" {
     module.iam,
   ]
 
-  deployment_name              = var.deployment_name
+  deployment_prefix            = local.deployment_prefix
+  deployment_prefix_logs       = local.deployment_prefix_logs
   stage_name                   = var.stage_name
-  cluster_name                 = "ai-description-${var.deployment_name}"
   ecr_processor_repository_url = module.ecr.ecr_processor_repository_url
   works_table_name             = module.dynamodb.works_table_name
   centralized_log_group_name   = module.cloudwatch.cloudwatch_log_group_name
@@ -132,7 +146,7 @@ module "lambda" {
     module.ecs
   ]
 
-  deployment_name         = var.deployment_name
+  deployment_prefix       = local.deployment_prefix
   sqs_queue_url           = module.sqs.queue_url
   private_subnet_ids      = module.vpc.private_subnet_ids
   works_table_name        = module.dynamodb.works_table_name
@@ -150,7 +164,7 @@ module "api_gateway" {
   source     = "./modules/api_gateway"
   depends_on = [module.lambda, module.iam]
 
-  deployment_name     = var.deployment_name
+  deployment_prefix   = local.deployment_prefix
   stage_name          = var.stage_name
   lambda              = module.lambda.function_arns
   cloudwatch_role_arn = module.iam.api_gateway_cloudwatch_role_arn
@@ -161,7 +175,7 @@ module "eventbridge" {
   source     = "./modules/eventbridge"
   depends_on = [module.sqs, module.lambda]
 
-  deployment_name         = var.deployment_name
+  deployment_prefix       = local.deployment_prefix
   sqs_works_queue_name    = module.sqs.queue_name
   run_ecs_task_lambda_arn = module.lambda.function_arns["run_ecs_task"]
 }
