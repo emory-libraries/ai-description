@@ -1,3 +1,5 @@
+# SQS outputs
+
 output "queue_url" {
   description = "The URL of the SQS work queue"
   value       = aws_sqs_queue.work_queue.id

@@ -5,7 +5,7 @@
 
 # ECR Repository for Docker images
 resource "aws_ecr_repository" "processor" {
-  name                 = "processor-repo-${var.deployment_name}"
+  name                 = "${var.deployment_prefix}-processor-repo"
   image_tag_mutability = "MUTABLE"
   force_delete         = var.stage_name == "dev"
 

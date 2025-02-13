@@ -13,8 +13,8 @@ variable "uploads_bucket_arn" {
   type        = string
 }
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
   type        = string
 }
 
@@ -25,6 +25,16 @@ variable "sqs_works_queue_arn" {
 
 variable "vpc_s3_endpoint_id" {
   description = "The ID of the VPC's S3 endpoint"
+  type        = string
+}
+
+variable "vpc_ecr_api_endpoint_id" {
+  description = "The ID of the VPC's ECR API endpoint"
+  type        = string
+}
+
+variable "vpc_ecr_dkr_endpoint_id" {
+  description = "The ID of the VPC's ECR DKR endpoint"
   type        = string
 }
 

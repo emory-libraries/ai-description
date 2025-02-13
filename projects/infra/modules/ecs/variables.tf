@@ -3,11 +3,6 @@
 
 # ECS variables
 
-variable "cluster_name" {
-  description = "Name of the ECS cluster"
-  type        = string
-}
-
 variable "task_execution_role_arn" {
   description = "ARN of the ECS task execution role"
   type        = string
@@ -33,13 +28,18 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
+  type        = string
+}
+
+variable "deployment_prefix_logs" {
+  description = "Unique name of the deployment for logs"
   type        = string
 }
 
 variable "stage_name" {
-  description = "Deployment stage name for environment"
+  description = "Deployment stage name for the environment"
   type        = string
 }
 

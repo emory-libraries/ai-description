@@ -7,8 +7,8 @@ data "aws_region" "current" {}
 
 # Create a REST API
 resource "aws_api_gateway_rest_api" "api" {
-  name        = "ai-description-${var.deployment_name}"
-  description = "REST API for Item Mapping POC"
+  name        = "${var.deployment_prefix}-rest-api"
+  description = "REST API for Image Captioning Assistant"
 
   binary_media_types = [
     "multipart/form-data",

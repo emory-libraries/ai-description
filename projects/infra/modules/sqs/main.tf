@@ -1,6 +1,7 @@
-# Define Dead Letter Queue
+# SQS module
+
 resource "aws_sqs_queue" "work_queue_dlq" {
-  name                       = "${var.queue_name}-dlq"
+  name                       = "${var.deployment_prefix}-dlq"
   delay_seconds              = var.delay_seconds
   max_message_size           = var.max_message_size
   message_retention_seconds  = var.message_retention_seconds
@@ -10,7 +11,7 @@ resource "aws_sqs_queue" "work_queue_dlq" {
 
 # Define main queue
 resource "aws_sqs_queue" "work_queue" {
-  name                       = var.queue_name
+  name                       = "${var.deployment_prefix}-queue"
   delay_seconds              = var.delay_seconds
   max_message_size           = var.max_message_size
   message_retention_seconds  = var.message_retention_seconds

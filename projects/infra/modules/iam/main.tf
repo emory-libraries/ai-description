@@ -2,13 +2,12 @@
 # Terms and the SOW between the parties dated 2025.
 
 # IAM module
-
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 # Base Lambda Role
 resource "aws_iam_role" "base_lambda_role" {
-  name = "base-lambda-role-${var.deployment_name}"
+  name = "${var.deployment_prefix}-base-lambda-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -23,7 +22,7 @@ resource "aws_iam_role" "base_lambda_role" {
 
 # Base Lambda Policy (common permissions)
 resource "aws_iam_policy" "base_lambda_policy" {
-  name = "base-lambda-policy-${var.deployment_name}"
+  name = "${var.deployment_prefix}-base-lambda-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -46,7 +45,7 @@ resource "aws_iam_policy" "base_lambda_policy" {
 
 # Service-Specific Policy
 resource "aws_iam_policy" "service_lambda_policy" {
-  name = "service-lambda-policy-${var.deployment_name}"
+  name = "${var.deployment_prefix}-service-lambda-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -123,7 +122,7 @@ resource "aws_iam_role_policy_attachment" "base_lambda_service_policy" {
 
 # IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name                  = "ecs-task-execution-role-${var.deployment_name}"
+  name                  = "${var.deployment_prefix}-ecs-task-execution-role"
   force_detach_policies = true
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -144,37 +143,15 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy_attach" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
+
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-
-resource "aws_ecr_repository_policy" "processor_policy" {
-  repository = var.ecr_processor_repository_name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowPullForECSTaskExecutionRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_iam_role.ecs_task_execution_role.arn
-        }
-        Action = [
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability"
-        ]
-      }
-    ]
-  })
-}
-
 # ECS Task Role
 resource "aws_iam_role" "ecs_task_role" {
-  name = "ecs-task-role-${var.deployment_name}"
+  name = "${var.deployment_prefix}-ecs-task-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -191,7 +168,7 @@ resource "aws_iam_role" "ecs_task_role" {
 
 # ECS Task Policy
 resource "aws_iam_policy" "ecs_task_policy" {
-  name        = "ecs-task-policy-${var.deployment_name}"
+  name        = "${var.deployment_prefix}-ecs-task-policy"
   path        = "/"
   description = "IAM policy for ECS tasks"
 
@@ -241,12 +218,25 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
         Resource = ["*"] # Any Bedrock model can be invoked
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "ecs:DescribeClusters",
+          "ecs:ListClusters",
+          "ecs:ListTasks",
+          "ecs:DescribeTasks"
+        ],
+        "Resource" : "*"
       }
     ]
   })
 }
 
-# ECS Task Role-Poliy Attachment
+# ECS Task Role-Policy Attachment
 resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
   policy_arn = aws_iam_policy.ecs_task_policy.arn
   role       = aws_iam_role.ecs_task_role.name
@@ -254,7 +244,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
 
 # API Gateway Role
 resource "aws_iam_role" "api_gateway_cloudwatch_role" {
-  name = "api_gateway_cloudwatch_role"
+  name = "${var.deployment_prefix}-api-gateway-cloudwatch-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -276,7 +266,7 @@ resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
   role       = aws_iam_role.api_gateway_cloudwatch_role.name
 }
 
-# VPC Endpoint policy
+# VPC Endpoint policies
 resource "aws_vpc_endpoint_policy" "s3_policy" {
   vpc_endpoint_id = var.vpc_s3_endpoint_id
   policy = jsonencode({
@@ -288,11 +278,50 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
         Principal = "*"
         Action = [
           "s3:GetObject",
+          "s3:ListBucket"
         ]
-        Resource = [
-          var.uploads_bucket_arn,
-          "${var.uploads_bucket_arn}/*",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_vpc_endpoint_policy" "ecr_api_policy" {
+  vpc_endpoint_id = var.vpc_ecr_api_endpoint_id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowECRAPI"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
         ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_vpc_endpoint_policy" "ecr_dkr_policy" {
+  vpc_endpoint_id = var.vpc_ecr_dkr_endpoint_id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowAll"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = "*"
       }
     ]
   })

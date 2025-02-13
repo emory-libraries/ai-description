@@ -1,7 +1,4 @@
-variable "queue_name" {
-  description = "The name of the SQS queue"
-  type        = string
-}
+# SQS variables
 
 variable "delay_seconds" {
   description = "The time in seconds that the delivery of all messages in the queue will be delayed"
@@ -31,4 +28,9 @@ variable "visibility_timeout_seconds" {
   description = "The visibility timeout for the queue"
   type        = number
   default     = 30
+}
+
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
+  type        = string
 }

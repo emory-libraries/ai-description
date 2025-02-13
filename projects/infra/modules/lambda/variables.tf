@@ -53,7 +53,7 @@ variable "task_execution_role_arn" {
   type        = string
 }
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
   type        = string
 }
