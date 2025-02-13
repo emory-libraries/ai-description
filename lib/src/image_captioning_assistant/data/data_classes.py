@@ -91,12 +91,15 @@ class BiasAnalysisEntry(BaseModel):
         description="Contextual analysis of bias manifestation",
     )
 
-BiasAnalysis = List[BiasAnalysisEntry]
+class BiasAnalysis(BaseModel):
+    bias_analysis: List[BiasAnalysisEntry] = Field(
+        ...,
+        description="Multiple bias evaluations allowed",
+    )
 
 class StructuredMetadata(BaseModel):
-    # object_detail_and_bias_analysis: str = Field(..., description="Step by step reasoning process")
     metadata: Metadata = Field(..., description="Metadata")
-    bias_analysis: BiasAnalysis = Field(
+    bias_analysis: List[BiasAnalysisEntry] = Field(
         ...,
         description="Multiple bias evaluations allowed",
     )

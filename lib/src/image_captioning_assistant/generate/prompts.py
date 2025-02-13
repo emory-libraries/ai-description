@@ -14,4 +14,7 @@ with open(os.path.join(current_dir, 'system_prompt.txt'), 'r') as file:
 with open(os.path.join(current_dir, 'user_prompt.txt'), 'r') as file:
     user_prompt = Template(file.read()).render(COT_TAG=COT_TAG, COT_TAG_END=COT_TAG_END, COT_TAG_NAME=COT_TAG_NAME)
 
+with open(os.path.join(current_dir, 'user_prompt_bias_only.txt'), 'r') as file:
+    user_prompt_bias_only = Template(file.read()).render(COT_TAG=COT_TAG, COT_TAG_END=COT_TAG_END, COT_TAG_NAME=COT_TAG_NAME)
+
 assistant_start = COT_TAG
