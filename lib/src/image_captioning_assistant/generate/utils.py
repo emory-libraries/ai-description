@@ -18,6 +18,23 @@ def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
     """
     return base64.b64encode(img_bytes).decode("utf-8")
 
+def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
+    # Open image and convert to RGB (removes alpha channel if present)
+    image = Image.open(BytesIO(image_bytes)).convert('RGB')
+    
+    # Set maximum dimensions while maintaining aspect ratio
+    image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+    
+    # Optimize JPEG quality and save to buffer
+    buffer = BytesIO()
+    image.save(buffer, 
+              format='JPEG', 
+              quality=jpeg_quality,  # Adjust between 75-95 for quality/size balance
+              optimize=True)
+    
+    buffer.seek(0)
+    return buffer.read()
+
 def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = None) -> tuple:
     """
     Encode the front image and optionally the back image of a ticket.

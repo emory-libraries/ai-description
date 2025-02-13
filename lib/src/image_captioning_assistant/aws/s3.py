@@ -6,8 +6,6 @@ from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 from loguru import logger
-from PIL import Image
-from io import BytesIO
 
 
 def list_contents_of_folder(
@@ -33,26 +31,8 @@ def list_contents_of_folder(
         Prefix=prefix,
     )
     logger.debug(f"list_conents_of_folder response: {response}")
-    return [obj["Key"] for obj in response["Contents"]]
+    return [obj["Key"] for obj in response["Contents"]]    
 
-
-def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
-    # Open image and convert to RGB (removes alpha channel if present)
-    image = Image.open(BytesIO(image_bytes)).convert('RGB')
-    
-    # Set maximum dimensions while maintaining aspect ratio
-    image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
-    
-    # Optimize JPEG quality and save to buffer
-    buffer = BytesIO()
-    image.save(buffer, 
-              format='JPEG', 
-              quality=jpeg_quality,  # Adjust between 75-95 for quality/size balance
-              optimize=True)
-    
-    buffer.seek(0)
-    return buffer.read()
-    
 
 def load_image_bytes(
     s3_bucket: str,
@@ -67,7 +47,7 @@ def load_image_bytes(
         Bucket=s3_bucket,
         Key=s3_key,
     )["Body"].read()
-    return convert_and_reduce_image(image_bytes, max_dimension=max_dimension, jpeg_quality=jpeg_quality)
+    return image_bytes
 
 
 def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str):

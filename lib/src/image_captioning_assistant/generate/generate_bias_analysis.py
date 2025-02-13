@@ -14,6 +14,7 @@ from image_captioning_assistant.generate.utils import (
     format_prompt_for_nova,
     encode_image_from_path,
     convert_bytes_to_base64_str,
+    convert_and_reduce_image,
     extract_json_and_cot_from_text,
 )
 from loguru import logger
@@ -40,14 +41,22 @@ def generate_bias_analysis(
         BiasAnalysis: Structured bias analysis for image.
     """
     # connect to runtime
-    bedrock_runtime = boto3.client("bedrock-runtime")
+    if 'region_name' in llm_kwargs:
+        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs.pop('region_name'))
+    else:
+        bedrock_runtime = boto3.client("bedrock-runtime")
+
+        # convert and resize image bytes if necessary
+    img_bytes_list_resize = [convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95)
+                              for image_bytes in img_bytes_list]
+        
     text_prompt = (
         p.user_prompt_bias_only + 
         f"\nHere is some additional information that might help: {img_context}"
     )
     model_name = llm_kwargs.pop("model")
     if "nova" in model_name:
-        prompt = format_prompt_for_nova(text_prompt, img_bytes_list)
+        prompt = format_prompt_for_nova(text_prompt, img_bytes_list_resize)
         request_body = {
             "schemaVersion": "messages-v1",
             "messages": prompt,
@@ -62,7 +71,7 @@ def generate_bias_analysis(
             },
         }
     elif "claude" in model_name:
-        prompt = format_prompt_for_claude(text_prompt, img_bytes_list)
+        prompt = format_prompt_for_claude(text_prompt, img_bytes_list_resize)
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
             "system": p.system_prompt,
