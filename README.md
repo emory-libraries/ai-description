@@ -23,7 +23,7 @@ export AWS_PROFILE=your-profile-name
 ```hcl
 vpc_id = ""  # Leave empty to create new VPC
 app_name = "ai-description"
-stage_name = "dev"
+deployment_stage = "dev"
 deployment_name = "your-deployment-name"  # Required
 ```
 
