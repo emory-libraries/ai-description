@@ -35,3 +35,6 @@ __pycache__/
 .pytest_cache
 .vscode
 *.egg-info
+
+# Research
+/research/ground_truth/*

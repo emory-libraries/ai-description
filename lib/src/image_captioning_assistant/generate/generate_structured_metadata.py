@@ -10,7 +10,7 @@ from image_captioning_assistant.data.data_classes import StructuredMetadata
 from image_captioning_assistant.generate.utils import (
     format_prompt_for_claude,
     format_prompt_for_nova,
-    convert_bytes_to_base64_str,
+    encode_image_from_path,
     extract_json_and_cot_from_text,
 )
 import image_captioning_assistant.generate.prompts as p
@@ -135,11 +135,9 @@ def extract_metadata_from_image(image_path, image_path_back=None
     # connect to runtime
     bedrock_runtime = boto3.client("bedrock-runtime")
     # Read and encode the image
-    with open(image_path, "rb") as image_file:
-        image_data = convert_bytes_to_base64_str(image_file.read())
+    image_data = encode_image_from_path(image_path)
     if image_path_back:
-        with open(image_path_back, "rb") as image_file_back:
-            image_data_back = convert_bytes_to_base64_str(image_file_back.read())
+        image_data_back = encode_image_from_path(image_path_back)
     else:
         image_data_back = None
 
