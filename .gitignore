@@ -37,4 +37,4 @@ __pycache__/
 *.egg-info
 
 # Research
-/research/ground_truth/*
+/projects/research/ground_truth/*
