@@ -101,7 +101,7 @@ def generate_bias_analysis(
         # Try parsing output and if structured output fails to hold, try again up to 5x
         try:
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            return {'cot': cot, 'metadata': BiasAnalysis(**json_dict)}
+            return {'cot': cot, 'bias_analysis': BiasAnalysis(**json_dict)}
         except Exception as e:
             # TODO: add detailed logging of llm_output somewhere
             print(llm_output.split(p.COT_TAG_END)[1])
