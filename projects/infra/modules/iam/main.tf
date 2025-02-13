@@ -218,6 +218,19 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
         Resource = ["*"] # Any Bedrock model can be invoked
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "ecs:DescribeClusters",
+          "ecs:ListClusters",
+          "ecs:ListTasks",
+          "ecs:DescribeTasks"
+        ],
+        "Resource" : "*"
       }
     ]
   })
