@@ -31,17 +31,15 @@ def list_contents_of_folder(
         Prefix=prefix,
     )
     logger.debug(f"list_conents_of_folder response: {response}")
-    return [obj["Key"] for obj in response["Contents"]]    
+    return [obj["Key"] for obj in response["Contents"]]
 
 
 def load_image_bytes(
     s3_bucket: str,
     s3_key: str,
     s3_client_kwargs: dict[str, Any],
-    max_dimension=2048,
-    jpeg_quality=95
 ) -> bytes:
-    """Load image bytes.  This function also converts the image to RGB and reduces the resolution enough to fit into the context window."""
+    """Load image bytes."""
     s3_client = boto3.client("s3", **s3_client_kwargs)
     image_bytes = s3_client.get_object(
         Bucket=s3_bucket,
