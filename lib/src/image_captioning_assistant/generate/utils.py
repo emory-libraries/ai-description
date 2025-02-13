@@ -51,11 +51,7 @@ def encode_image_from_path(image_full_path, max_size=2048, jpeg_quality=95):
                   optimize=True)
         
         buffer.seek(0)
-        image_data = base64.b64encode(buffer.read()).decode("utf-8")
-    
-    # Verify size constraint
-    if len(image_data) >= 10000000:
-        raise ValueError("Resized image still exceeds size limit - try reducing max_dimension or quality")
+        image_data = buffer.read()
     
     return image_data
 

@@ -11,6 +11,7 @@ from image_captioning_assistant.generate.utils import (
     format_prompt_for_claude,
     format_prompt_for_nova,
     encode_image_from_path,
+    convert_bytes_to_base64_str,
     extract_json_and_cot_from_text,
 )
 import image_captioning_assistant.generate.prompts as p
@@ -96,15 +97,96 @@ def get_request_body(modelId, image_data, image_data_back=None):
 
     return request_bodies[("claude" if 'claude' in modelId else "nova")]
 
+def generate_structured_metadata(
+    img_bytes_list: list[bytes],
+    llm_kwargs: dict[str, Any],
+    img_context: str,
+    return_all=False, return_cot=False
+) -> StructuredMetadata:
+    """Generate structured metadata for an image.
+
+    Args:
+        img_bytes_list (list[bytes]): Image bytes - may include multiple (front and back) but at max two.  If two the latter is assumed to be the back
+        llm_kwargs (dict[str, Any]): Keyword args for LLM
+        img_context (str): Additional freeform context to help the LLM.
+
+    Raises:
+        ValueError: Error when model ID does not include nova or claude
+
+    Returns:
+        StructuredMetadata: Structured metadata for image.
+    """
+    
+    # connect to runtime
+    bedrock_runtime = boto3.client("bedrock-runtime")
+    text_prompt = (
+        p.user_prompt + 
+        f"\nHere is some additional information that might help: {img_context}"
+    )
+    model_name = llm_kwargs.pop("model")
+    if "nova" in model_name:
+        prompt = format_prompt_for_nova(text_prompt, img_bytes_list)
+        request_body = {
+            "schemaVersion": "messages-v1",
+            "messages": prompt,
+            "system": [{"text": p.system_prompt}],
+            "toolConfig": {},
+            "inferenceConfig": {
+                "max_new_tokens": 4096,
+                "top_p": 0.6,
+                # "top_k": 250,
+                "temperature": 0.1,
+                # ,"stopSequences": ['']
+            },
+        }
+    elif "claude" in model_name:
+        prompt = format_prompt_for_claude(text_prompt, img_bytes_list)
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "system": p.system_prompt,
+            "max_tokens": 4096,
+            "temperature": 0.1,
+            "top_p": 0.6,
+            # "top_k": 250,
+            # "stop_sequences": [''],
+            "messages": prompt,
+        }
+    else:
+        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
+    # Send the request to Bedrock and validate output.  Do in try-loop up to 5 times
+    for _ in range(5):
+        response = bedrock_runtime.invoke_model(
+            modelId=model_name, body=json.dumps(request_body)
+        )
+    
+        # Process the response
+        result = json.loads(response["body"].read())
+        if 'claude' in model_name:
+            llm_output = result["content"][0]["text"]
+        elif 'nova' in model_name:
+            llm_output = result["output"]["message"]["content"][0]["text"]
+        else:
+            raise ValueError("ModelId " + model_name + " not supported, must be set up")
+        if return_all:
+            return llm_output 
+        else: # try to parse output
+            try:
+                cot, json_dict = extract_json_and_cot_from_text(llm_output)
+                return (cot, StructuredMetadata(**json_dict)) if return_cot else StructuredMetadata(**json_dict)
+            except Exception as e:
+                print(e)
+                print("trying again")
+
+
 def extract_metadata_from_image(image_path, image_path_back=None
                                 , return_all=False, return_cot=False
                                 , modelId = "anthropic.claude-3-5-sonnet-20240620-v1:0"):
     # connect to runtime
     bedrock_runtime = boto3.client("bedrock-runtime")
     # Read and encode the image
-    image_data = encode_image_from_path(image_path)
+    image_data = convert_bytes_to_base64_str(encode_image_from_path(image_path))
     if image_path_back:
-        image_data_back = encode_image_from_path(image_path_back)
+        image_data_back = convert_bytes_to_base64_str(encode_image_from_path(image_path_back))
     else:
         image_data_back = None
 
@@ -134,39 +216,5 @@ def extract_metadata_from_image(image_path, image_path_back=None
             except Exception as e:
                 print(e)
                 print("trying again")
-
-
-def generate_structured_metadata(
-    img_bytes_list: list[bytes],
-    llm_kwargs: dict[str, Any],
-    img_context: str,
-) -> StructuredMetadata:
-    """Generate structured metadata for an image.
-
-    Args:
-        img_bytes_list (list[bytes]): Image bytes - may include multiple (front and back)
-        llm_kwargs (dict[str, Any]): Keyword args for LLM
-        img_context (str): Additional freeform context to help the LLM.
-
-    Raises:
-        ValueError: Error when model ID does not include nova or claude
-
-    Returns:
-        StructuredMetadata: Structured metadata for image.
-    """
-    text_prompt = (
-        "Task: Review one or more images and generate structured metadata for it. "
-        f"Here is some additional information that might help: {img_context}"
-    )
-    model_name = llm_kwargs.pop("model")
-    if "nova" in model_name:
-        prompt = format_prompt_for_nova(text_prompt, img_bytes_list)
-    elif "claude" in model_name:
-        prompt = format_prompt_for_claude(text_prompt, img_bytes_list)
-    else:
-        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
-    llm = ChatBedrockConverse(model=model_name, **llm_kwargs)
-    structured_llm = llm.with_structured_output(StructuredMetadata)
-    return structured_llm.invoke(prompt)
 
 
