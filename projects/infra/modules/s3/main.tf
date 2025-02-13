@@ -4,12 +4,12 @@
 # S3 module
 
 locals {
-  force_destroy = var.stage_name == "dev" ? true : false
+  force_destroy = var.deployment_stage == "dev" ? true : false
 }
 
 # Uploads bucket
 resource "aws_s3_bucket" "uploads" {
-  bucket        = "${var.global_deployment_prefix}-uploads"
+  bucket        = "${var.deployment_prefix_global}-uploads"
   force_destroy = local.force_destroy
 }
 
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_public_access_block" "uploads_public_access_block" {
 
 # Logs bucket
 resource "aws_s3_bucket" "logs" {
-  bucket        = "${var.global_deployment_prefix}-logs"
+  bucket        = "${var.deployment_prefix_global}-logs"
   force_destroy = local.force_destroy
 }
 
@@ -57,6 +57,6 @@ resource "aws_s3_bucket_public_access_block" "logs_public_access_block" {
 
 # Lambda code bucket
 resource "aws_s3_bucket" "lambda_code" {
-  bucket        = "${var.global_deployment_prefix}-lambda-code"
+  bucket        = "${var.deployment_prefix_global}-lambda-code"
   force_destroy = local.force_destroy
 }

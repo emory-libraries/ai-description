@@ -18,7 +18,7 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      Environment = var.stage_name
+      Environment = var.deployment_stage
       Project     = "ai-description"
       ManagedBy   = "terraform"
     }
@@ -29,9 +29,9 @@ data "aws_caller_identity" "current" {}
 
 locals {
   account_id               = data.aws_caller_identity.current.account_id
-  deployment_prefix        = lower("${var.app_name}-${var.stage_name}-${var.deployment_name}")
-  deployment_prefix_logs   = lower("${var.app_name}/${var.stage_name}/${var.deployment_name}")
-  global_deployment_prefix = lower("${var.app_name}-${var.stage_name}-${var.deployment_name}-${local.account_id}")
+  deployment_prefix        = lower("${var.app_name}-${var.deployment_stage}-${var.deployment_name}")
+  deployment_prefix_logs   = lower("${var.app_name}/${var.deployment_stage}/${var.deployment_name}")
+  deployment_prefix_global = lower("${local.deployment_prefix}-${local.account_id}")
 }
 
 # CloudWatch module
@@ -54,7 +54,7 @@ module "ecr" {
   source = "./modules/ecr"
 
   deployment_prefix = local.deployment_prefix
-  stage_name        = var.stage_name
+  deployment_stage  = var.deployment_stage
 }
 
 # DynamoDB module
@@ -83,8 +83,8 @@ module "s3" {
   source = "./modules/s3"
 
   deployment_prefix        = local.deployment_prefix
-  global_deployment_prefix = local.global_deployment_prefix
-  stage_name               = var.stage_name
+  deployment_prefix_global = local.deployment_prefix_global
+  deployment_stage         = var.deployment_stage
 }
 
 # IAM module
@@ -123,7 +123,7 @@ module "ecs" {
 
   deployment_prefix            = local.deployment_prefix
   deployment_prefix_logs       = local.deployment_prefix_logs
-  stage_name                   = var.stage_name
+  deployment_stage             = var.deployment_stage
   ecr_processor_repository_url = module.ecr.ecr_processor_repository_url
   works_table_name             = module.dynamodb.works_table_name
   centralized_log_group_name   = module.cloudwatch.cloudwatch_log_group_name
@@ -165,7 +165,7 @@ module "api_gateway" {
   depends_on = [module.lambda, module.iam]
 
   deployment_prefix   = local.deployment_prefix
-  stage_name          = var.stage_name
+  deployment_stage    = var.deployment_stage
   lambda              = module.lambda.function_arns
   cloudwatch_role_arn = module.iam.api_gateway_cloudwatch_role_arn
 }

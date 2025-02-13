@@ -7,7 +7,7 @@
 resource "aws_ecr_repository" "processor" {
   name                 = "${var.deployment_prefix}-processor-repo"
   image_tag_mutability = "MUTABLE"
-  force_delete         = var.stage_name == "dev"
+  force_delete         = var.deployment_stage == "dev"
 
   image_scanning_configuration {
     scan_on_push = true
