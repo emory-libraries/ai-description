@@ -6,6 +6,8 @@ from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 from loguru import logger
+from PIL import Image
+from io import BytesIO
 
 
 def list_contents_of_folder(
@@ -34,18 +36,38 @@ def list_contents_of_folder(
     return [obj["Key"] for obj in response["Contents"]]
 
 
+def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
+    # Open image and convert to RGB (removes alpha channel if present)
+    image = Image.open(BytesIO(image_bytes)).convert('RGB')
+    
+    # Set maximum dimensions while maintaining aspect ratio
+    image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+    
+    # Optimize JPEG quality and save to buffer
+    buffer = BytesIO()
+    image.save(buffer, 
+              format='JPEG', 
+              quality=jpeg_quality,  # Adjust between 75-95 for quality/size balance
+              optimize=True)
+    
+    buffer.seek(0)
+    return buffer.read()
+    
+
 def load_image_bytes(
     s3_bucket: str,
     s3_key: str,
     s3_client_kwargs: dict[str, Any],
+    max_dimension=2048,
+    jpeg_quality=95
 ) -> bytes:
-    """Load image bytes."""
+    """Load image bytes.  This function also converts the image to RGB and reduces the resolution enough to fit into the context window."""
     s3_client = boto3.client("s3", **s3_client_kwargs)
     image_bytes = s3_client.get_object(
         Bucket=s3_bucket,
         Key=s3_key,
     )["Body"].read()
-    return image_bytes
+    return convert_and_reduce_image(image_bytes, max_dimension=max_dimension, jpeg_quality=jpeg_quality)
 
 
 def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str):
