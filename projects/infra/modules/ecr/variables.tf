@@ -8,7 +8,7 @@ variable "deployment_prefix" {
   type        = string
 }
 
-variable "stage_name" {
+variable "deployment_stage" {
   description = "Deployment stage name for the environment"
   type        = string
 }

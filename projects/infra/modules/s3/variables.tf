@@ -8,12 +8,12 @@ variable "deployment_prefix" {
   type        = string
 }
 
-variable "global_deployment_prefix" {
+variable "deployment_prefix_global" {
   description = "Global unique name of the deployment"
   type        = string
 }
 
-variable "stage_name" {
+variable "deployment_stage" {
   description = "Deployment stage name for the environment"
   type        = string
 }
