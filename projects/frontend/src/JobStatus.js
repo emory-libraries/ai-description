@@ -1,12 +1,17 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "react-oidc-context";
-import { 
+import {
   View,
-  Card, 
-  Button, 
-  Heading, 
-  Flex, 
+  Card,
+  Button,
+  Heading,
+  Flex,
   Text,
   Alert,
   Loader,
@@ -41,7 +46,7 @@ const JobStatus = () => {
 
   const mockJobStatusLambda = async (event) => {
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     switch (event.action) {
       case 'getStatus':
         return mockDynamoDB.jobs.get(event.jobId);
@@ -76,10 +81,10 @@ const JobStatus = () => {
   }, [auth.isAuthenticated]);
 
   const handleViewResults = (job) => {
-    navigate(`/results/${job.job_name}`, { 
-      state: { 
+    navigate(`/results/${job.job_name}`, {
+      state: {
         s3Uris: job.s3_uris,
-        jobName: job.job_name 
+        jobName: job.job_name
       }
     });
   };
@@ -110,8 +115,8 @@ const JobStatus = () => {
       <View padding="medium">
         <Card variation="elevated">
           <Flex direction="column" alignItems="center" gap="medium">
-            <Button 
-              onClick={() => auth.signinRedirect()} 
+            <Button
+              onClick={() => auth.signinRedirect()}
               variation="primary"
               size="large"
             >
@@ -128,9 +133,9 @@ const JobStatus = () => {
       <Card variation="elevated">
         <Flex direction="column" gap="medium">
           <Heading level={4}>Jobs</Heading>
-          
+
           {error && <Alert variation="error">{error}</Alert>}
-          
+
           {isLoading ? (
             <Flex direction="column" alignItems="center">
               <Loader size="large" />
