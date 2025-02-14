@@ -5,7 +5,7 @@ First, carefully analyze the above image(s) of what will subsequently be referre
      "metadata": {
        "description": "Summary description",
        "transcription": {
-                       "print": ["list of", "transcribed text", "in print", "in object"]
+                       "printed_text": ["list of", "transcribed text", "in print", "in object"]
                        "handwriting": ["handwritten notes", "<against_programming></against_programming>"]
                        }
        "date": "specific date if available" or if not, "Circa YEAR/DECADE"
