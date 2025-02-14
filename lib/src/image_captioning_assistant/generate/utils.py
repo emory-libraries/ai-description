@@ -3,9 +3,11 @@
 
 import base64
 import json
-from PIL import Image
 from io import BytesIO
+
 import image_captioning_assistant.generate.prompts as p
+from PIL import Image
+
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
     """Convert bytes to Base64 encoding.
@@ -18,22 +20,23 @@ def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
     """
     return base64.b64encode(img_bytes).decode("utf-8")
 
+
 def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
     # Open image and convert to RGB (removes alpha channel if present)
-    image = Image.open(BytesIO(image_bytes)).convert('RGB')
-    
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+
     # Set maximum dimensions while maintaining aspect ratio
     image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
-    
+
     # Optimize JPEG quality and save to buffer
     buffer = BytesIO()
-    image.save(buffer, 
-              format='JPEG', 
-              quality=jpeg_quality,  # Adjust between 75-95 for quality/size balance
-              optimize=True)
-    
+    image.save(
+        buffer, format="JPEG", quality=jpeg_quality, optimize=True  # Adjust between 75-95 for quality/size balance
+    )
+
     buffer.seek(0)
     return buffer.read()
+
 
 def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = None) -> tuple:
     """
@@ -54,25 +57,25 @@ def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = 
             image_list.append(image_file_back.read())
     return image_list
 
+
 def encode_image_from_path(image_full_path, max_size=2048, jpeg_quality=95):
     with open(image_full_path, "rb") as image_file:
         # Open image and convert to RGB (removes alpha channel if present)
-        image = Image.open(image_file).convert('RGB')
-        
+        image = Image.open(image_file).convert("RGB")
+
         # Set maximum dimensions while maintaining aspect ratio
         max_dimension = 2048  # Adjust this based on your size requirements
         image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
-        
+
         # Optimize JPEG quality and save to buffer
         buffer = BytesIO()
-        image.save(buffer, 
-                  format='JPEG', 
-                  quality=jpeg_quality,  # Adjust between 75-95 for quality/size balance
-                  optimize=True)
-        
+        image.save(
+            buffer, format="JPEG", quality=jpeg_quality, optimize=True  # Adjust between 75-95 for quality/size balance
+        )
+
         buffer.seek(0)
         image_data = buffer.read()
-    
+
     return image_data
 
 
@@ -80,11 +83,12 @@ def extract_json_and_cot_from_text(text):
     # split chain of thought
     cot, text = text.split(p.COT_TAG_END)
     try:
-        return (cot.replace(p.COT_TAG,''), json.loads(text.strip()))
+        return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
     except json.JSONDecodeError:
         print("Could not decode")
         print(text)
         raise json.JSONDecodeError
+
 
 def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes]) -> list[dict]:
     """Format prompt for Anthropic Claude LLM.

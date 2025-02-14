@@ -3,27 +3,21 @@
 
 """Generate structured metadata for an image."""
 
-from typing import Any
-import boto3
 import json
+from typing import Any
 
+import boto3
+import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.data.data_classes import StructuredMetadata
 from image_captioning_assistant.generate.utils import (
-    format_prompt_for_claude,
-    format_prompt_for_nova,
-    encode_image_from_path,
-    convert_bytes_to_base64_str,
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
+    format_prompt_for_claude,
+    format_prompt_for_nova,
 )
-import image_captioning_assistant.generate.prompts as p
 
 
-def generate_structured_metadata(
-    img_bytes_list: list[bytes],
-    llm_kwargs: dict[str, Any],
-    img_context: str
-) -> dict:
+def generate_structured_metadata(img_bytes_list: list[bytes], llm_kwargs: dict[str, Any], img_context: str) -> dict:
     """Generate structured metadata for an image.
 
     Args:
@@ -40,19 +34,17 @@ def generate_structured_metadata(
     """
 
     # convert and resize image bytes if necessary
-    img_bytes_list_resize = [convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95)
-                              for image_bytes in img_bytes_list]
-    
+    img_bytes_list_resize = [
+        convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95) for image_bytes in img_bytes_list
+    ]
+
     # connect to runtime
-    if 'region_name' in llm_kwargs:
-        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs.pop('region_name'))
+    if "region_name" in llm_kwargs:
+        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs.pop("region_name"))
     else:
         bedrock_runtime = boto3.client("bedrock-runtime")
-        
-    text_prompt = (
-        p.user_prompt + 
-        f"\nHere is some additional information that might help: {img_context}"
-    )
+
+    text_prompt = p.user_prompt + f"\nHere is some additional information that might help: {img_context}"
     model_name = llm_kwargs.pop("model")
     if "nova" in model_name:
         prompt = format_prompt_for_nova(text_prompt, img_bytes_list_resize)
@@ -65,7 +57,7 @@ def generate_structured_metadata(
                 "top_p": 0.6,
                 "temperature": 0.1,
                 # inference config items injected after will overwrite above defaults
-                **llm_kwargs
+                **llm_kwargs,
             },
             "messages": prompt,
         }
@@ -85,24 +77,22 @@ def generate_structured_metadata(
         raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
     # Send the request to Bedrock and validate output.  Do in try-loop up to 5 times
     for _ in range(5):
-        response = bedrock_runtime.invoke_model(
-            modelId=model_name, body=json.dumps(request_body)
-        )
-    
+        response = bedrock_runtime.invoke_model(modelId=model_name, body=json.dumps(request_body))
+
         # Process the response
         result = json.loads(response["body"].read())
-        if 'claude' in model_name:
+        if "claude" in model_name:
             llm_output = result["content"][0]["text"]
-        elif 'nova' in model_name:
+        elif "nova" in model_name:
             llm_output = result["output"]["message"]["content"][0]["text"]
         else:
             raise ValueError("ModelId " + model_name + " not supported, must be set up")
         # Try parsing output and if structured output fails to hold, try again up to 5x
         try:
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            return {'cot': cot, 'metadata': StructuredMetadata(**json_dict)}
+            return {"cot": cot, "metadata": StructuredMetadata(**json_dict)}
         except Exception as e:
             # TODO: add detailed logging of llm_output somewhere
             print(e)
+            print(llm_output.split(p.COT_TAG_END)[1])
             print("trying again")
-

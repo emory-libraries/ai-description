@@ -6,8 +6,7 @@ from enum import Enum
 
 class BiasLevel(str, Enum):
     """Different levels of bias."""
-
-    none: str = "none"
+    
     # Low potential for harm: unintentional exclusion; gaps or imbalances in the
     # representation of individuals and communities
     low: str = "low"
@@ -23,11 +22,13 @@ class BiasType(str, Enum):
     """Different types of bias."""
 
     gender: str = "gender"
-    race: str = "race"
-    culture: str = "culture"
+    racial: str = "racial"
+    sexual: str = "sexual"
+    cultural: str = "cultural"
     ability: str = "ability"
     sexual_orientation: str = "sexual orientation"
-    body_shape: str = "body_shape"
+    body_shape: str = "body shape"
     age: str = "age"
     violence: str = "violence"
+    political: str = "political"
     other: str = "other"

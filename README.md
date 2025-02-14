@@ -15,11 +15,13 @@ This repository contains the full-stack solution for the Archival Image Captioni
 
 1. Clone the repository
 2. Configure your AWS credentials or use instance roles (usually AWS_PROFILE=default):
+
 ```bash
 export AWS_PROFILE=your-profile-name
 ```
 
 3. Update the `dev.tfvars` file with your configuration:
+
 ```hcl
 vpc_id = ""  # Leave empty to create new VPC
 app_name = "ai-description"
@@ -30,6 +32,7 @@ deployment_name = "your-deployment-name"  # Required
 ## Available Make Commands
 
 ### Setup Commands
+
 - `make createPythonEnvironment` - Creates a Python virtual environment
 - `make createTerraformBackend` - Creates Terraform backend configuration in S3 and DynamoDB
 - `make installPythonRequirements` - Installs Python dependencies
@@ -37,6 +40,7 @@ deployment_name = "your-deployment-name"  # Required
 - `make install` - Installs all dependencies
 
 ### Terraform Commands
+
 - `make terraformFmtValidate` - Formats and validates Terraform code (automatically applied to other Make rules)
 - `make terraformInit` - Initializes Terraform configuration
 - `make terraformPlan` - Creates Terraform plan
@@ -44,6 +48,7 @@ deployment_name = "your-deployment-name"  # Required
 - `make terraformDestroy` - Destroys Terraform infrastructure
 
 ### Cleanup Commands
+
 - `make cleanPython` - Cleans Python artifacts
 - `make cleanTerraform` - Cleans Terraform artifacts
 - `make cleanTypeScript` - Cleans TypeScript artifacts
@@ -52,21 +57,25 @@ deployment_name = "your-deployment-name"  # Required
 ## Deployment Steps
 
 1. Initialize the project:
+
 ```bash
 make terraformInit
 ```
 
 2. Create and review the deployment plan:
+
 ```bash
 make terraformPlan
 ```
 
 3. Apply the changes:
+
 ```bash
 make terraformApply
 ```
 
 4. To destroy the infrastructure:
+
 ```bash
 make terraformDestroy
 ```
@@ -74,6 +83,7 @@ make terraformDestroy
 ## Infrastructure Components
 
 The deployment creates the following AWS resources:
+
 - VPC with public/private subnets and VPC endpoints
 - API Gateway
 - Lambda functions

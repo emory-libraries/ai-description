@@ -10,48 +10,23 @@ from pydantic import BaseModel, Field
 
 
 class Transcription(BaseModel):
-    print: List[str] = Field(
-        ...,
-        description="Printed text elements in their original layout/sequence"
-    )
-    handwriting: List[str] = Field(
-        ...,
-        description="Handwritten elements with original spelling/punctuation"
-    )
+    print: List[str] = Field(..., description="Printed text elements in their original layout/sequence")
+    handwriting: List[str] = Field(..., description="Handwritten elements with original spelling/punctuation")
+
 
 class Metadata(BaseModel):
     description: str = Field(
         ...,
         description="Detailed accessibility-focused description of visual content",
     )
-    transcription: Transcription = Field(
-        ...,
-        description="Complete transcription of all legible text elements"
+    transcription: Transcription = Field(..., description="Complete transcription of all legible text elements")
+    date: str = Field(..., description="Date of creation (circa dates or ranges acceptable)")
+    location: str = Field(..., description="Geographic context of depicted content")
+    publication_info: List[str] = Field(..., description="Production/publishing context if documented")
+    contextual_info: List[str] = Field(..., description="Cultural/historical context of creation or subject")
+    format: Literal["Still Image", "Text", "Artifact", "Cartographic", "Notated Music", "Mixed Material"] = Field(
+        ..., description="Physical/digital format category"
     )
-    date: str = Field(
-        ...,
-        description="Date of creation (circa dates or ranges acceptable)"
-    )
-    location: str = Field(
-        ...,
-        description="Geographic context of depicted content"
-    )
-    publication_info: List[str] = Field(
-        ...,
-        description="Production/publishing context if documented"
-    )
-    contextual_info: List[str] = Field(
-        ...,
-        description="Cultural/historical context of creation or subject"
-    )
-    format: Literal[
-        "Still Image", 
-        "Text", 
-        "Artifact", 
-        "Cartographic", 
-        "Notated Music", 
-        "Mixed Material"
-    ] = Field(..., description="Physical/digital format category")
     genre: List[str] = Field(
         ...,
         description="Formal/genre classifications",
@@ -69,33 +44,22 @@ class Metadata(BaseModel):
         description="Visible human subjects using specific descriptors",
     )
 
+
 class BiasAnalysisEntry(BaseModel):
-    bias_level: Literal["Low", "Medium", "High"] = Field(
-        ...,
-        description="Potential harm classification"
-    )
-    bias_type: Literal[
-        "gender", 
-        "racial", 
-        "sexual", 
-        "cultural", 
-        "ableist",
-        "sexual_orientation", 
-        "ageism", 
-        "violence", 
-        "political", 
-        "other"
-    ] = Field(..., description="Category of bias identified")
+    bias_level: BiasLevel = Field(..., description="Potential harm classification")
+    bias_type: BiasType = Field(..., description="Category of bias identified")
     explanation: str = Field(
         ...,
         description="Contextual analysis of bias manifestation",
     )
+
 
 class BiasAnalysis(BaseModel):
     bias_analysis: List[BiasAnalysisEntry] = Field(
         ...,
         description="Multiple bias evaluations allowed",
     )
+
 
 class StructuredMetadata(BaseModel):
     metadata: Metadata = Field(..., description="Metadata")

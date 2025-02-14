@@ -1,15 +1,20 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import React, { useState, useCallback } from 'react';
 import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
-import { 
-  View, 
-  Card, 
-  Button, 
-  Heading, 
-  Flex, 
+import {
+  View,
+  Card,
+  Button,
+  Heading,
+  Flex,
   Text,
   Alert,
   Loader,
@@ -23,7 +28,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { s3Uris = [], jobName } = location.state || {};
-  
+
   const [selectedUri, setSelectedUri] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
@@ -51,15 +56,15 @@ function App() {
       if (!matches) {
         throw new Error('Invalid S3 URI format');
       }
-  
+
       const [, bucket, key] = matches;
       const command = new GetObjectCommand({
         Bucket: bucket,
         Key: key
       });
-  
+
       const response = await s3Client.send(command);
-      
+
       const chunks = [];
       const reader = response.Body.getReader();
       while (true) {
@@ -67,14 +72,14 @@ function App() {
         if (done) break;
         chunks.push(value);
       }
-      
+
       const blob = new Blob(chunks);
       const base64Image = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
-      
+
       setImageData(base64Image);
     } catch (err) {
       console.error('Error fetching image:', err);
@@ -103,7 +108,7 @@ function App() {
       const metadataObj = {
         ...response.Metadata
       };
-      
+
       setSelectedUri(uri);
       setMetadata(metadataObj);
       setAllMetadata(prev => ({
@@ -133,13 +138,13 @@ function App() {
 
   const downloadAllMetadata = () => {
     if (Object.keys(allMetadata).length === 0) return;
-  
+
     const allKeys = new Set();
     Object.values(allMetadata).forEach(metadata => {
       Object.keys(metadata).forEach(key => allKeys.add(key));
     });
     const headers = Array.from(allKeys);
-  
+
     const csvContent = [
       ['S3 URI', 'File Name', ...headers].join(','),
       ...Object.entries(allMetadata).map(([uri, metadata]) => {
@@ -153,17 +158,17 @@ function App() {
         ].join(',');
       })
     ].join('\n');
-  
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    
+
     link.href = URL.createObjectURL(blob);
     link.download = `${jobName}-results.csv`;
     link.style.display = 'none';
     document.body.appendChild(link);
-    
+
     link.click();
-    
+
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
   };
@@ -235,8 +240,8 @@ function App() {
                   {imageData && (
                     <Card variation="outlined" padding="small">
                       <Flex direction="column" gap="small" alignItems="center">
-                        <img 
-                          src={imageData} 
+                        <img
+                          src={imageData}
                           alt="S3 Object Preview"
                           style={{
                             maxWidth: '100%',

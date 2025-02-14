@@ -1,3 +1,6 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 # SQS module
 
 resource "aws_sqs_queue" "work_queue_dlq" {
@@ -23,4 +26,3 @@ resource "aws_sqs_queue" "work_queue" {
     maxReceiveCount     = 3
   })
 }
-
