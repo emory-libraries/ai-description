@@ -102,10 +102,15 @@ def generate_bias_analysis(
             print("trying again")
 
 
-def generate_work_bias_analysis(image_s3_uris: str, context_s3_uri: str | None = None) -> list[BiasAnalysisEntry]:
+def generate_work_bias_analysis(
+    image_s3_uris: str, 
+    context_s3_uri: str | None = None,
+    original_metadata: str | None = None,
+) -> list[BiasAnalysisEntry]:
     logger.info("Processing work")
     logger.info(context_s3_uri)
     logger.info(image_s3_uris)
+    logger.info(original_metadata)
     logger.info("Processing work complete")
     return [
         BiasAnalysisEntry(

@@ -100,10 +100,15 @@ def generate_structured_metadata(
     raise RuntimeError("Unexpected error in retry loop")
 
 
-def generate_work_structured_metadata(image_s3_uris: str, context_s3_uri: str | None = None) -> Metadata:
+def generate_work_bias_analysis(
+    image_s3_uris: str, 
+    context_s3_uri: str | None = None,
+    original_metadata: str | None = None,
+) -> Metadata:
     logger.info("Processing work")
     logger.info(context_s3_uri)
     logger.info(image_s3_uris)
+    logger.info(original_metadata)
     logger.info("Processing work complete")
     return Metadata(
         description="description",

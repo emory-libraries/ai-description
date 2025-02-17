@@ -27,6 +27,7 @@ WORKS = "works"
 WORK_ID = "work_id"
 IMAGE_S3_URIS = "image_s3_uris"
 CONTEXT_S3_URI = "context_s3_uri"
+ORIGINAL_METADATA = "original_metadata"
 WORK_STATUS = "work_status"
 
 # Initialize AWS clients globally
@@ -74,8 +75,9 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
         table = dynamodb.Table(WORKS_TABLE_NAME)
         for work in works:
             work_id: str = work[WORK_ID]
-            image_s3_uris: str = work[IMAGE_S3_URIS]
+            image_s3_uris: list[str] = work[IMAGE_S3_URIS]
             context_s3_uri: str | None = work.get(CONTEXT_S3_URI, None)
+            original_metadata: str | None = work.get(ORIGINAL_METADATA, None)
             # Add work item to SQS queue
             sqs_message = {
                 JOB_NAME: job_name,
@@ -83,6 +85,7 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 WORK_ID: work_id,
                 IMAGE_S3_URIS: image_s3_uris,
                 CONTEXT_S3_URI: context_s3_uri,
+                ORIGINAL_METADATA: original_metadata,
             }
             sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(sqs_message))
             logger.debug(f"Successfully added job={job_name} work={work_id} to SQS")
@@ -93,6 +96,7 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 WORK_ID: work_id,
                 IMAGE_S3_URIS: image_s3_uris,
                 CONTEXT_S3_URI: context_s3_uri,
+                ORIGINAL_METADATA: original_metadata,
                 WORK_STATUS: "IN_QUEUE",
             }
             table.put_item(Item=ddb_work_item)

@@ -29,6 +29,7 @@ JOB_TYPE = "job_type"
 WORK_ID = "work_id"
 IMAGE_S3_URIS = "image_s3_uris"
 CONTEXT_S3_URI = "context_s3_uri"
+ORIGINAL_METADATA = "original_metadata"
 WORK_STATUS = "work_status"
 
 # Set up logging
@@ -102,7 +103,6 @@ def process_sqs_messages():
 
         for message in response["Messages"]:
             try:
-
                 # Parse the message body
                 message_body = json.loads(message["Body"])
                 job_name = message_body[JOB_NAME]
@@ -110,6 +110,7 @@ def process_sqs_messages():
                 work_id = message_body[WORK_ID]
                 context_s3_uri = message_body[CONTEXT_S3_URI]
                 image_s3_uris = message_body[IMAGE_S3_URIS]
+                original_metadata = message_body[ORIGINAL_METADATA]
 
                 logger.info(f"Message Body: {message_body}")
                 logger.info(f"Job name: {job_name}")
@@ -117,6 +118,7 @@ def process_sqs_messages():
                 logger.info(f"Work ID: {work_id}")
                 logger.info(f"Context S3 URI: {context_s3_uri}")
                 logger.info(f"Image S3 URIs: {image_s3_uris}")
+                logger.info(f"Original metadata: {original_metadata}")
 
                 # Update work_status for the item in DynamoDB to "PROCESSING"
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
@@ -125,6 +127,7 @@ def process_sqs_messages():
                     work_structured_metadata = generate_work_structured_metadata(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
+                        original_metadata=original_metadata,
                     )
                     # Update DynamoDB with all fields from work_structured_metadata
                     update_data = work_structured_metadata.dict()
@@ -133,6 +136,7 @@ def process_sqs_messages():
                     work_bias_analysis = generate_work_bias_analysis(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
+                        original_metadata=original_metadata,
                     )
                     # Update DynamoDB with the bias_analysis field
                     update_data = {"bias_analysis": [item.dict() for item in work_bias_analysis]}
