@@ -6,8 +6,8 @@
 import json
 import logging
 import os
-from typing import Any, Dict
 from decimal import Decimal
+from typing import Any, Dict
 
 import boto3
 

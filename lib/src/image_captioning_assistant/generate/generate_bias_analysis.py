@@ -103,7 +103,7 @@ def generate_bias_analysis(
 
 
 def generate_work_bias_analysis(
-    image_s3_uris: str, 
+    image_s3_uris: str,
     context_s3_uri: str | None = None,
     original_metadata: str | None = None,
 ) -> list[BiasAnalysisEntry]:

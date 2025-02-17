@@ -15,7 +15,6 @@ from botocore.exceptions import ClientError
 from image_captioning_assistant.generate.generate_bias_analysis import generate_work_bias_analysis
 from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata
 
-
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
