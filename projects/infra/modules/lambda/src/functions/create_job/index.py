@@ -71,11 +71,11 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
         job_name: str = body[JOB_NAME]
         job_type: str = body[JOB_TYPE]
         works: list[dict[str, str]] = body[WORKS]
-        context_s3_uri: str | None = body.get(CONTEXT_S3_URI, None)
         table = dynamodb.Table(WORKS_TABLE_NAME)
         for work in works:
             work_id: str = work[WORK_ID]
             image_s3_uris: str = work[IMAGE_S3_URIS]
+            context_s3_uri: str | None = work.get(CONTEXT_S3_URI, None)
             # Add work item to SQS queue
             sqs_message = {
                 JOB_NAME: job_name,
