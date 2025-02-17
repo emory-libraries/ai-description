@@ -10,112 +10,137 @@ import {
   Text,
   Alert,
   Loader,
-  Collection
+  Collection,
+  Divider,
+  TextField
 } from '@aws-amplify/ui-react';
 
-const mockDynamoDB = {
-  jobs: new Map([
-    ['job_1', {
-      job_name: 'yearbook',
-      work_id: '5',
-      s3_uris: ['s3://emory-testui/test/Charlie Chaplin.jpg', 's3://emory-testui/test/Eddie Anderson.jpg'],
-      work_status: 100,
-      description: 'yearbook collection run'
-    }],
-    ['job_2', {
-      job_name: 'Langmuir',
-      work_id: '5',
-      s3_uris: ['s3://emory-testui/test/Charlie Chaplin.jpg', 's3://emory-testui/test/Eddie Anderson.jpg'],
-      work_status: 50,
-      description: 'langmuir collection run'
-    }]
-  ])
-};
+const API_ENDPOINT = 'https://44xufe7wa8.execute-api.us-east-1.amazonaws.com/dev';
 
 const JobStatus = () => {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState(() => {
+    const savedJobs = localStorage.getItem('jobStatus');
+    return savedJobs ? new Map(JSON.parse(savedJobs)) : new Map();
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [jobName, setJobName] = useState('');
+  const [submittedJobName, setSubmittedJobName] = useState(() => {
+    return localStorage.getItem('submittedJobName') || '';
+  });
 
-  const mockJobStatusLambda = async (event) => {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    switch (event.action) {
-      case 'getStatus':
-        return mockDynamoDB.jobs.get(event.jobId);
-      case 'listJobs':
-        return Array.from(mockDynamoDB.jobs.values());
-      default:
-        throw new Error('Invalid action');
+  useEffect(() => {
+    localStorage.setItem('jobStatus', JSON.stringify(Array.from(jobs.entries())));
+  }, [jobs]);
+
+  useEffect(() => {
+    localStorage.setItem('submittedJobName', submittedJobName);
+  }, [submittedJobName]);
+
+  const handleSubmitJobName = (e) => {
+    e.preventDefault();
+    if (jobName.trim()) {
+      setJobs(new Map());
+      setError(null);
+      setSubmittedJobName(jobName.trim());
     }
   };
 
-  const pollJobStatus = async () => {
+  const checkJobProgress = async () => {
+    if (!auth.user?.access_token || !submittedJobName) return;
+  
     try {
       setIsLoading(true);
-      const results = await mockJobStatusLambda({
-        action: 'listJobs'
-      });
-      setJobs(results);
+      const response = await fetch(
+        `${API_ENDPOINT}/job_progress?job_name=${submittedJobName}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log('Job Progress Data:', data);
+  
+      const newJobs = new Map();
+      const jobKey = submittedJobName;
+  
+      const workItems = [
+        ...(data['READY FOR REVIEW'] || []).map(id => ({ 
+          work_id: id,
+          status: 'READY FOR REVIEW',
+          job_name: jobKey,
+        })),
+        ...(data['IN_PROGRESS'] || []).map(id => ({ 
+          work_id: id,
+          status: 'IN_PROGRESS',
+          job_name: jobKey,
+        })),
+        ...(data['IN_QUEUE'] || []).map(id => ({ 
+          work_id: id,
+          status: 'IN_QUEUE',
+          job_name: jobKey,
+        }))
+      ];
+  
+      const jobData = {
+        job_name: jobKey,
+        works: workItems,
+      };
+  
+      newJobs.set(jobKey, jobData);
+      setJobs(newJobs);
+  
     } catch (err) {
-      setError('Failed to fetch jobs');
-      console.error('Error polling jobs:', err);
+      console.error('Error checking job progress:', err);
+      setError(`Failed to check job progress: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      const interval = setInterval(pollJobStatus, 5000);
-      pollJobStatus(); // Initial poll
-      return () => clearInterval(interval);
+    if (auth.isAuthenticated && auth.user?.access_token && submittedJobName) {
+      checkJobProgress();
+      const intervalId = setInterval(checkJobProgress, 5000);
+      return () => clearInterval(intervalId);
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, auth.user?.access_token, submittedJobName]);
 
-  const handleViewResults = (job) => {
+  const handleViewResults = (job, work) => {
+    console.log('Navigating with data:', {
+      jobName: job.job_name,
+      workId: work.work_id
+    });
+
     navigate(`/results/${job.job_name}`, { 
       state: { 
-        s3Uris: job.s3_uris,
-        jobName: job.job_name 
+        jobName: job.job_name,
+        workId: work.work_id
       }
     });
   };
-
-  if (auth.isLoading) {
-    return (
-      <View padding="medium">
-        <Flex direction="column" alignItems="center">
-          <Loader size="large" />
-          <Text>Loading...</Text>
-        </Flex>
-      </View>
-    );
-  }
-
-  if (auth.error) {
-    return (
-      <View padding="medium">
-        <Alert variation="error">
-          Oops... {auth.error.message}
-        </Alert>
-      </View>
-    );
-  }
 
   if (!auth.isAuthenticated) {
     return (
       <View padding="medium">
         <Card variation="elevated">
-          <Flex direction="column" alignItems="center" gap="medium">
-            <Button 
-              onClick={() => auth.signinRedirect()} 
+          <Flex direction="column" gap="medium" alignItems="center">
+            <Heading level={3}>Please sign in to continue</Heading>
+            <Button
               variation="primary"
-              size="large"
+              onClick={() => auth.signinRedirect()}
+              loadingText="Redirecting..."
             >
-              Log in
+              Sign In
             </Button>
           </Flex>
         </Card>
@@ -125,39 +150,65 @@ const JobStatus = () => {
 
   return (
     <View padding="medium">
-      <Card variation="elevated">
+      <Card variation="elevated" padding="medium">
         <Flex direction="column" gap="medium">
-          <Heading level={4}>Jobs</Heading>
-          
-          {error && <Alert variation="error">{error}</Alert>}
-          
-          {isLoading ? (
-            <Flex direction="column" alignItems="center">
-              <Loader size="large" />
-              <Text>Loading jobs...</Text>
+          <Heading level={3}>Enter Job Name</Heading>
+          <form onSubmit={handleSubmitJobName}>
+            <Flex direction="row" gap="medium" alignItems="end">
+              <TextField
+                label="Job Name"
+                value={jobName}
+                onChange={(e) => setJobName(e.target.value)}
+                placeholder="Enter job name"
+                required
+              />
+              <Button type="submit" variation="primary">
+                Submit
+              </Button>
             </Flex>
-          ) : (
+          </form>
+        </Flex>
+      </Card>
+
+      {submittedJobName && (
+        <>
+          {jobs.size > 0 && Array.from(jobs.values()).map(job => (
             <Collection
+              key={job.job_name}
               type="list"
-              items={jobs}
-              gap="small"
+              items={job.works}
+              gap="medium"
             >
-              {(job) => (
-                <Card key={job.job_name} variation="outlined">
+              {(work) => (
+                <Card 
+                  key={work.work_id}
+                  variation="elevated"
+                  padding="medium"
+                >
                   <Flex direction="column" gap="small">
-                    <Text>Job Name: {job.job_name}</Text>
-                    <Text>Work Id: {job.work_id}</Text>
-                    <Text>Description: {job.description}</Text>
-                    {job.work_status !== undefined && (
-                      <Flex direction="column" gap="xs">
-                        <progress value={job.work_status} max="100" />
-                        <Text>{job.work_status}%</Text>
-                      </Flex>
-                    )}
-                    {job.work_status === 100 && (
+                    <Text>Job Name: {work.job_name}</Text>
+                    <Text>Work ID: {work.work_id}</Text>
+                    <Text>Status: {work.status}</Text>
+                    
+                    <Flex direction="column" gap="xs">
+                      <Text>Completed: {work.status === 'READY FOR REVIEW' ? 1 : 0}</Text>
+                      <Text>In Progress: {work.status === 'IN_PROGRESS' ? 1 : 0}</Text>
+                      <Text>In Queue: {work.status === 'IN_QUEUE' ? 1 : 0}</Text>
+                      <progress 
+                        value={work.status === 'READY FOR REVIEW' ? 100 : 
+                              work.status === 'IN_PROGRESS' ? 50 : 0} 
+                        max="100" 
+                      />
+                      <Text>
+                        {work.status === 'READY FOR REVIEW' ? '100' : 
+                        work.status === 'IN_PROGRESS' ? '50' : '0'}%
+                      </Text>
+                    </Flex>
+
+                    {work.status === 'READY FOR REVIEW' && (
                       <Button
                         variation="primary"
-                        onClick={() => handleViewResults(job)}
+                        onClick={() => handleViewResults(job, work)}
                       >
                         View Results
                       </Button>
@@ -166,9 +217,28 @@ const JobStatus = () => {
                 </Card>
               )}
             </Collection>
+          ))}
+
+          {isLoading && (
+            <Flex direction="column" alignItems="center" padding="large">
+              <Loader size="large" />
+              <Text>Loading jobs...</Text>
+            </Flex>
           )}
-        </Flex>
-      </Card>
+
+          {error && (
+            <Alert variation="error">
+              {error}
+            </Alert>
+          )}
+
+          {jobs.size === 0 && !isLoading && (
+            <Card variation="elevated">
+              <Text>No active jobs found for {submittedJobName}</Text>
+            </Card>
+          )}
+        </>
+      )}
     </View>
   );
 };

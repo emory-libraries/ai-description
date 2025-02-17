@@ -27,15 +27,15 @@ resource "null_resource" "push_image" {
   }
 
   provisioner "local-exec" {
-    command    = <<EOF
-      set -ex
+    interpreter = ["bash", "-c"] # Explicitly specify bash interpreter
+    command     = <<EOF
       echo "Starting Docker build and push process"
       aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
       sudo docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
       sudo docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
-    on_failure = fail
+    on_failure  = fail
   }
 }
 

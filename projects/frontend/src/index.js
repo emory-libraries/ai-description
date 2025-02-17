@@ -4,6 +4,7 @@ import { AuthProvider } from "react-oidc-context";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import JobStatus from './JobStatus';
 import App from './App';  
+import { createRoot } from 'react-dom/client';
 
 const cognitoAuthConfig = {
   authority: process.env.REACT_APP_COGNITO_AUTHORITY,
@@ -13,7 +14,15 @@ const cognitoAuthConfig = {
   scope: "email openid phone",
 };
 
-ReactDOM.render(
+console.log('Cognito Config:', {
+  authority: process.env.REACT_APP_COGNITO_AUTHORITY,
+  client_id: process.env.REACT_APP_COGNITO_CLIENT_ID,
+  redirect_uri: process.env.REACT_APP_COGNITO_REDIRECT_URI
+});
+
+const root = createRoot(document.getElementById('root'));
+
+root.render(
   <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
       <Router>

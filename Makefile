@@ -35,7 +35,7 @@ checkAwsCredentials:
 
 ## Set up Python interpreter environment
 createPythonEnvironment:
-	python3 -m venv .venv
+	python -m venv .venv
 	@printf "New virtual environment created. To activate run: 'source .venv/bin/activate'\n"
 
 
@@ -54,16 +54,16 @@ installPythonRequirements:
 	) || ( \
 		echo "Standard installation failed. Attempting pip reinstallation..." && \
 		echo "Step 2: Running get_pip.py..." && \
-		python3 "${PROJECT_DIR}/scripts/get_pip.py" --force-reinstall || true && \
+		python "${PROJECT_DIR}/scripts/get_pip.py" --force-reinstall || true && \
 		echo "Step 3: Trying pip upgrade again..." && \
-		python3 -m pip install --upgrade pip && \
+		python -m pip install --upgrade pip && \
 		echo "Step 4: Installing requirements..." && \
-		python3 -m pip install -r requirements-dev.txt \
+		python -m pip install -r requirements-dev.txt \
 	) || ( \
 		echo "All attempts failed. Trying alternative approach..." && \
 		curl https://bootstrap.pypa.io/get-pip.py -o get_pip.py && \
-		python3 get_pip.py && \
-		python3 -m pip install -r requirements-dev.txt && \
+		python get_pip.py && \
+		python -m pip install -r requirements-dev.txt && \
 		rm get_pip.py \
 	)
 
