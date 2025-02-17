@@ -12,8 +12,9 @@ This module contains structured data definitions for:
 
 from typing import List, Optional
 
-from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 from pydantic import BaseModel, Field
+
+from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 
 
 class Transcription(BaseModel):

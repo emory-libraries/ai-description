@@ -22,6 +22,9 @@ CORS_HEADERS = {
     "Access-Control-Allow-Methods": "*",
     "Access-Control-Allow-Credentials": True,
 }
+JOB_NAME = "job_name"
+WORK_ID = "work_id"
+WORK_STATUS = "work_status"
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -58,8 +61,8 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
     try:
         # Parse the request body
         body = json.loads(event["body"])
-        job_name = body.get("job_name")
-        work_id = body.get("work_id")
+        job_name = body.get(JOB_NAME)
+        work_id = body.get(WORK_ID)
         updated_fields = body.get("updated_fields")
 
         if not job_name or not work_id or not updated_fields:
@@ -81,7 +84,7 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
 
         # Update the item in DynamoDB
         response = table.update_item(
-            Key={"job_name": job_name, "work_id": work_id},
+            Key={JOB_NAME: job_name, WORK_ID: work_id},
             UpdateExpression=update_expression,
             ExpressionAttributeValues=expression_attribute_values,
             ExpressionAttributeNames=expression_attribute_names,
@@ -90,10 +93,10 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
 
         updated_item = response.get("Attributes")
         if updated_item:
-            logger.info(f"Successfully updated item for job_name={job_name} and work_id={work_id}")
+            logger.info(f"Successfully updated item for {JOB_NAME}={job_name} and {WORK_ID}={work_id}")
             return create_response(200, {"message": "Item updated successfully", "item": updated_item})
         else:
-            logger.warning(f"No item found for job_name={job_name} and work_id={work_id}")
+            logger.warning(f"No item found for {JOB_NAME}={job_name} and {WORK_ID}={work_id}")
             return create_response(404, {"error": "Item not found"})
 
     except ClientError as e:

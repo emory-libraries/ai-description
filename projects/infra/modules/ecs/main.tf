@@ -8,11 +8,11 @@ data "aws_region" "current" {}
 locals {
   project_root_path = "${path.root}/../.."
   ecs_src_path      = "${path.module}/src"
-  package_src_path  = "${local.project_root_path}/lib/image_captioning_assistant"
+  lib_path          = "${local.project_root_path}/lib"
   ecs_src_files     = fileset(local.ecs_src_path, "**")
-  package_src_files = fileset(local.package_src_path, "**")
+  package_src_files = fileset(local.lib_path, "**")
   ecs_src_hash      = sha256(join("", [for f in local.ecs_src_files : filesha256("${local.ecs_src_path}/${f}")]))
-  package_src_hash  = sha256(join("", [for f in local.package_src_files : filesha256("${local.package_src_path}/${f}")]))
+  package_src_hash  = sha256(join("", [for f in local.package_src_files : filesha256("${local.lib_path}/${f}")]))
   combined_src_hash = sha256("${local.ecs_src_hash}${local.package_src_hash}")
   image_tag         = substr(local.combined_src_hash, 0, 8) # Using first 8 characters of the hash for brevity
 }

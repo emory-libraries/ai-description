@@ -7,8 +7,10 @@ import json
 from typing import Any
 
 import boto3
+from loguru import logger
+
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import StructuredMetadata
+from image_captioning_assistant.data.data_classes import StructuredMetadata, BiasAnalysisEntry, BiasType, BiasLevel
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
@@ -98,3 +100,27 @@ def generate_bias_analysis(
             print(e)
             print(llm_output.split(p.COT_TAG_END)[1])
             print("trying again")
+
+
+def generate_work_bias_analysis(
+    image_s3_uris: str,
+    context_s3_uri: str | None = None,
+    original_metadata: str | None = None,
+) -> list[BiasAnalysisEntry]:
+    logger.info("Processing work")
+    logger.info(context_s3_uri)
+    logger.info(image_s3_uris)
+    logger.info(original_metadata)
+    logger.info("Processing work complete")
+    return [
+        BiasAnalysisEntry(
+            bias_level=BiasLevel.high,
+            bias_type=BiasType.age,
+            explanation="explanation1",
+        ),
+        BiasAnalysisEntry(
+            bias_level=BiasLevel.low,
+            bias_type=BiasType.sexual,
+            explanation="explanation2",
+        ),
+    ]

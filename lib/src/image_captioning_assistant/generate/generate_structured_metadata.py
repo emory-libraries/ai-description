@@ -7,8 +7,11 @@ import json
 from typing import Any
 
 import boto3
+from loguru import logger
+
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import StructuredMetadata
+from image_captioning_assistant.data.data_classes import StructuredMetadata, Metadata, Transcription
+from image_captioning_assistant.data.constants import LibraryFormat
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
@@ -95,3 +98,28 @@ def generate_structured_metadata(
             print("Raw model output:", llm_output.split(p.COT_TAG_END)[-1])
 
     raise RuntimeError("Unexpected error in retry loop")
+
+
+def generate_work_bias_analysis(
+    image_s3_uris: str,
+    context_s3_uri: str | None = None,
+    original_metadata: str | None = None,
+) -> Metadata:
+    logger.info("Processing work")
+    logger.info(context_s3_uri)
+    logger.info(image_s3_uris)
+    logger.info(original_metadata)
+    logger.info("Processing work complete")
+    return Metadata(
+        description="description",
+        transcription=Transcription(printed_text=["printed_text"], handwriting=["handwriting"]),
+        date="date",
+        location="location",
+        publication_info=["pub_info"],
+        contextual_info=["context_info"],
+        format=LibraryFormat.mixed_material,
+        genre=["genre"],
+        objects=["object"],
+        actions=["action"],
+        people=["people"],
+    )
