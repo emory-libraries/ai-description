@@ -23,6 +23,9 @@ CORS_HEADERS = {
     "Access-Control-Allow-Methods": "*",
     "Access-Control-Allow-Credentials": True,
 }
+JOB_NAME = "job_name"
+WORK_ID = "work_id"
+WORK_STATUS = "work_status"
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -47,16 +50,16 @@ def get_work_ids_by_job_name_and_status(job_name: str) -> dict[str, list[str]]:
     """Get work ids by job name and status"""
     try:
         response = table.query(
-            KeyConditionExpression=Key("job_name").eq(job_name),
-            ProjectionExpression="work_id, work_status",
+            KeyConditionExpression=Key(JOB_NAME).eq(job_name),
+            ProjectionExpression=f"{WORK_ID}, {WORK_STATUS}",
         )
 
         items = response["Items"]
 
         while "LastEvaluatedKey" in response:
             response = table.query(
-                KeyConditionExpression=Key("job_name").eq(job_name),
-                ProjectionExpression="work_id, work_status",
+                KeyConditionExpression=Key(JOB_NAME).eq(job_name),
+                ProjectionExpression=f"{WORK_ID}, {WORK_STATUS}",
                 ExclusiveStartKey=response["LastEvaluatedKey"],
             )
             items.extend(response["Items"])
@@ -64,7 +67,7 @@ def get_work_ids_by_job_name_and_status(job_name: str) -> dict[str, list[str]]:
         # Organize items by status
         organized_items = defaultdict(list)
         for item in items:
-            organized_items[item["work_status"]].append(item["work_id"])
+            organized_items[item[WORK_STATUS]].append(item[WORK_ID])
 
         # Convert defaultdict to regular dict
         return dict(organized_items)
@@ -86,15 +89,15 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler for getting job progress."""
     try:
         query_params = event.get("queryStringParameters", {})
-        job_name: str = query_params.get("job_name")
+        job_name: str = query_params.get(JOB_NAME)
 
         if not job_name:
-            return create_response(400, {"error": "Missing required query parameter: job_name"})
+            return create_response(400, {"error": f"Missing required query parameter: {JOB_NAME}"})
 
         work_ids_by_status: dict[str, list[str]] = get_work_ids_by_job_name_and_status(job_name)
 
         if not work_ids_by_status:
-            return create_response(404, {"message": f"No data found for job_name={job_name}"})
+            return create_response(404, {"message": f"No data found for {JOB_NAME}={job_name}"})
 
         return create_response(200, work_ids_by_status)
 

@@ -5,8 +5,9 @@ import base64
 import json
 from io import BytesIO
 
-import image_captioning_assistant.generate.prompts as p
 from PIL import Image
+
+import image_captioning_assistant.generate.prompts as p
 
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
