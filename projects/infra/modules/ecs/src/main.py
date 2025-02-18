@@ -11,7 +11,6 @@ import sys
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
-
 from image_captioning_assistant.generate.generate_bias_analysis import generate_work_bias_analysis
 from image_captioning_assistant.generate.generate_structured_metadata import generate_structured_metadata
 

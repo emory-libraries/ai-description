@@ -12,9 +12,8 @@ This module contains structured data definitions for:
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
-
 from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
+from pydantic import BaseModel, Field
 
 
 class Transcription(BaseModel):
@@ -39,9 +38,12 @@ class Metadata(BaseModel):
     actions: List[str] = Field(..., description="Primary actions depicted in the content")
     people: List[str] = Field(..., description="Visible human subjects using specific descriptors")
 
+
 class MetadataCOT(Metadata):
     """Composite metadata structure combining Chain of Thought and Metadata."""
+
     cot: str = Field(..., description="Chain of thought of model")
+
 
 class BiasAnalysisEntry(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
@@ -50,15 +52,19 @@ class BiasAnalysisEntry(BaseModel):
     bias_type: BiasType = Field(..., description="Category of bias identified")
     explanation: str = Field(..., description="Contextual analysis of bias manifestation")
 
+
 BiasAnalysis = List[BiasAnalysisEntry]
+
 
 class BiasAnalysisCOT(BaseModel):
     """Composite metadata structure combining Chain of Thought and Bias Analysis."""
+
     cot: str = Field(..., description="Chain of thought of model")
     bias_analysis: BiasAnalysis = Field(
         ...,
         description="Aggregated bias assessments",
     )
+
 
 # class StructuredMetadata(BaseModel):
 #     """Composite metadata structure combining descriptive and analytical components.
