@@ -10,11 +10,7 @@ import boto3
 from loguru import logger
 
 import image_captioning_assistant.generate.prompts as p
-<<<<<<< Updated upstream
-from image_captioning_assistant.data.data_classes import StructuredMetadata, BiasAnalysisEntry, BiasType, BiasLevel
-=======
-from image_captioning_assistant.data.data_classes import BiasAnalysisCOT
->>>>>>> Stashed changes
+from image_captioning_assistant.data.data_classes import BiasAnalysisEntry, BiasAnalysisCOT, BiasType, BiasLevel
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,

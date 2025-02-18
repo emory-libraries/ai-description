@@ -10,12 +10,8 @@ import boto3
 from loguru import logger
 
 import image_captioning_assistant.generate.prompts as p
-<<<<<<< Updated upstream
-from image_captioning_assistant.data.data_classes import StructuredMetadata, Metadata, Transcription
+from image_captioning_assistant.data.data_classes import Metadata, MetadataCOT, Transcription
 from image_captioning_assistant.data.constants import LibraryFormat
-=======
-from image_captioning_assistant.data.data_classes import MetadataCOT
->>>>>>> Stashed changes
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
@@ -107,7 +103,6 @@ def generate_structured_metadata(
                 system_prompt = p.system_prompt_court_order
                 assistant_start = p.assistant_start_court_order
 
-<<<<<<< Updated upstream
     raise RuntimeError("Unexpected error in retry loop")
 
 
@@ -134,6 +129,3 @@ def generate_work_bias_analysis(
         actions=["action"],
         people=["people"],
     )
-=======
-    raise RuntimeError("Unexpectedly unable to generate structured output")
->>>>>>> Stashed changes
