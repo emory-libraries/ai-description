@@ -95,7 +95,7 @@ def evaluate_potential_biases(
         llm_bias_analysis=[bias_analysis.model_dump() for bias_analysis in llm_potential_biases],
         human_bias_analysis=[bias_analysis.model_dump() for bias_analysis in human_potential_biases],
     )
-    # logger.debug(f"Prompt:\n------------\n{prompt}\n------------")
+    logger.debug(f"Prompt:\n------------\n{prompt}\n------------")
 
     # Invoke LLM
     evaluation: BiasAnalysisEvaluation = structured_llm.invoke(prompt)
@@ -110,12 +110,12 @@ def batch_evaluate_bias_analyses(
 ) -> BatchBiasAnalysesEvaluation:
     """Evaluate bias analysis experiment.
 
-    Basically evaulate multiple items.
+    Basically evaluate multiple items.
 
     Args:
         llm_bias_analyses (list[BiasAnalysisCOT]): Multiple BiasAnalysisCOT objects with Bias analysis items according to an LLM
         human_bias_analyses (list[BiasAnalysisCOT]): Multiple BiasAnalysisCOT objects with Bias analysis items according to a human.
-        chat_bedrock_converse_kwargs (dict[str, Any]): Keword arguments for Bedrock.
+        chat_bedrock_converse_kwargs (dict[str, Any]): Keyword arguments for Bedrock.
 
     Returns:
         BatchBiasAnalysesEvaluation: Evaluation
