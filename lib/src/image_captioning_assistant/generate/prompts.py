@@ -1,13 +1,12 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
+import os
+
+from jinja2 import Template
 
 COT_TAG_NAME = "object_detail_and_bias_analysis"
 COT_TAG = f"<{COT_TAG_NAME}>"
 COT_TAG_END = f"</{COT_TAG_NAME}>"
-
-import os
-
-from jinja2 import Template
 
 current_dir = os.path.dirname(__file__)
 

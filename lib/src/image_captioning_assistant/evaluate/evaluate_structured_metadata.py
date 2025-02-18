@@ -29,7 +29,7 @@ against the structured metadata written by a human. \
 Evaluate the LLM's performance, assuming the human's answer, if provided, is the gold standard, with the exceptions below.
 Consider the names evaluation to encompass the objects, actions and people attributes, and score for inclusion, not attribute location.
    The human result will always be completely contained in objects, however that is for legacy reasons and the fact the LLM breaks them out should not be considered in your evaluation.
-Similarly for the transcription evaluation, human result will always be "printed" however the LLM breaks out print and handwriting.  This should not be considered in your evaluation, only consider the accuracy of transcription: if words/phrases are incorrectly transcribed, left out or hallucinations have occured compared to the gold standard human transcription.
+Similarly for the transcription evaluation, human result will always be "printed" however the LLM breaks out print and handwriting.  This should not be considered in your evaluation, only consider the accuracy of transcription: if words/phrases are incorrectly transcribed, left out or hallucinations have occurred compared to the gold standard human transcription.
 Consider the human result not provided if it is either empty or null or N/A.
 If the human result is not provided, ignore the field when calculating the evaluation score.
 If there is no human information for the evaluation type, return a score of 1.
@@ -65,9 +65,6 @@ class StructuredMetadataEvaluation(PartialStructuredMetadataEvaluation):
     description_evaluation: FreeformResponseEvaluation = Field(
         ..., description="Evaluation of LLM's description of image"
     )
-    # bias_analysis_evaluation: BiasAnalysisEvaluation = Field(
-    #     ..., description="Evaluation of LLM's analysis of bias in image"
-    # )
 
 
 class BatchStructuredMetadataEvaluation(BaseModel):
@@ -106,7 +103,6 @@ class BatchStructuredMetadataEvaluation(BaseModel):
                 location_weight * self.mean_location_evaluation,
                 publication_info_weight * self.mean_publication_info_evaluation,
                 contextual_info_weight * self.mean_contextual_info_evaluation,
-                # bias_weight * self.overall_bias_analysis_evaluation.overall(),
             ]
         )
 
@@ -132,12 +128,6 @@ def evaluate_structured_metadata(
         human_freeform_response=human_structured_metadata.description,
         chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
     )
-    # Evaluate bias
-    # bias_analysis_evaluation: BiasAnalysisEvaluation = evaluate_potential_biases(
-    #     llm_potential_biases=llm_structured_metadata.potential_biases,
-    #     human_potential_biases=human_structured_metadata.potential_biases,
-    #     chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
-    # )
     # Build structured LLM client
     structured_llm = ChatBedrockConverse(**chat_bedrock_converse_kwargs).with_structured_output(
         PartialStructuredMetadataEvaluation
