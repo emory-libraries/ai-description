@@ -146,7 +146,7 @@ def evaluate_structured_metadata(
     # Build prompt, drop COT from LLM
     human_written_metadata_str = json.dumps(human_structured_metadata.model_dump(), indent=2)
     llm_dump = llm_structured_metadata.model_dump()
-    del llm_dump['cot']
+    del llm_dump["cot"]
     llm_generated_metadata_str = json.dumps(llm_dump, indent=2)
     prompt = PROMPT_TEMPLATE.format(
         human_written_metadata=human_written_metadata_str,

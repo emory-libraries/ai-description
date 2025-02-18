@@ -7,16 +7,15 @@ import json
 from typing import Any
 
 import boto3
-from loguru import logger
-
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import BiasAnalysisEntry, BiasAnalysisCOT, BiasType, BiasLevel
+from image_captioning_assistant.data.data_classes import BiasAnalysisCOT, BiasAnalysisEntry, BiasLevel, BiasType
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
+from loguru import logger
 
 
 def generate_bias_analysis(
