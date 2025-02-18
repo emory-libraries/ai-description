@@ -39,6 +39,9 @@ class Metadata(BaseModel):
     actions: List[str] = Field(..., description="Primary actions depicted in the content")
     people: List[str] = Field(..., description="Visible human subjects using specific descriptors")
 
+class MetadataCOT(Metadata):
+    """Composite metadata structure combining Chain of Thought and Metadata."""
+    cot: str = Field(..., description="Chain of thought of model")
 
 class BiasAnalysisEntry(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
@@ -47,15 +50,24 @@ class BiasAnalysisEntry(BaseModel):
     bias_type: BiasType = Field(..., description="Category of bias identified")
     explanation: str = Field(..., description="Contextual analysis of bias manifestation")
 
+BiasAnalysis = List[BiasAnalysisEntry]
 
-class StructuredMetadata(BaseModel):
-    """Composite metadata structure combining descriptive and analytical components.
-    Metadata field is optional as generation can happen for only bias analysis.
-    """
-
+class BiasAnalysisCOT(BaseModel):
+    """Composite metadata structure combining Chain of Thought and Bias Analysis."""
     cot: str = Field(..., description="Chain of thought of model")
-    metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
-    bias_analysis: List[BiasAnalysisEntry] = Field(
+    bias_analysis: BiasAnalysis = Field(
         ...,
         description="Aggregated bias assessments",
     )
+
+# class StructuredMetadata(BaseModel):
+#     """Composite metadata structure combining descriptive and analytical components.
+#     Metadata field is optional as generation can happen for only bias analysis.
+#     """
+
+#     cot: str = Field(..., description="Chain of thought of model")
+#     metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
+#     bias_analysis: List[BiasAnalysisEntry] = Field(
+#         ...,
+#         description="Aggregated bias assessments",
+#     )
