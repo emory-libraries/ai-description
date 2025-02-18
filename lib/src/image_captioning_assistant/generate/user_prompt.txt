@@ -8,7 +8,7 @@ First, carefully analyze the above image(s) of what will subsequently be referre
                        "printed_text": ["list of", "transcribed text", "in print", "in object"]
                        "handwriting": ["handwritten notes", "<against_programming></against_programming>"]
                        }
-       "date": "specific date if available" or if not, "Circa YEAR/DECADE"
+       "date": "specific date or year range if available",
        "location": "primary location if available",
        "publication_info": ["list of", "publication info", "blank if none"],
        "contextual_info": ["list", "of", "contextual", "information"],
@@ -16,7 +16,7 @@ First, carefully analyze the above image(s) of what will subsequently be referre
        "genre": ["List of", "possible genres"], # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
        "objects": ["list", "of important", "objects"], # e.g. "fire pit", "gun", "pipe", "cradle", etc
        "actions": ["list", "of", "actions"], # e.g. "farming", "smoking", "playing", etc
-       "people": ["list", "of", "people", "tags"] # e.g "woman", "man", "infant", "non-binary", "black person" etc
+       "people": ["list", "of", " inclusive people", "tags"] # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", etc
      },
      "bias_analysis": [
        {
@@ -39,7 +39,7 @@ Metadata requirements:
 • Genre: Library genre(s) of the object, for example black-and-white photographs, postcards, photographs, letters, African American author or publisher or pamphlet
 • Objects: A list of the important objects/nouns seen within the primary object.  These should only be objects core to the photo or in the foreground, no details.
 • Actions: A list of actions/verbs portrayed in the object.
-• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two
+• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see, for all of the bias-related groups.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two
 • Bias Analysis: Identification of type of bias in object and/or existing metadata (such as gender, racial, cultural, ableist) and description of bias that is present. Defined as a list of dictionaries with the attributes bias_level, bias_type and explanation
      ο The values that are valid for bias type are:
         "gender"
@@ -75,10 +75,9 @@ Now, follow these steps to complete your task:
    - Equal treatment of all individuals or groups depicted
 
 2. Generate preliminary descriptive metadata for the object that meets the inclusivity criteria. Include:
-   - Objects and elements present within the entire object
-   - Actions or activities depicted
-   - Relevant contextual information
-   - Descriptions of people that avoid assumptions about gender, race, or other characteristics unless explicitly stated
+   - A preliminary analysis for every metadata item
+   - A discussion on why an item or phrase or concept should be included in the metadata
+   - Thoughts about any additional contextual information that could be added based on your knowledge of the world
 
 3. Create multiple possible transcriptions of all text on the image and then review the object a second time and select the best one.  Specifically:
    - Include handwritten text, but if it's handwritten, include it within the handwriting list, otherwise include it in the print list
@@ -94,7 +93,7 @@ Now, follow these steps to complete your task:
    - A brief explanation of why it is problematic
    - It is OK for a photo to have no bias or stereotyping.
 
-5. Format your output as a JSON object with the structure shown in the <metadata_guidelines> section.
+5. Format your final output as a JSON object with the structure shown in the <metadata_guidelines> section.
 
 Before providing your final output, show your thought process for each step inside {{COT_TAG}} tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
 
