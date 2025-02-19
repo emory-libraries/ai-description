@@ -7,12 +7,6 @@ import json
 from typing import Any
 
 from image_captioning_assistant.data.data_classes import Metadata, MetadataCOT
-from image_captioning_assistant.evaluate.evaluate_bias_analysis import (
-    BatchBiasAnalysesEvaluation,
-    BiasAnalysisEvaluation,
-    combine_potential_bias_evals,
-    evaluate_potential_biases,
-)
 from image_captioning_assistant.evaluate.evaluate_freeform_description import (
     BatchFreeformResponseEvaluation,
     combine_freeform_evaluations,
@@ -79,9 +73,6 @@ class BatchStructuredMetadataEvaluation(BaseModel):
     overall_description_evaluation: BatchFreeformResponseEvaluation = Field(
         ..., description="Overall evaluation of image description"
     )
-    overall_bias_analysis_evaluation: BatchBiasAnalysesEvaluation = Field(
-        ..., description="Overall evaluation of bias analysis"
-    )
 
     def overall(
         self,
@@ -92,7 +83,6 @@ class BatchStructuredMetadataEvaluation(BaseModel):
         location_weight: int = 1,
         publication_info_weight: int = 1,
         contextual_info_weight: int = 1,
-        bias_weight: int = 1,
     ):
         return mean(
             [
@@ -155,7 +145,6 @@ def evaluate_structured_metadata(
         location_evaluation=partial_structured_metadata_evaluation.location_evaluation,
         contextual_info_evaluation=partial_structured_metadata_evaluation.contextual_info_evaluation,
         publication_info_evaluation=partial_structured_metadata_evaluation.publication_info_evaluation,
-        # bias_analysis_evaluation=bias_analysis_evaluation,
     )
 
 
@@ -176,9 +165,6 @@ def combine_structured_metadata_evaluations(
     mean_names_evaluation = mean([eval.names_evaluation for eval in metadata_evaluations])
     mean_publication_info_evaluation = mean([eval.publication_info_evaluation for eval in metadata_evaluations])
     mean_transcription_evaluation = mean([eval.transcription_evaluation for eval in metadata_evaluations])
-    overall_bias_analysis_evaluation = combine_potential_bias_evals(
-        [eval.bias_analysis_evaluation for eval in metadata_evaluations]
-    )
     overall_description_evaluation = combine_freeform_evaluations(
         [eval.description_evaluation for eval in metadata_evaluations]
     )
@@ -189,7 +175,6 @@ def combine_structured_metadata_evaluations(
         mean_names_evaluation=mean_names_evaluation,
         mean_publication_info_evaluation=mean_publication_info_evaluation,
         mean_transcription_evaluation=mean_transcription_evaluation,
-        overall_bias_analysis_evaluation=overall_bias_analysis_evaluation,
         overall_description_evaluation=overall_description_evaluation,
     )
 
