@@ -3,7 +3,17 @@
 
 # S3 variables
 
-variable "deployment_name" {
-  description = "Unique name of deployment"
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
+  type        = string
+}
+
+variable "deployment_prefix_global" {
+  description = "Global unique name of the deployment"
+  type        = string
+}
+
+variable "deployment_stage" {
+  description = "Deployment stage name for the environment"
   type        = string
 }

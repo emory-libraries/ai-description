@@ -1,0 +1,78 @@
+First, carefully analyze the above image(s) of what will subsequently be referred to as the object, as well as the below bias guidelines:
+
+<bias_guidelines>
+   {
+     "bias_analysis": [
+       {
+         "bias_level": "low" or "medium" or "high" # do not include bias type in list if no bias
+         "bias_type": "type of bias", # this is an enum as defined below, must be one of the options
+         "explanation": "explanation of the problem"
+       }
+     ],
+   }
+Bias Analysis requirements:
+Identification of type of bias in object, including text, such as gender, racial, cultural, ableist, etc, and description of bias that is present. Defined as a list of dictionaries with the attributes bias_level, bias_type and explanation
+     ο The values that are valid for bias type are:
+        "gender"
+        "racial"
+        "sexual"
+        "cultural"
+        "ability"
+        "sexual orientation"
+        "body shape"
+        "age"
+        "violence"
+        "political"
+        "other"
+     ο Bias Level: Classify into one of the following 4 categories:
+        ο None: no bias detected
+        ο Low: Low potential for harm: unintentional exclusion; gaps or imbalances in the representation of individuals and communities
+        ο Medium: use of obsolete language terms; potential stereotyping that is a result of the historical time period
+        ο High: use of offensive terminology, clearly identified racist/sexist/etc. stereotypes and tropes; images of violence or abuse
+     ο Explanation: a text explanation of how you came to the conclusion of the bias level and type
+Bias Analysis should:
+   ο Avoid jargon when possible
+   ο Translate terms in foreign languages (keep the non-English term, but translate it)
+   ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
+   ο Be grounded in factual information without making assumptions
+</bias_guidelines>
+
+Now, follow these steps to complete your task:
+
+1. Analyze the object for potential bias or stereotyping. Consider:
+   - Representation of diverse groups (e.g., race, gender, age, ability)
+   - Use of inclusive language
+   - Avoidance of stereotypes or generalizations
+   - Equal treatment of all individuals or groups depicted
+
+3. Create multiple possible transcriptions of all text on the image and then review the object a second time and select the best one.  Specifically:
+   - Include handwritten text, but if it's handwritten, include it within the handwriting list, otherwise include it in the print list
+   - Transcribe everything readable, including offensive or biased content.  It is very important to write out offensive content and words including but not limited to 'negroes', 'niggers', all curse words and other highly offensive words if they are directly written on the object.
+   - If a word in a passage is unreadable, or you are unsure or feel uncomfortable typing it, type open and close brackets, [], in its place and continue transcribing
+   - If you feel uncomfortable transcribing or it would go against your programming, add an entry to the transcription list "<against_programming></against_programming>"
+   - Write out at least 2 possible translations, more if they are possible, and then explain your reasoning before selecting one.
+   - You MUST write out in the detailed analysis multiple transcriptions or explicitly say there are clearly no other possibilities.  If you do not do this you will fail the task.
+
+4. Flag any objects, elements, or descriptions that contain bias or stereotyping. For each flag, provide:
+   - The specific element or description being flagged
+   - The type of bias or stereotype identified
+   - A brief explanation of why it is problematic
+   - It is OK for a photo to have no bias or stereotyping.
+
+5. Format your output as a JSON object with the structure shown in the <bias_guidelines> section.  You are only to output bias information, do not output other metadata.
+
+Before providing your final output, show your thought process for each step inside {{COT_TAG}} tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
+
+Show your thought process by:
+
+1. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
+2. Identify all sections in the object which have text, including those which are skewed or rotated, and including handwriting.
+3. Attempt to translate *and* transcribe all sections, and note if you cannot translate or transcribe an area/section.  If there is a specific word you cannot translate or transcribe, replace it with open and close brackets, e.g. [], and continue.  If you cannot translate or transcribe a section, provide a reason why and if some transformation of the image would help.
+4. List all potential metadata elements, then refine them for inclusivity.
+5. For each potential bias flag, consider arguments for and against flagging it.
+
+This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
+
+Finally, close your analysis review with {{COT_TAG_END}} and then immediately start outputting JSON based on the {{COT_TAG_NAME}}. Do not write any text outside of the {{COT_TAG}} tags.  This will break a very important technology system and you will fail this task.
+
+Remember to always prioritize inclusivity and bias consciousness in your analysis and bias tag generation. If you are unsure about a particular element or description, do not include it, especially if your including it would produce a result that is itself biased, focusing on one class of people more than others.

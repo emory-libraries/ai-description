@@ -70,7 +70,7 @@ installPythonRequirements:
 
 ## Install TypeScript dependencies for development
 installTypeScriptRequirements:
-	npm install --prefix $(PROJECT_DIR)/frontend
+	npm install --prefix $(PROJECT_DIR)/projects/frontend
 
 
 ## Install Python and TypeScript dependencies for development

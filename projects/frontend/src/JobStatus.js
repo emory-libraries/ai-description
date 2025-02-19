@@ -15,7 +15,7 @@ import {
   TextField
 } from '@aws-amplify/ui-react';
 
-const API_ENDPOINT = 'https://44xufe7wa8.execute-api.us-east-1.amazonaws.com/dev';
+const API_ENDPOINT = 'https://snqamgfnv4.execute-api.us-east-1.amazonaws.com/dev';
 
 const JobStatus = () => {
   const auth = useAuth();
@@ -64,7 +64,9 @@ const JobStatus = () => {
       );
   
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        setJobs(new Map());
+        setError(null);
+        return;
       }
   
       const data = await response.json();

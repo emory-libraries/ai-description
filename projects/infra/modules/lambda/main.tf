@@ -5,7 +5,6 @@
 
 data "aws_region" "current" {}
 
-
 # Create dist directories for other functions
 resource "null_resource" "create_dist_dirs" {
   for_each = toset([
@@ -49,9 +48,10 @@ locals {
       timeout     = 30
       environment = {
         ECS_CLUSTER_NAME        = var.ecs_cluster_name
+        ECS_CONTAINER_NAME      = "${var.deployment_prefix}-processing-container"
         ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
         ECS_SUBNET_IDS          = join(",", var.private_subnet_ids)
-        ECS_SECURITY_GROUP_IDS  = join(",", [var.ecs_security_group_id, var.vpc_security_group_id])
+        ECS_SECURITY_GROUP_IDS  = join(",", [var.ecs_security_group_id])
         TASK_EXECUTION_ROLE_ARN = var.task_execution_role_arn
       }
     }
@@ -91,7 +91,7 @@ resource "aws_lambda_function" "functions" {
   ]
 
   for_each      = local.lambda
-  function_name = "${each.key}-${var.deployment_name}"
+  function_name = "${var.deployment_prefix}-${each.key}"
   description   = each.value.description
   role          = var.base_lambda_role_arn
   timeout       = each.value.timeout

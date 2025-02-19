@@ -15,6 +15,7 @@ AWS_REGION = os.environ["AWS_REGION"]
 ECS_CLUSTER_NAME = os.environ["ECS_CLUSTER_NAME"]
 ECS_TASK_DEFINITION_ARN = os.environ["ECS_TASK_DEFINITION_ARN"]
 ECS_TASK_FAMILY_NAME = ECS_TASK_DEFINITION_ARN.split("/")[-1].split(":")[0]
+ECS_CONTAINER_NAME = os.environ["ECS_CONTAINER_NAME"]
 SUBNET_IDS = os.environ["ECS_SUBNET_IDS"].split(",")
 SECURITY_GROUP_IDS = os.environ["ECS_SECURITY_GROUP_IDS"].split(",")
 
@@ -51,7 +52,7 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         overrides = {
             "containerOverrides": [
                 {
-                    "name": "processing-container",
+                    "name": ECS_CONTAINER_NAME,
                     "environment": [{"name": "JOB_ID"}],
                 }
             ]

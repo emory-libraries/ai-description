@@ -1,10 +1,20 @@
-variable "deployment_name" {
-  description = "Unique name of deployment"
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
+# EventBridge variables
+
+variable "deployment_prefix" {
+  description = "Unique name of the deployment"
   type        = string
 }
 
 variable "sqs_works_queue_name" {
   description = "Name of the SQS works queue"
+  type        = string
+}
+
+variable "ecs_cluster_name" {
+  description = "Name of the ECS cluster"
   type        = string
 }
 

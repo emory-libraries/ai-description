@@ -1,13 +1,14 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+"""Constants for use in Metadata and Bias Determination."""
+
 from enum import Enum
 
 
 class BiasLevel(str, Enum):
     """Different levels of bias."""
 
-    none: str = "none"
     # Low potential for harm: unintentional exclusion; gaps or imbalances in the
     # representation of individuals and communities
     low: str = "low"
@@ -23,11 +24,24 @@ class BiasType(str, Enum):
     """Different types of bias."""
 
     gender: str = "gender"
-    race: str = "race"
-    culture: str = "culture"
+    racial: str = "racial"
+    sexual: str = "sexual"
+    cultural: str = "cultural"
     ability: str = "ability"
     sexual_orientation: str = "sexual orientation"
-    body_shape: str = "body_shape"
+    body_shape: str = "body shape"
     age: str = "age"
     violence: str = "violence"
+    political: str = "political"
     other: str = "other"
+
+
+class LibraryFormat(str, Enum):
+    """Allowed format values for library materials."""
+
+    still_image = "Still Image"
+    text = "Text"
+    artifact = "Artifact"
+    cartographic = "Cartographic"
+    notated_music = "Notated Music"
+    mixed_material = "Mixed Material"

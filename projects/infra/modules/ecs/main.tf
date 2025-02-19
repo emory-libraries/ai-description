@@ -3,21 +3,19 @@
 
 # ECS module
 
+data "aws_region" "current" {}
+
 locals {
   project_root_path = "${path.root}/../.."
   ecs_src_path      = "${path.module}/src"
-  package_src_path  = "${local.project_root_path}/lib/image_captioning_assistant"
+  lib_path          = "${local.project_root_path}/lib"
   ecs_src_files     = fileset(local.ecs_src_path, "**")
-  package_src_files = fileset(local.package_src_path, "**")
+  package_src_files = fileset(local.lib_path, "**")
   ecs_src_hash      = sha256(join("", [for f in local.ecs_src_files : filesha256("${local.ecs_src_path}/${f}")]))
-  package_src_hash  = sha256(join("", [for f in local.package_src_files : filesha256("${local.package_src_path}/${f}")]))
+  package_src_hash  = sha256(join("", [for f in local.package_src_files : filesha256("${local.lib_path}/${f}")]))
   combined_src_hash = sha256("${local.ecs_src_hash}${local.package_src_hash}")
   image_tag         = substr(local.combined_src_hash, 0, 8) # Using first 8 characters of the hash for brevity
 }
-
-
-
-data "aws_region" "current" {}
 
 # Push latest image
 resource "null_resource" "push_image" {
@@ -30,9 +28,9 @@ resource "null_resource" "push_image" {
     interpreter = ["bash", "-c"] # Explicitly specify bash interpreter
     command     = <<EOF
       echo "Starting Docker build and push process"
-      aws ecr get-login-password --region ${data.aws_region.current.name} | sudo docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
-      sudo docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
-      sudo docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
+      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
+      docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
+      docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
     on_failure  = fail
@@ -41,12 +39,17 @@ resource "null_resource" "push_image" {
 
 # ECS Cluster
 resource "aws_ecs_cluster" "cluster" {
-  name = var.cluster_name
+  name = "${var.deployment_prefix}-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 # ECS Task Definition using Fargate with increased ephemeral storage
 resource "aws_ecs_task_definition" "task" {
-  family                   = "processing-task-${var.deployment_name}"
+  family                   = "${var.deployment_prefix}-processing-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "1024" # 1 vCPU
@@ -62,7 +65,7 @@ resource "aws_ecs_task_definition" "task" {
   # Container definitions
   container_definitions = jsonencode([
     {
-      name      = "processing-container"
+      name      = "${var.deployment_prefix}-processing-container"
       image     = "${var.ecr_processor_repository_url}:${local.image_tag}"
       cpu       = 1024
       memory    = 2048
@@ -78,7 +81,7 @@ resource "aws_ecs_task_definition" "task" {
         options = {
           awslogs-group         = var.centralized_log_group_name
           awslogs-region        = data.aws_region.current.name
-          awslogs-stream-prefix = "ecs-processing-task"
+          awslogs-stream-prefix = "${var.deployment_prefix_logs}/processing-logs"
         }
       }
     }

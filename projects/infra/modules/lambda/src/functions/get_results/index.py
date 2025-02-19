@@ -22,6 +22,8 @@ CORS_HEADERS = {
     "Access-Control-Allow-Methods": "*",
     "Access-Control-Allow-Credentials": True,
 }
+JOB_NAME = "job_name"
+WORK_ID = "work_id"
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -77,24 +79,26 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler."""
     try:
-        job_name = event["queryStringParameters"].get("job_name")
+        job_name = event["queryStringParameters"].get(JOB_NAME)
         if not job_name:
-            logger.error("Missing 'job_name' in query parameters")
-            return create_response(400, {"error": "Missing 'job_id' parameter"})
+            msg = f"Missing '{JOB_NAME}' in query parameters"
+            logger.error(msg)
+            return create_response(400, {"error": msg})
 
-        work_id = event["queryStringParameters"].get("work_id")
+        work_id = event["queryStringParameters"].get(WORK_ID)
         if not work_id:
-            logger.error("Missing 'work_id' in query parameters")
-            return create_response(400, {"error": "Missing 'work_id' parameter"})
+            msg = f"Missing '{WORK_ID}' in query parameters"
+            logger.error(msg)
+            return create_response(400, {"error": msg})
 
-        response = table.get_item(Key={"job_name": job_name, "work_id": work_id})
+        response = table.get_item(Key={JOB_NAME: job_name, WORK_ID: work_id})
         item = response.get("Item")
         if item:
             deserialized_item = deserialize_dynamodb_item(item)
             return create_response(200, {"item": deserialized_item})
 
         else:
-            logger.warning(f"Results not available for job_name={job_name} and work_id={work_id}")
+            logger.warning(f"Results not available for {JOB_NAME}={job_name} and {WORK_ID}={work_id}")
             return create_response(404, {"error": "Results not available"})
 
     except ClientError as e:
