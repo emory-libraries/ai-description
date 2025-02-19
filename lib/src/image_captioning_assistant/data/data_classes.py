@@ -37,6 +37,7 @@ class Metadata(BaseModel):
     objects: List[str] = Field(..., description="Foreground objects critical to understanding the content")
     actions: List[str] = Field(..., description="Primary actions depicted in the content")
     people: List[str] = Field(..., description="Visible human subjects using specific descriptors")
+    topics: List[str] = Field(..., description="Clear high level topics")
 
 
 class MetadataCOT(Metadata):
