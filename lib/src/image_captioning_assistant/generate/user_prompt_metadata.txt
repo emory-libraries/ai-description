@@ -16,7 +16,8 @@ First, carefully analyze the above image(s) of what will subsequently be referre
        "genre": ["List of", "possible genres"], # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
        "objects": ["list", "of important", "objects"], # e.g. "fire pit", "gun", "pipe", "cradle", etc
        "actions": ["list", "of", "actions"], # e.g. "farming", "smoking", "playing", etc
-       "people": ["list", "of", " inclusive people", "tags"] # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
+       "people": ["list", "of", " inclusive people", "tags"], # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
+       "topics": ["list", "of", "core", "topics"], # e.g. "religion", "sex", "clothes", "family", etc
      }
    }
 Metadata requirements:
@@ -32,12 +33,13 @@ Metadata requirements:
 • Genre: Library genre(s) of the object, for example black-and-white photographs, postcards, photographs, letters, African American author or publisher or pamphlet
 • Objects: A list of the important objects/nouns seen within the primary object.  These should only be objects core to the photo or in the foreground, no details.
 • Actions: A list of actions/verbs portrayed in the object.
-• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see, for all of the bias-related groups.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two
+• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see, for all of the bias-related groups.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two.
+• Topics: A list of core topics being portrayed in the object.  These could be redundant with objects, actions and people, however should be the highest level concepts and take into account the transcription.
 Metadata should:
    ο Avoid jargon when possible
    ο Translate terms in foreign languages (keep the non-English term, but translate it)
    ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
-   ο Be grounded in factual information without making assumptions, however transcriptions should be considered factual information
+   ο Be grounded in factual information, given either in the object or the transcription, without making assumptions
 </metadata_guidelines>
 
 Now, follow these steps to complete your task:
@@ -61,7 +63,10 @@ Now, follow these steps to complete your task:
    - A discussion on why an item or phrase or concept should be included in the metadata
    - Thoughts about any additional contextual information that could be added based on your knowledge of the world
 
-4. Review your plan for consistency across results.  For example, it is inconsistent to refer to a subject as a "person" in the description, but a "Woman" in the people tags.  Make sure your chosen language is consistent across all metadata items.
+4. Review your plan for consistency across results. Make sure your chosen language is consistent across all metadata items, especially considering the description's substantial consistency with the rest of the items. For example:
+   ο "Mountain town" and "Mountain village" are not consistent
+   ο "Man" and "Person" are not consistent
+   ο "Male" and "Man" are consistent
 
 5. Format your final output as a JSON object with the structure shown in the <metadata_guidelines> section.
 
@@ -73,7 +78,7 @@ Show your thought process by:
 2. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
 3. Identify all sections in the object which have text, including those which are skewed or rotated, and including handwriting.
 4. Taking into account both the object and the transcriptions (of which the information should be considered truthful), go through the metadata items one by one and discuss an initial analysis for each, and then choose what should be included, biasing for inclusivity and your expert knowledge.
-5. For each item, provide arguments for and against including any item, unless there are no arguments in one direction, i.e. it must be or must not be included, in which case, say that.
+5. Provide arguments for and against including every single entry for all metadata items.
 
 This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
 
