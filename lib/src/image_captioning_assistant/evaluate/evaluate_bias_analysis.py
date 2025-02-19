@@ -5,7 +5,7 @@
 
 from typing import Any
 
-from image_captioning_assistant.data.data_classes import BiasAnalysis
+from image_captioning_assistant.data.data_classes import BiasAnalysisCOT
 from image_captioning_assistant.evaluate.utils import mean
 from langchain_aws import ChatBedrockConverse
 from loguru import logger
@@ -73,15 +73,15 @@ def combine_potential_bias_evals(
 
 
 def evaluate_potential_biases(
-    llm_potential_biases: BiasAnalysis,
-    human_potential_biases: BiasAnalysis,
+    llm_potential_biases: BiasAnalysisCOT,
+    human_potential_biases: BiasAnalysisCOT,
     chat_bedrock_converse_kwargs: dict[str, Any],
 ) -> BiasAnalysisEvaluation:
     """Evaluate bias analysis
 
     Args:
-        llm_potential_biases (BiasAnalysis): A list of potential biases identified by an LLM.
-        human_potential_biases (BiasAnalysis): A list of potential biases identified by a human.
+        llm_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list of potential biases identified by an LLM.
+        human_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list of potential biases identified by a human.
         chat_bedrock_converse_kwargs (dict[str, Any]): Keyword args for ChatBedrockConverse.
 
     Returns:
@@ -104,18 +104,18 @@ def evaluate_potential_biases(
 
 
 def batch_evaluate_bias_analyses(
-    llm_bias_analyses: list[BiasAnalysis],
-    human_bias_analyses: list[BiasAnalysis],
+    llm_bias_analyses: list[BiasAnalysisCOT],
+    human_bias_analyses: list[BiasAnalysisCOT],
     chat_bedrock_converse_kwargs: dict[str, Any],
 ) -> BatchBiasAnalysesEvaluation:
     """Evaluate bias analysis experiment.
 
-    Basically evaulate multiple items.
+    Basically evaluate multiple items.
 
     Args:
-        llm_bias_analyses (list[BiasAnalysis]): Bias analysis items according to an LLM
-        human_bias_analyses (list[BiasAnalysis]): Bias analysis items according to a human.
-        chat_bedrock_converse_kwargs (dict[str, Any]): Keword arguments for Bedrock.
+        llm_bias_analyses (list[BiasAnalysisCOT]): Multiple BiasAnalysisCOT objects with Bias analysis items according to an LLM
+        human_bias_analyses (list[BiasAnalysisCOT]): Multiple BiasAnalysisCOT objects with Bias analysis items according to a human.
+        chat_bedrock_converse_kwargs (dict[str, Any]): Keyword arguments for Bedrock.
 
     Returns:
         BatchBiasAnalysesEvaluation: Evaluation

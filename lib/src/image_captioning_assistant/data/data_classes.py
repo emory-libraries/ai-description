@@ -12,9 +12,8 @@ This module contains structured data definitions for:
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
-
 from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
+from pydantic import BaseModel, Field
 
 
 class Transcription(BaseModel):
@@ -40,6 +39,12 @@ class Metadata(BaseModel):
     people: List[str] = Field(..., description="Visible human subjects using specific descriptors")
 
 
+class MetadataCOT(Metadata):
+    """Composite metadata structure combining Chain of Thought and Metadata."""
+
+    cot: str = Field(..., description="Chain of thought of model")
+
+
 class BiasAnalysisEntry(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
 
@@ -48,14 +53,27 @@ class BiasAnalysisEntry(BaseModel):
     explanation: str = Field(..., description="Contextual analysis of bias manifestation")
 
 
-class StructuredMetadata(BaseModel):
-    """Composite metadata structure combining descriptive and analytical components.
-    Metadata field is optional as generation can happen for only bias analysis.
-    """
+BiasAnalysis = List[BiasAnalysisEntry]
+
+
+class BiasAnalysisCOT(BaseModel):
+    """Composite metadata structure combining Chain of Thought and Bias Analysis."""
 
     cot: str = Field(..., description="Chain of thought of model")
-    metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
-    bias_analysis: List[BiasAnalysisEntry] = Field(
+    bias_analysis: BiasAnalysis = Field(
         ...,
         description="Aggregated bias assessments",
     )
+
+
+# class StructuredMetadata(BaseModel):
+#     """Composite metadata structure combining descriptive and analytical components.
+#     Metadata field is optional as generation can happen for only bias analysis.
+#     """
+
+#     cot: str = Field(..., description="Chain of thought of model")
+#     metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
+#     bias_analysis: List[BiasAnalysisEntry] = Field(
+#         ...,
+#         description="Aggregated bias assessments",
+#     )

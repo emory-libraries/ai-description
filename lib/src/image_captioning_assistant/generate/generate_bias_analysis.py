@@ -7,23 +7,22 @@ import json
 from typing import Any
 
 import boto3
-from loguru import logger
-
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import StructuredMetadata, BiasAnalysisEntry, BiasType, BiasLevel
+from image_captioning_assistant.data.data_classes import BiasAnalysisCOT, BiasAnalysisEntry, BiasLevel, BiasType
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
+from loguru import logger
 
 
 def generate_bias_analysis(
     img_bytes_list: list[bytes],
     llm_kwargs: dict[str, Any],
     img_context: str,
-) -> StructuredMetadata:
+) -> BiasAnalysisCOT:
     """Generate bias analysis for an image.
 
     Args:
@@ -94,7 +93,7 @@ def generate_bias_analysis(
         # Try parsing output and if structured output fails to hold, try again up to 5x
         try:
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            return StructuredMetadata(cot=cot, **json_dict)
+            return BiasAnalysisCOT(cot=cot, **json_dict)
         except Exception as e:
             # TODO: add detailed logging of llm_output somewhere
             print(e)

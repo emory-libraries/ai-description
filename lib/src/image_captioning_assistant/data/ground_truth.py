@@ -4,7 +4,6 @@
 from enum import Enum
 
 import pandas as pd
-
 from image_captioning_assistant.aws.s3 import copy_s3_object
 
 

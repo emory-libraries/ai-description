@@ -7,22 +7,21 @@ import json
 from typing import Any
 
 import boto3
-from loguru import logger
-
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import StructuredMetadata, Metadata, Transcription
 from image_captioning_assistant.data.constants import LibraryFormat
+from image_captioning_assistant.data.data_classes import Metadata, MetadataCOT, Transcription
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
+from loguru import logger
 
 
 def generate_structured_metadata(
     img_bytes_list: list[bytes], llm_kwargs: dict[str, Any], img_context: str
-) -> StructuredMetadata:
+) -> MetadataCOT:
     """Generate structured metadata for an image using foundation models.
 
     Args:
@@ -51,34 +50,40 @@ def generate_structured_metadata(
     bedrock_runtime = boto3.client("bedrock-runtime", region_name=region) if region else boto3.client("bedrock-runtime")
 
     # Construct augmented prompt
-    text_prompt = f"{p.user_prompt}\nContextual Help: {img_context}"
+    text_prompt = f"{p.user_prompt_metadata}\nContextual Help: {img_context}"
     model_name: str = llm_kwargs.pop("model")
-
-    # Configure model-specific parameters
-    if "nova" in model_name:
-        request_body = {
-            "schemaVersion": "messages-v1",
-            "system": [{"text": p.system_prompt}],
-            "toolConfig": {},
-            "inferenceConfig": {"max_new_tokens": 4096, "top_p": 0.6, "temperature": 0.1, **llm_kwargs},
-            "messages": format_prompt_for_nova(text_prompt, img_bytes_list_resize),
-        }
-    elif "claude" in model_name:
-        request_body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "system": p.system_prompt,
-            "max_tokens": 4096,
-            "temperature": 0.1,
-            "top_p": 0.6,
-            **llm_kwargs,
-            "messages": format_prompt_for_claude(text_prompt, img_bytes_list_resize),
-        }
-    else:
-        raise ValueError(f"Unsupported model: {model_name}. Requires 'nova' or 'claude'")
-
-    # Retry loop for robustness
+    system_prompt = p.system_prompt
+    assistant_start = p.assistant_start
+    # Retry loop for robustness around structured metadata
     for attempt in range(5):
         try:
+            # Configure model-specific parameters
+            if "nova" in model_name:
+                request_body = {
+                    "schemaVersion": "messages-v1",
+                    "system": [{"text": system_prompt}],
+                    "toolConfig": {},
+                    "inferenceConfig": {"max_new_tokens": 4096, "top_p": 0.6, "temperature": 0.1, **llm_kwargs},
+                    "messages": format_prompt_for_nova(
+                        text_prompt, img_bytes_list_resize, assistant_start=assistant_start
+                    ),
+                }
+            elif "claude" in model_name:
+                request_body = {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "system": system_prompt,
+                    "max_tokens": 4096,
+                    "temperature": 0.1,
+                    "top_p": 0.6,
+                    "stop_sequences": ["<innerthinking.md>"],
+                    **llm_kwargs,
+                    "messages": format_prompt_for_claude(
+                        text_prompt, img_bytes_list_resize, assistant_start=assistant_start
+                    ),
+                }
+            else:
+                raise ValueError(f"Unsupported model: {model_name}. Requires 'nova' or 'claude'")
+
             response = bedrock_runtime.invoke_model(modelId=model_name, body=json.dumps(request_body))
             result = json.loads(response["body"].read())
 
@@ -89,13 +94,17 @@ def generate_structured_metadata(
                 llm_output = result["output"]["message"]["content"][0]["text"]
 
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            return StructuredMetadata(cot=cot, **json_dict)
+            return MetadataCOT(cot=cot, **json_dict["metadata"])
 
         except Exception as e:
             if attempt == 4:
                 raise RuntimeError("Failed to parse model output after 5 attempts") from e
             print(f"Attempt {attempt+1}/5 failed: {str(e)}")
-            print("Raw model output:", llm_output.split(p.COT_TAG_END)[-1])
+            raw_output = llm_output.split(p.COT_TAG_END)[-1]
+            print("Raw model output:", raw_output)
+            if "apologize" in raw_output.lower() or "i cannot" in raw_output.lower() or "i can't" in raw_output.lower():
+                system_prompt = p.system_prompt_court_order
+                assistant_start = p.assistant_start_court_order
 
     raise RuntimeError("Unexpected error in retry loop")
 

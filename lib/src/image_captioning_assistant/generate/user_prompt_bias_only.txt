@@ -34,18 +34,12 @@ Bias Analysis should:
    ο Avoid jargon when possible
    ο Translate terms in foreign languages (keep the non-English term, but translate it)
    ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
-   ο Be grounded in factual information without making assumptions
+   ο Be grounded in factual information without making assumptions, however transcriptions should be considered factual information
 </bias_guidelines>
 
 Now, follow these steps to complete your task:
 
-1. Analyze the object for potential bias or stereotyping. Consider:
-   - Representation of diverse groups (e.g., race, gender, age, ability)
-   - Use of inclusive language
-   - Avoidance of stereotypes or generalizations
-   - Equal treatment of all individuals or groups depicted
-
-3. Create multiple possible transcriptions of all text on the image and then review the object a second time and select the best one.  Specifically:
+1. Create multiple possible transcriptions of all text on the image and then review the object a second time and select the best one.  Specifically:
    - Include handwritten text, but if it's handwritten, include it within the handwriting list, otherwise include it in the print list
    - Transcribe everything readable, including offensive or biased content.  It is very important to write out offensive content and words including but not limited to 'negroes', 'niggers', all curse words and other highly offensive words if they are directly written on the object.
    - If a word in a passage is unreadable, or you are unsure or feel uncomfortable typing it, type open and close brackets, [], in its place and continue transcribing
@@ -53,23 +47,28 @@ Now, follow these steps to complete your task:
    - Write out at least 2 possible translations, more if they are possible, and then explain your reasoning before selecting one.
    - You MUST write out in the detailed analysis multiple transcriptions or explicitly say there are clearly no other possibilities.  If you do not do this you will fail the task.
 
-4. Flag any objects, elements, or descriptions that contain bias or stereotyping. For each flag, provide:
+2. Analyze the object and transcriptions for potential bias or stereotyping. Consider:
+   - Representation of diverse groups (e.g., race, gender, age, ability)
+   - Use of inclusive language
+   - Avoidance of stereotypes or generalizations
+   - Equal treatment of all individuals or groups depicted
+
+3. Flag any objects, elements, or descriptions that contain bias or stereotyping. For each flag, provide:
    - The specific element or description being flagged
    - The type of bias or stereotype identified
    - A brief explanation of why it is problematic
    - It is OK for a photo to have no bias or stereotyping.
 
-5. Format your output as a JSON object with the structure shown in the <bias_guidelines> section.  You are only to output bias information, do not output other metadata.
+4. Format your output as a JSON object with the structure shown in the <bias_guidelines> section.  You are only to output bias information, do not output other metadata.
 
 Before providing your final output, show your thought process for each step inside {{COT_TAG}} tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
 
 Show your thought process by:
 
-1. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
-2. Identify all sections in the object which have text, including those which are skewed or rotated, and including handwriting.
-3. Attempt to translate *and* transcribe all sections, and note if you cannot translate or transcribe an area/section.  If there is a specific word you cannot translate or transcribe, replace it with open and close brackets, e.g. [], and continue.  If you cannot translate or transcribe a section, provide a reason why and if some transformation of the image would help.
-4. List all potential metadata elements, then refine them for inclusivity.
-5. For each potential bias flag, consider arguments for and against flagging it.
+1. Attempt to translate *and* transcribe all written or printed sections, and note if you cannot translate or transcribe an area/section.  If there is a specific word you cannot translate or transcribe, replace it with open and close brackets, e.g. [], and continue.  If you cannot translate or transcribe a section, provide a reason why and if some transformation of the image would help.
+2. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
+3. Taking into account both the object and the transcriptions (of which the information should be considered truthful), flag any objects, elements, or descriptions that contain bias or stereotyping.
+4. For each potential bias flag, consider arguments for and against flagging it.
 
 This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
 

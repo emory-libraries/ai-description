@@ -5,9 +5,8 @@ import base64
 import json
 from io import BytesIO
 
-from PIL import Image
-
 import image_captioning_assistant.generate.prompts as p
+from PIL import Image
 
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
@@ -91,7 +90,7 @@ def extract_json_and_cot_from_text(text):
         raise json.JSONDecodeError
 
 
-def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes]) -> list[dict]:
+def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes], assistant_start: str = "") -> list[dict]:
     """Format prompt for Anthropic Claude LLM.
 
     Args:
@@ -112,10 +111,13 @@ def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes]) -> list[d
             },
         }
         content.append(img_message)
-    return [{"role": "user", "content": content}]
+    msg_list = [{"role": "user", "content": content}]
+    if len(assistant_start) > 0:
+        msg_list.append({"role": "assistant", "content": assistant_start})
+    return msg_list
 
 
-def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes]) -> list[dict]:
+def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str = "") -> list[dict]:
     """Format prompt for Amazon Nova models.
 
     Args:
@@ -134,4 +136,7 @@ def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes]) -> list[dic
             }
         }
         content.append(img_message)
-    return [{"role": "user", "content": content}]
+    msg_list = [{"role": "user", "content": content}]
+    if len(assistant_start) > 0:
+        msg_list.append({"role": "assistant", "content": assistant_start})
+    return msg_list
