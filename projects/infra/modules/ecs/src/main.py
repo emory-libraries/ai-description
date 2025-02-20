@@ -11,7 +11,8 @@ import sys
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from image_captioning_assistant.generate.generate_bias_analysis import generate_work_bias_analysis
+
+from image_captioning_assistant.generate.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
 from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata
 
 AWS_REGION = os.environ["AWS_REGION"]
@@ -22,6 +23,18 @@ S3_CONFIG = Config(
     s3={"addressing_style": "virtual"},
     signature_version="s3v4",
 )
+S3_KWARGS = {
+    "config": S3_CONFIG,
+    "region_name": AWS_REGION,
+}
+LLM_KWARGS = {
+    "region_name": AWS_REGION,
+    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+}
+RESIZE_KWARGS = {
+    "max_dimension": 2048,
+    "jpeg_quality": 95,
+}
 JOB_NAME = "job_name"
 JOB_TYPE = "job_type"
 WORK_ID = "work_id"
@@ -135,6 +148,9 @@ def process_sqs_messages():
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
                         original_metadata=original_metadata,
+                        llm_kwargs=LLM_KWARGS,
+                        s3_kwargs=S3_KWARGS,
+                        resize_kwargs=RESIZE_KWARGS,
                     )
                     # Update DynamoDB with the bias_analysis field
                     update_data = {"bias_analysis": [item.dict() for item in work_bias_analysis]}

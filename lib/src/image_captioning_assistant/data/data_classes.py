@@ -46,22 +46,32 @@ class MetadataCOT(Metadata):
     cot: str = Field(..., description="Chain of thought of model")
 
 
-class BiasAnalysisEntry(BaseModel):
+class Bias(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
 
-    bias_level: BiasLevel = Field(..., description="Potential harm classification")
-    bias_type: BiasType = Field(..., description="Category of bias identified")
+    level: BiasLevel = Field(..., description="Potential harm classification")
+    type: BiasType = Field(..., description="Category of bias identified")
     explanation: str = Field(..., description="Contextual analysis of bias manifestation")
 
 
-BiasAnalysis = List[BiasAnalysisEntry]
+class Biases(BaseModel):
+    """All biases detected."""
+
+    biases: list[Bias] = Field(..., description="All biases detected")
+
+
+class WorkBiasAnalysis(BaseModel):
+    """Bias analysis for an entire work."""
+
+    metadata_biases: Biases = Field(..., description="Biases in the metadata itself")
+    page_biases: list[Biases] = Field(..., description="Biases found in each page of a work")
 
 
 class BiasAnalysisCOT(BaseModel):
     """Composite metadata structure combining Chain of Thought and Bias Analysis."""
 
     cot: str = Field(..., description="Chain of thought of model")
-    bias_analysis: BiasAnalysis = Field(
+    bias_analysis: Biases = Field(
         ...,
         description="Aggregated bias assessments",
     )

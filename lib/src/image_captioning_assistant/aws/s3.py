@@ -34,18 +34,33 @@ def list_contents_of_folder(
     return [obj["Key"] for obj in response["Contents"]]
 
 
-def load_image_bytes(
+def load_to_bytes(
     s3_bucket: str,
     s3_key: str,
     s3_client_kwargs: dict[str, Any],
 ) -> bytes:
-    """Load image bytes."""
+    """Load bytes directly into memory."""
     s3_client = boto3.client("s3", **s3_client_kwargs)
-    image_bytes = s3_client.get_object(
+    file_bytes = s3_client.get_object(
         Bucket=s3_bucket,
         Key=s3_key,
     )["Body"].read()
-    return image_bytes
+    return file_bytes
+
+
+def load_to_str(
+    s3_bucket: str,
+    s3_key: str,
+    s3_client_kwargs: dict[str, Any],
+    encoding: str = "utf-8",
+) -> str:
+    """Load a plain-text file into string."""
+    file_bytes = load_to_bytes(
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+        s3_client_kwargs=s3_client_kwargs,
+    )
+    return file_bytes.decode(encoding)
 
 
 def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str):

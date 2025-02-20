@@ -90,7 +90,9 @@ def extract_json_and_cot_from_text(text):
         raise json.JSONDecodeError
 
 
-def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes], assistant_start: str = '') -> list[dict]:
+def format_prompt_for_claude(
+    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
+) -> list[dict]:
     """Format prompt for Anthropic Claude LLM.
 
     Args:
@@ -112,12 +114,12 @@ def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes], assistant
         }
         content.append(img_message)
     msg_list = [{"role": "user", "content": content}]
-    if len(assistant_start)>0:
+    if assistant_start:
         msg_list.append({"role": "assistant", "content": assistant_start})
     return msg_list
 
 
-def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str = '') -> list[dict]:
+def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None) -> list[dict]:
     """Format prompt for Amazon Nova models.
 
     Args:
@@ -137,6 +139,6 @@ def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_s
         }
         content.append(img_message)
     msg_list = [{"role": "user", "content": content}]
-    if len(assistant_start)>0:
+    if assistant_start:
         msg_list.append({"role": "assistant", "content": assistant_start})
     return msg_list
