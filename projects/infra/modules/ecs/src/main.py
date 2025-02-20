@@ -29,7 +29,6 @@ S3_KWARGS = {
 }
 LLM_KWARGS = {
     "region_name": AWS_REGION,
-    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "config": Config(
         retries={"max_attempts": 1, "mode": "standard"},
     ),
