@@ -9,22 +9,22 @@ from langchain_aws import ChatBedrockConverse
 from loguru import logger
 
 from image_captioning_assistant.data.data_classes import Biases, WorkBiasAnalysis
-from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_image
+from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_image, invoke_with_retry
 
 
-def find_biases_in_metadata(
-    metadata: str,
+def find_biases_in_original_metadata(
+    original_metadata: str,
     structured_llm: Any,
     work_context: str | None = None,
 ):
-    """Find biases in metadata."""
+    """Find biases in original metadata."""
     logger.info(f"Analyzing original metadata")
     messages = create_messages(
         img_bytes_list=[],
         work_context=work_context,
-        original_metadata=metadata,
+        original_metadata=original_metadata,
     )
-    return structured_llm.invoke(messages)
+    return invoke_with_retry(structured_llm, messages)
 
 
 def find_biases_in_image(
@@ -45,7 +45,7 @@ def find_biases_in_image(
             resize_kwargs=resize_kwargs,
         )
         messages = create_messages(img_bytes_list=[resized_img_bytes], work_context=work_context)
-        image_biases = structured_llm.invoke(messages)
+        image_biases = invoke_with_retry(structured_llm, messages)
         page_biases.extend(image_biases)
 
     return page_biases
@@ -63,7 +63,7 @@ def find_biases_in_long_work(
     llm = ChatBedrockConverse(**llm_kwargs)
     structured_llm = llm.with_structured_output(Biases)
     if original_metadata:
-        metadata_biases = find_biases_in_metadata(
+        metadata_biases = find_biases_in_original_metadata(
             original_metadata=original_metadata,
             work_context=work_context,
             structured_llm=structured_llm,

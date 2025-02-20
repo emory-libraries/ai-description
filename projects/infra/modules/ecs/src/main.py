@@ -30,6 +30,9 @@ S3_KWARGS = {
 LLM_KWARGS = {
     "region_name": AWS_REGION,
     "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "config": Config(
+        retries={'max_attempts': 1, 'mode': 'standard'},
+    )
 }
 RESIZE_KWARGS = {
     "max_dimension": 2048,
@@ -59,10 +62,11 @@ table = dynamodb.Table(WORKS_TABLE_NAME)
 
 
 def update_dynamodb_item(job_name, work_id, update_data):
+    status = "READY FOR REVIEW"
     try:
         update_expression = "SET #status = :status"
         expression_attribute_names = {"#status": WORK_STATUS}
-        expression_attribute_values = {":status": "READY FOR REVIEW"}
+        expression_attribute_values = {":status": status}
 
         for key, value in update_data.items():
             update_expression += f", #{key} = :{key}"
@@ -75,7 +79,7 @@ def update_dynamodb_item(job_name, work_id, update_data):
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
         )
-        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id}")
+        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
     except ClientError as e:
         logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
 

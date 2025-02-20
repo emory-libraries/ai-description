@@ -6,6 +6,7 @@
 from pathlib import Path
 from typing import Any
 
+from retry import retry
 from cloudpathlib import S3Path
 from jinja2 import Environment, FileSystemLoader
 from loguru import logger
@@ -72,3 +73,8 @@ def load_and_resize_images(
         )
         resized_img_bytes_list.append(resized_img_bytes)
     return resized_img_bytes_list
+
+
+@retry(exceptions=Exception, tries=5, delay=10, backoff=2)
+def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
+    return structured_llm.invoke(messages)

@@ -8,7 +8,7 @@ from typing import Any
 from langchain_aws import ChatBedrockConverse
 
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysis
-from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_images
+from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_images, invoke_with_retry
 
 
 def find_biases_in_short_work(
@@ -31,4 +31,4 @@ def find_biases_in_short_work(
     llm = ChatBedrockConverse(**llm_kwargs)
     structured_llm = llm.with_structured_output(WorkBiasAnalysis)
     # Invoke model
-    return structured_llm.invoke(messages)
+    return invoke_with_retry(structured_llm, messages)
