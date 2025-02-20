@@ -77,4 +77,7 @@ def load_and_resize_images(
 
 @retry(exceptions=Exception, tries=5, delay=10, backoff=2)
 def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
-    return structured_llm.invoke(messages)
+    logger.info("Invoking structured LLM...")
+    response = structured_llm.invoke(messages)
+    logger.info("Invocation successful")
+    return response
