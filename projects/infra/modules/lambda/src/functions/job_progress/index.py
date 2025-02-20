@@ -24,6 +24,7 @@ CORS_HEADERS = {
     "Access-Control-Allow-Credentials": True,
 }
 JOB_NAME = "job_name"
+JOB_TYPE = "job_type"
 WORK_ID = "work_id"
 WORK_STATUS = "work_status"
 
@@ -46,34 +47,76 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
-def get_work_ids_by_job_name_and_status(job_name: str) -> dict[str, list[str]]:
-    """Get work ids by job name and status"""
+def _query_all_items(job_name: str) -> list[dict]:
+    """Query all items for a given job name, handling pagination."""
+    items = []
+    query_kwargs = {
+        "KeyConditionExpression": Key(JOB_NAME).eq(job_name),
+        "ProjectionExpression": f"{WORK_ID}, {WORK_STATUS}, {JOB_TYPE}",
+    }
+
+    while True:
+        response = table.query(**query_kwargs)
+        items.extend(response["Items"])
+
+        if "LastEvaluatedKey" not in response:
+            break
+
+        query_kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+
+    return items
+
+
+def _organize_items(items: list[dict]) -> tuple[dict[str, list[str]], str]:
+    """Organize items by status and extract job type."""
+    work_ids_by_status = defaultdict(list)
+    job_types = set()
+
+    for item in items:
+        work_id = item.get(WORK_ID, None)
+        job_type = item.get(JOB_TYPE, None)
+
+        if work_id is None:
+            msg = f"Field {WORK_ID} not found for item."
+            logger.warning(msg)
+            raise ValueError(msg)
+
+        elif job_type is None:
+            msg = f"Field {JOB_TYPE} not found for {WORK_ID}={work_id}."
+            logger.warning(msg)
+            raise ValueError(msg)
+
+        else:
+            work_ids_by_status[item[WORK_STATUS]].append(work_id)
+            job_types.add(job_type)
+
+    if len(job_types) > 1:
+        msg = f"Multiple job types found for the same job: {job_types}."
+        logger.warning(msg)
+        raise ValueError(msg)
+
+    return dict(work_ids_by_status), job_type
+
+
+def fetch_work_data_by_job(job_name: str) -> tuple[dict[str, list[str]], str]:
+    """
+    Fetch work IDs grouped by status and job type for a given job name.
+
+    Args:
+        job_name (str): The name of the job to query.
+
+    Returns:
+        dict[str, list[str]]: A dictionary with work statuses as keys and lists of work_ids as values.
+        str: The job_type as a string
+    """
     try:
-        response = table.query(
-            KeyConditionExpression=Key(JOB_NAME).eq(job_name),
-            ProjectionExpression=f"{WORK_ID}, {WORK_STATUS}",
-        )
-
-        items = response["Items"]
-
-        while "LastEvaluatedKey" in response:
-            response = table.query(
-                KeyConditionExpression=Key(JOB_NAME).eq(job_name),
-                ProjectionExpression=f"{WORK_ID}, {WORK_STATUS}",
-                ExclusiveStartKey=response["LastEvaluatedKey"],
-            )
-            items.extend(response["Items"])
-
-        # Organize items by status
-        organized_items = defaultdict(list)
-        for item in items:
-            organized_items[item[WORK_STATUS]].append(item[WORK_ID])
-
-        # Convert defaultdict to regular dict
-        return dict(organized_items)
+        items = _query_all_items(job_name)
+        work_ids_by_status, job_type = _organize_items(items)
+        return work_ids_by_status, job_type
 
     except Exception as e:
-        logger.exception(f"Failed to get works for job {job_name}: {str(e)}")
+        logger.exception(f"Failed to fetch work data for job {job_name}: {str(e)}")
+        raise
 
 
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
@@ -94,12 +137,17 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         if not job_name:
             return create_response(400, {"error": f"Missing required query parameter: {JOB_NAME}"})
 
-        work_ids_by_status: dict[str, list[str]] = get_work_ids_by_job_name_and_status(job_name)
+        work_ids_by_status, job_type = fetch_work_data_by_job(job_name)
 
         if not work_ids_by_status:
             return create_response(404, {"message": f"No data found for {JOB_NAME}={job_name}"})
 
-        return create_response(200, work_ids_by_status)
+        # Return success response
+        response = {
+            "job_progress": work_ids_by_status,
+            "job_type": job_type,
+        }
+        return create_response(200, response)
 
     except ClientError as e:
         logger.exception(f"DynamoDB error: {e}")
