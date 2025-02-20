@@ -7,6 +7,8 @@ import json
 from typing import Any
 
 import boto3
+from loguru import logger
+
 import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.data.constants import LibraryFormat
 from image_captioning_assistant.data.data_classes import Metadata, MetadataCOT, Transcription
@@ -16,7 +18,6 @@ from image_captioning_assistant.generate.utils import (
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
-from loguru import logger
 
 
 def generate_structured_metadata(
@@ -109,15 +110,21 @@ def generate_structured_metadata(
     raise RuntimeError("Unexpected error in retry loop")
 
 
-def generate_work_bias_analysis(
+def generate_work_structured_metadata(
     image_s3_uris: str,
+    llm_kwargs: dict[str, Any],
+    s3_kwargs: dict[str, Any],
+    resize_kwargs: dict[str, Any],
     context_s3_uri: str | None = None,
-    original_metadata: str | None = None,
+    original_metadata_s3_uri: str | None = None,
 ) -> Metadata:
     logger.info("Processing work")
     logger.info(context_s3_uri)
     logger.info(image_s3_uris)
-    logger.info(original_metadata)
+    logger.info(original_metadata_s3_uri)
+    logger.info(llm_kwargs)
+    logger.info(s3_kwargs)
+    logger.info(resize_kwargs)
     logger.info("Processing work complete")
     return Metadata(
         description="description",
@@ -131,4 +138,5 @@ def generate_work_bias_analysis(
         objects=["object"],
         actions=["action"],
         people=["people"],
+        topics=["topics"],
     )

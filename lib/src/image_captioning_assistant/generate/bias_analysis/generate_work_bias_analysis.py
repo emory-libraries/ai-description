@@ -19,9 +19,21 @@ def generate_work_bias_analysis(
     s3_kwargs: dict[str, Any],
     resize_kwargs: dict[str, Any],
     context_s3_uri: str | None = None,
-    original_metadata: str | None = None,
+    original_metadata_s3_uri: str | None = None,
 ) -> WorkBiasAnalysis:
     """Find biases across an arbitrarily long work."""
+    original_metadata = None
+    # If metadata was provided
+    if original_metadata_s3_uri:
+        # Retrieve it from S3
+        s3_path = S3Path(context_s3_uri)
+        original_metadata = load_to_str(
+            s3_bucket=s3_path.bucket,
+            s3_key=s3_path.key,
+            s3_client_kwargs=s3_kwargs,
+        )        
+
+    work_context = None
     # If context was provided
     if context_s3_uri:
         # Retrieve it from S3
@@ -31,14 +43,13 @@ def generate_work_bias_analysis(
             s3_key=s3_path.key,
             s3_client_kwargs=s3_kwargs,
         )
-    # Otherwise leave it as none
-    else:
-        work_context = None
 
     # If it's a short document, analyze metadata (if available) and image(s) all together
     if len(image_s3_uris) <= 2:
         return find_biases_in_short_work(
             image_s3_uris=image_s3_uris,
+            s3_kwargs=s3_kwargs,
+            resize_kwargs=resize_kwargs,
             llm_kwargs=llm_kwargs,
             work_context=work_context,
             original_metadata=original_metadata,

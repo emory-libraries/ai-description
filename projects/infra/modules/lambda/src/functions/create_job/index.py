@@ -10,6 +10,7 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import boto3
+from boto3.dynamodb.conditions import Key
 
 # Constants
 AWS_REGION = os.environ["AWS_REGION"]
@@ -27,7 +28,7 @@ WORKS = "works"
 WORK_ID = "work_id"
 IMAGE_S3_URIS = "image_s3_uris"
 CONTEXT_S3_URI = "context_s3_uri"
-ORIGINAL_METADATA = "original_metadata"
+ORIGINAL_METADATA_S3_URI = "original_metadata_s3_uri"
 WORK_STATUS = "work_status"
 
 # Initialize AWS clients globally
@@ -57,6 +58,14 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
         "headers": CORS_HEADERS,
     }
 
+def job_exists(table, job_name: str) -> bool:
+    """Check if a job with the given name already exists."""
+    response = table.query(
+        KeyConditionExpression=Key(JOB_NAME).eq(job_name),
+        Limit=1
+    )
+    return len(response['Items']) > 0
+
 
 def handler(event: Any, context: Any) -> Dict[str, Any]:
     """Lambda handler."""
@@ -73,11 +82,18 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
         job_type: str = body[JOB_TYPE]
         works: list[dict[str, str]] = body[WORKS]
         table = dynamodb.Table(WORKS_TABLE_NAME)
+
+        # Check if job already exists
+        if job_exists(table, job_name):
+            msg = f"Job with name '{job_name}' already exists"
+            logger.error(msg)
+            return create_response(409, {"error": msg})
+
         for work in works:
             work_id: str = work[WORK_ID]
             image_s3_uris: list[str] = work[IMAGE_S3_URIS]
             context_s3_uri: str | None = work.get(CONTEXT_S3_URI, None)
-            original_metadata: str | None = work.get(ORIGINAL_METADATA, None)
+            original_metadata_s3_uri: str | None = work.get(ORIGINAL_METADATA_S3_URI, None)
             # Add work item to SQS queue
             sqs_message = {
                 JOB_NAME: job_name,
@@ -85,7 +101,7 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 WORK_ID: work_id,
                 IMAGE_S3_URIS: image_s3_uris,
                 CONTEXT_S3_URI: context_s3_uri,
-                ORIGINAL_METADATA: original_metadata,
+                ORIGINAL_METADATA_S3_URI: original_metadata_s3_uri,
             }
             sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(sqs_message))
             logger.debug(f"Successfully added job={job_name} work={work_id} to SQS")
@@ -96,7 +112,7 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 WORK_ID: work_id,
                 IMAGE_S3_URIS: image_s3_uris,
                 CONTEXT_S3_URI: context_s3_uri,
-                ORIGINAL_METADATA: original_metadata,
+                ORIGINAL_METADATA_S3_URI: original_metadata_s3_uri,
                 WORK_STATUS: "IN_QUEUE",
             }
             table.put_item(Item=ddb_work_item)

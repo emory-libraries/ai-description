@@ -48,7 +48,7 @@ def find_biases_in_image(
         image_biases = structured_llm.invoke(messages)
         page_biases.extend(image_biases)
 
-    return
+    return page_biases
 
 
 def find_biases_in_long_work(

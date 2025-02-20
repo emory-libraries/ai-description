@@ -16,7 +16,7 @@ def find_biases_in_short_work(
     s3_kwargs: dict[str, Any],
     llm_kwargs: dict[str, Any],
     resize_kwargs: dict[str, Any],
-    document_context: str | None = None,
+    work_context: str | None = None,
     original_metadata: str | None = None,
 ) -> WorkBiasAnalysis:
     """Find biases in one or two images and, optionally, their existing metadata."""
@@ -25,7 +25,7 @@ def find_biases_in_short_work(
     # Create messages
     messages = create_messages(
         img_bytes_list=img_bytes_list,
-        work_context=document_context,
+        work_context=work_context,
         original_metadata=original_metadata,
     )
     llm = ChatBedrockConverse(**llm_kwargs)
