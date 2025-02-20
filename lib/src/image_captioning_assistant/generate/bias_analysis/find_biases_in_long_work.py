@@ -9,7 +9,11 @@ from langchain_aws import ChatBedrockConverse
 from loguru import logger
 
 from image_captioning_assistant.data.data_classes import Biases, WorkBiasAnalysis
-from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_image, invoke_with_retry
+from image_captioning_assistant.generate.bias_analysis.utils import (
+    create_messages,
+    invoke_with_retry,
+    load_and_resize_image,
+)
 
 
 def find_biases_in_original_metadata(

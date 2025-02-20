@@ -58,13 +58,11 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
         "headers": CORS_HEADERS,
     }
 
+
 def job_exists(table, job_name: str) -> bool:
     """Check if a job with the given name already exists."""
-    response = table.query(
-        KeyConditionExpression=Key(JOB_NAME).eq(job_name),
-        Limit=1
-    )
-    return len(response['Items']) > 0
+    response = table.query(KeyConditionExpression=Key(JOB_NAME).eq(job_name), Limit=1)
+    return len(response["Items"]) > 0
 
 
 def handler(event: Any, context: Any) -> Dict[str, Any]:

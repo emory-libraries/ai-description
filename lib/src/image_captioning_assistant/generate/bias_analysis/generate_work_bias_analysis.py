@@ -31,7 +31,7 @@ def generate_work_bias_analysis(
             s3_bucket=s3_path.bucket,
             s3_key=s3_path.key,
             s3_client_kwargs=s3_kwargs,
-        )        
+        )
 
     work_context = None
     # If context was provided

@@ -51,6 +51,7 @@ def load_to_bytes(
         logger.warning(f"Failed to load {s3_key} from {s3_bucket}")
         raise exc
 
+
 def load_to_str(
     s3_bucket: str,
     s3_key: str,

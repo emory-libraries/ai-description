@@ -8,7 +8,11 @@ from typing import Any
 from langchain_aws import ChatBedrockConverse
 
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysis
-from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_images, invoke_with_retry
+from image_captioning_assistant.generate.bias_analysis.utils import (
+    create_messages,
+    invoke_with_retry,
+    load_and_resize_images,
+)
 
 
 def find_biases_in_short_work(
