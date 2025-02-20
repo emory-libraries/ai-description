@@ -12,8 +12,8 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from image_captioning_assistant.generate.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
-from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata
+from image_captioning_assistant.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
+from image_captioning_assistant.generate.generate_structured_metadata import generate_structured_metadata
 
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
@@ -135,7 +135,7 @@ def process_sqs_messages():
                 update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
 
                 if job_type == "metadata":
-                    work_structured_metadata = generate_work_structured_metadata(
+                    work_structured_metadata = generate_structured_metadata(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
                         original_metadata=original_metadata,

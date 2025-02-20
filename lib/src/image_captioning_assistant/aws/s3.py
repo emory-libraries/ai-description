@@ -40,13 +40,16 @@ def load_to_bytes(
     s3_client_kwargs: dict[str, Any],
 ) -> bytes:
     """Load bytes directly into memory."""
-    s3_client = boto3.client("s3", **s3_client_kwargs)
-    file_bytes = s3_client.get_object(
-        Bucket=s3_bucket,
-        Key=s3_key,
-    )["Body"].read()
-    return file_bytes
-
+    try:
+        s3_client = boto3.client("s3", **s3_client_kwargs)
+        file_bytes = s3_client.get_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+        )["Body"].read()
+        return file_bytes
+    except Exception as exc:
+        logger.warning(f"Failed to load {s3_key} from {s3_bucket}")
+        raise exc
 
 def load_to_str(
     s3_bucket: str,
