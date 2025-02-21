@@ -4,7 +4,7 @@
 from pathlib import Path
 
 from botocore.config import Config
-from image_captioning_assistant.aws.s3 import list_contents_of_folder, load_image_bytes
+from image_captioning_assistant.aws.s3 import list_contents_of_folder, load_to_bytes
 from image_captioning_assistant.data.db.database_manager import DatabaseManager
 from image_captioning_assistant.data.db.tables.document import put_document
 from image_captioning_assistant.data.db.tables.document_bias import (
@@ -94,7 +94,7 @@ def process_job(
                 image_id=image_key,  # TODO: FIX ME
             )
             # For now assume one file one document
-            img_bytes = load_image_bytes(s3_bucket, image_key, s3_kwargs)
+            img_bytes = load_to_bytes(s3_bucket, image_key, s3_kwargs)
             # Define kwargs at each loop because generate_structured_metadata involves popping
             llm_kwargs = {
                 "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
