@@ -3,7 +3,7 @@ First, carefully analyze the above image(s) of what will subsequently be referre
 <metadata_guidelines>
    {
      "metadata": {
-       "description": "Summary description",
+       "description": ExplainedValue("Summary description"),
        "transcription": { "transcriptions": 
                             [ # list required here
                                 # First image transcription, only include text on first image
@@ -19,19 +19,24 @@ First, carefully analyze the above image(s) of what will subsequently be referre
                             ],
                         "model_notes": "free form string of notes or call outs you'd like to mention about the transcription"
                         }
-       "date": "specific date or year range if available",
-       "location": ["list of", "distinct locations", "depicted in object", "if available", "empty list if none"]
-       "publication_info": "Complete but concise transcription and/or description of publication details, if any",
-       "contextual_info": Complete but concise description, drawing from expert knowledge, of contextual information surrounding the object",
-       "format": "Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material"
-       "genre": ["List of", "possible genres"], # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
-       "objects": ["list", "of important", "objects"], # e.g. "fire pit", "gun", "pipe", "cradle", etc
-       "actions": ["list", "of", "actions"], # e.g. "farming", "smoking", "playing", etc
-       "people": ["list", "of", " inclusive people", "tags"], # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
-       "topics": ["list", "of", "core", "topics"], # e.g. "religion", "sex", "clothes", "family", etc
+       "date": ExplainedValue("specific date or year range if available"),
+       "location": ExplainedValue(["list of", "distinct locations", "depicted in object", "if available", "empty list if none"])
+       "publication_info": ExplainedValue("Complete but concise transcription and/or description of publication details, if any"),
+       "contextual_info": ExplainedValue("Complete but concise description, drawing from expert knowledge, of contextual information surrounding the object"),
+       "format": ExplainedValue("Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material")
+       "genre": ExplainedValue(["List of", "possible genres"]), # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
+       "objects": ExplainedValue(["list", "of important", "objects"]), # e.g. "fire pit", "gun", "pipe", "cradle", etc
+       "actions": ExplainedValue(["list", "of", "actions"]), # e.g. "farming", "smoking", "playing", etc
+       "people": ExplainedValue(["list", "of", " inclusive people", "tags"]), # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
+       "topics": ExplainedValue(["list", "of", "core", "topics"]), # e.g. "religion", "sex", "clothes", "family", etc
      }
    }
+
+ExplainedValue(input_value) is a simplification, the ExplainedValue object, you must replace it anytime seen above with the following:
+{"value": input_value, "explanation": "LLM's explanation as to why input_value was chosen to be reported"}
+
 Metadata requirements:
+EVERY item that is wrapped in ExplainedValue must be not output as it is shown but output as an ExplainedValue object with your justification as to why you chose to populate the value in the explanation section.
 • Description: Summary description of the object, described in detail as if the person may not be able to see the object (for accessibility reasons).  Should include additional expert knowledge context if applicable.
 • Transcription: Transcription of any provided text on the object.  Transcribe EVERYTHING you can see written, including potentially mundane details.  All visible text must be noted, but if it is not clear what the text is, do not transcribe it, but use [] for the word. If in a different/non sequential location, create a separate entry in the list.  The bias in the object is dependent on all text as it provides important context.
      ο Handwriting: any handwritten messages
