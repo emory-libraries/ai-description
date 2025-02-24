@@ -10,12 +10,28 @@ This module contains structured data definitions for:
 - Composite structured metadata format
 """
 
-from typing import List, Optional
-
+from typing import List, Generic, TypeVar, Annotated
 from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, BeforeValidator
+from pydantic.functional_validators import AfterValidator
 
+ValueType = TypeVar("ValueType")
 
+class ExplainedValue(BaseModel, Generic[ValueType]):
+    """Generic container for typed values with LLM explanations"""
+    value: ValueType
+    explanation: str = Field(...,
+        description="LLM's reasoning for providing this specific value"
+    )
+
+    @classmethod
+    def with_type(cls, value_type: type[ValueType]) -> type["ExplainedValue"]:
+        """Type helper for creating field-specific variants"""
+        class ConcreteExplainedValue(ExplainedValue[ValueType]):
+            value: value_type  # type: ignore
+            
+        return ConcreteExplainedValue
+    
 class PageTranscription(BaseModel):
     """Container for transcribed text elements in a page with preservation of original layout."""
 
@@ -33,18 +49,18 @@ class Transcription(BaseModel):
 class Metadata(BaseModel):
     """Primary metadata container for cultural heritage materials."""
 
-    description: str = Field(..., description="Detailed accessibility-focused description of visual content")
+    description: ExplainedValue[str] = Field(..., description="Detailed accessibility-focused description of visual content")
     transcription: Transcription = Field(..., description="Complete transcription of all legible text elements")
-    date: str = Field(..., description="Date of creation (circa dates or ranges acceptable)")
-    location: List[str] = Field(..., description="List of locations depicted in content")
-    publication_info: str = Field(..., description="Production/publishing context if documented")
-    contextual_info: str = Field(..., description="Cultural/historical context of creation or subject")
-    format: LibraryFormat = Field(..., description="Physical/digital format category")
-    genre: List[str] = Field(..., description="Formal/genre classifications")
-    objects: List[str] = Field(..., description="Foreground objects critical to understanding the content")
-    actions: List[str] = Field(..., description="Primary actions depicted in the content")
-    people: List[str] = Field(..., description="Visible human subjects using specific descriptors")
-    topics: List[str] = Field(..., description="Clear high level topics")
+    date: ExplainedValue[str] = Field(..., description="Date of creation (circa dates or ranges acceptable)")
+    location: ExplainedValue[List[str]] = Field(..., description="List of locations depicted in content")
+    publication_info: ExplainedValue[str] = Field(..., description="Production/publishing context if documented")
+    contextual_info: ExplainedValue[str] = Field(..., description="Cultural/historical context of creation or subject")
+    format: ExplainedValue[LibraryFormat] = Field(..., description="Physical/digital format category")
+    genre: ExplainedValue[List[str]] = Field(..., description="Formal/genre classifications")
+    objects: ExplainedValue[List[str]] = Field(..., description="Foreground objects critical to understanding the content")
+    actions: ExplainedValue[List[str]] = Field(..., description="Primary actions depicted in the content")
+    people: ExplainedValue[List[str]] = Field(..., description="Visible human subjects using specific descriptors")
+    topics: ExplainedValue[List[str]] = Field(..., description="Clear high level topics")
 
 
 class MetadataCOT(Metadata):
