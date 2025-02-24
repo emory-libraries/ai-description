@@ -16,22 +16,29 @@ from image_captioning_assistant.data.constants import BiasLevel, BiasType, Libra
 from pydantic import BaseModel, Field
 
 
-class Transcription(BaseModel):
-    """Container for transcribed text elements with preservation of original layout."""
+class PageTranscription(BaseModel):
+    """Container for transcribed text elements in a page with preservation of original layout."""
 
     printed_text: List[str] = Field(..., description="Printed text elements in their original layout/sequence")
     handwriting: List[str] = Field(..., description="Handwritten elements with original spelling/punctuation")
 
 
+class Transcription(BaseModel):
+    """Container for transcribed text elements in multiple pages with notes from the model."""
+
+    transcriptions: List[PageTranscription] = Field(..., description="PageTranscription per page")
+    model_notes: str = Field(..., description="Notes to be called out or reviewed per the LLM")
+
+    
 class Metadata(BaseModel):
     """Primary metadata container for cultural heritage materials."""
 
     description: str = Field(..., description="Detailed accessibility-focused description of visual content")
     transcription: Transcription = Field(..., description="Complete transcription of all legible text elements")
     date: str = Field(..., description="Date of creation (circa dates or ranges acceptable)")
-    location: str = Field(..., description="Geographic context of depicted content")
-    publication_info: List[str] = Field(..., description="Production/publishing context if documented")
-    contextual_info: List[str] = Field(..., description="Cultural/historical context of creation or subject")
+    location: List[str] = Field(..., description="List of locations depicted in content")
+    publication_info: str = Field(..., description="Production/publishing context if documented")
+    contextual_info: str = Field(..., description="Cultural/historical context of creation or subject")
     format: LibraryFormat = Field(..., description="Physical/digital format category")
     genre: List[str] = Field(..., description="Formal/genre classifications")
     objects: List[str] = Field(..., description="Foreground objects critical to understanding the content")
