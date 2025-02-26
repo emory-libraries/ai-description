@@ -85,15 +85,24 @@ def encode_image_from_path(image_full_path, max_size=2048, jpeg_quality=95):
     return image_data
 
 
+class LLMResponseParsingError(Exception):
+    def __init__(self, message, error_code=None):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"LLMResponseParsingError: {self.message} (Error Code: {self.error_code})"
+
+
 def extract_json_and_cot_from_text(text):
     # split chain of thought
     cot, text = text.split(p.COT_TAG_END)
     try:
         return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
     except json.JSONDecodeError:
-        print("Could not decode")
-        print(text)
-        raise json.JSONDecodeError
+        logger.warning(f"Could not parse {text}")
+        raise LLMResponseParsingError
 
 
 def format_prompt_for_claude(

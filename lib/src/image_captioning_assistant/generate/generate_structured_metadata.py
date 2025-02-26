@@ -17,6 +17,7 @@ from image_captioning_assistant.generate.utils import (
     extract_json_and_cot_from_text,
     format_prompt_for_claude,
     format_prompt_for_nova,
+    LLMResponseParsingError,
     load_and_resize_images,
 )
 
@@ -44,12 +45,12 @@ def generate_structured_metadata(
     """
     # Configure Bedrock client
     if "region_name" in llm_kwargs:
-        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs.pop("region_name"))
+        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs["region_name"])
     else:
         bedrock_runtime = boto3.client("bedrock-runtime")
     # Construct augmented prompt
     text_prompt = f"{p.user_prompt_metadata}\nContextual Help: {work_context}"
-    model_name: str = llm_kwargs.pop("model_id")
+    model_name: str = llm_kwargs["model_id"]
     system_prompt = p.system_prompt
     assistant_start = p.assistant_start
     # Configure model-specific parameters
@@ -97,16 +98,20 @@ def generate_structured_metadata(
             return MetadataCOT(cot=cot, **json_dict["metadata"])
 
         except Exception as e:
-            if attempt == 4:
-                raise RuntimeError("Failed to parse model output after 5 attempts") from e
             logger.debug(f"Attempt {attempt+1}/5 failed: {str(e)}")
-            raw_output = llm_output.split(p.COT_TAG_END)[-1]
-            logger.debug("Raw model output:", raw_output)
-            if "apologize" in raw_output.lower() or "i cannot" in raw_output.lower() or "i can't" in raw_output.lower():
-                system_prompt = p.system_prompt_court_order
-                assistant_start = p.assistant_start_court_order
 
-    raise RuntimeError("Unexpected error in retry loop")
+            if isinstance(e, LLMResponseParsingError):
+                raw_output = llm_output.split(p.COT_TAG_END)[-1]
+                logger.debug("Raw model output:", raw_output)
+                if (
+                    "apologize" in raw_output.lower()
+                    or "i cannot" in raw_output.lower()
+                    or "i can't" in raw_output.lower()
+                ):
+                    system_prompt = p.system_prompt_court_order
+                    assistant_start = p.assistant_start_court_order
+
+    raise RuntimeError("Failed to parse model output after 5 attempts")
 
 
 def generate_work_structured_metadata(
