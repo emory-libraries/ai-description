@@ -122,6 +122,11 @@ def generate_work_structured_metadata(
     context_s3_uri: str | None = None,
 ) -> Metadata:
     """Generate structured metadata for a work."""
+    # Enforce max length of two
+    if len(image_s3_uris) > 2:
+        msg = "Structured metadata only supports documents of 1-2 pages, " f"{len(image_s3_uris)} pages provided."
+        logger.warning(msg)
+        raise ValueError(msg)
     # Establish a default model
     if "model_id" not in llm_kwargs:
         llm_kwargs["model_id"] = "anthropic.claude-3-5-sonnet-20240620-v1:0"
