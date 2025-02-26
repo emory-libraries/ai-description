@@ -4,11 +4,11 @@
 """Generate structured metadata for a work."""
 
 import json
+import logging
 from typing import Any
 
 import boto3
 from cloudpathlib import S3Path
-from loguru import logger
 
 import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.aws.s3 import load_to_str
@@ -20,6 +20,8 @@ from image_captioning_assistant.generate.utils import (
     LLMResponseParsingError,
     load_and_resize_images,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def generate_structured_metadata(

@@ -1,11 +1,13 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+import logging
 from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
-from loguru import logger
+
+logger = logging.getLogger(__name__)
 
 
 def list_contents_of_folder(

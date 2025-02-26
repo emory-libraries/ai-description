@@ -3,10 +3,10 @@
 
 """Generate bias analysis for an image."""
 
+import logging
 from typing import Any
 
 from langchain_aws import ChatBedrockConverse
-from loguru import logger
 
 from image_captioning_assistant.data.data_classes import Biases, WorkBiasAnalysis
 from image_captioning_assistant.generate.bias_analysis.utils import (
@@ -14,6 +14,8 @@ from image_captioning_assistant.generate.bias_analysis.utils import (
     invoke_with_retry,
     load_and_resize_image,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def find_biases_in_original_metadata(

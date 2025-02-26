@@ -3,16 +3,18 @@
 
 import base64
 import json
+import logging
 from io import BytesIO
 from typing import Any
 
 from cloudpathlib import S3Path
-from loguru import logger
 from PIL import Image
 from retry import retry
 
 import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.aws.s3 import load_to_bytes
+
+logger = logging.getLogger(__name__)
 
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
