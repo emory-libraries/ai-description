@@ -28,8 +28,14 @@ locals {
       description = "Create new batch job"
       timeout     = 30
       environment = {
-        WORKS_TABLE_NAME = var.works_table_name
-        SQS_QUEUE_URL    = var.sqs_queue_url
+        WORKS_TABLE_NAME        = var.works_table_name
+        SQS_QUEUE_URL           = var.sqs_queue_url
+        ECS_CLUSTER_NAME        = var.ecs_cluster_name
+        ECS_CONTAINER_NAME      = "${var.deployment_prefix}-processing-container"
+        ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
+        ECS_SUBNET_IDS          = join(",", var.private_subnet_ids)
+        ECS_SECURITY_GROUP_IDS  = join(",", [var.ecs_security_group_id])
+        TASK_EXECUTION_ROLE_ARN = var.task_execution_role_arn
       }
     }
     job_progress = {
@@ -38,19 +44,6 @@ locals {
       timeout     = 15
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
-      }
-    }
-    run_ecs_task = {
-      source_dir  = "${path.module}/src/functions/run_ecs_task"
-      description = "Manages ECS task operations for processing jobs"
-      timeout     = 30
-      environment = {
-        ECS_CLUSTER_NAME        = var.ecs_cluster_name
-        ECS_CONTAINER_NAME      = "${var.deployment_prefix}-processing-container"
-        ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
-        ECS_SUBNET_IDS          = join(",", var.private_subnet_ids)
-        ECS_SECURITY_GROUP_IDS  = join(",", [var.ecs_security_group_id])
-        TASK_EXECUTION_ROLE_ARN = var.task_execution_role_arn
       }
     }
     get_results = {
