@@ -24,6 +24,16 @@ from image_captioning_assistant.generate.utils import (
 logger = logging.getLogger(__name__)
 
 
+class DocumentLengthError(Exception):
+    def __init__(self, message, error_code=None):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"DocumentLengthError: {self.message} (Error Code: {self.error_code})"
+
+
 def generate_structured_metadata(
     img_bytes_list: list[bytes], llm_kwargs: dict[str, Any], work_context: str | None = None
 ) -> MetadataCOT:
@@ -128,7 +138,7 @@ def generate_work_structured_metadata(
     if len(image_s3_uris) > 2:
         msg = f"Structured metadata only supports documents of 1-2 pages, {len(image_s3_uris)} pages provided."
         logger.warning(msg)
-        raise ValueError(msg)
+        raise DocumentLengthError(msg)
     # Establish a default model
     if "model_id" not in llm_kwargs:
         llm_kwargs["model_id"] = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"

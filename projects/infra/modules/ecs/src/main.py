@@ -13,7 +13,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from image_captioning_assistant.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
-from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata
+from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata, DocumentLengthError
 
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
@@ -181,7 +181,10 @@ def process_sqs_messages():
                 # Delete the message from the queue
                 sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
             except Exception as exc:
-                logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
+                if isinstance(exc, DocumentLengthError):
+                    logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
+                else:
+                    logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
 
                 # Parse the message body
                 message_body = json.loads(message["Body"])
