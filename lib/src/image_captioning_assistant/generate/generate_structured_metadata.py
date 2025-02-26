@@ -129,7 +129,7 @@ def generate_work_structured_metadata(
         raise ValueError(msg)
     # Establish a default model
     if "model_id" not in llm_kwargs:
-        llm_kwargs["model_id"] = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        llm_kwargs["model_id"] = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
     work_context = None
     # If context was provided
     if context_s3_uri:
