@@ -142,3 +142,34 @@ def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_s
     if assistant_start:
         msg_list.append({"role": "assistant", "content": assistant_start})
     return msg_list
+
+
+def format_request_body(model_name: str, messages: list[dict]) -> dict:
+    if "nova" in model_name:
+        request_body = {
+            "schemaVersion": "messages-v1",
+            "messages": messages,
+            "system": [{"text": p.system_prompt}],
+            "toolConfig": {},
+            "inferenceConfig": {
+                "max_new_tokens": 4096,
+                "top_p": 0.6,
+                # "top_k": 250,
+                "temperature": 0.1,
+                # ,"stopSequences": ['']
+            },
+        }
+    elif "claude" in model_name:
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "system": p.system_prompt,
+            "max_tokens": 4096,
+            "temperature": 0.1,
+            "top_p": 0.6,
+            # "top_k": 250,
+            # "stop_sequences": [''],
+            "messages": messages,
+        }
+    else:
+        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
+    return request_body

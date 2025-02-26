@@ -6,7 +6,6 @@
 from typing import Any
 
 from cloudpathlib import S3Path
-
 from image_captioning_assistant.aws.s3 import load_to_str
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysis
 from image_captioning_assistant.generate.bias_analysis.find_biases_in_long_work import find_biases_in_long_work
@@ -24,7 +23,7 @@ def generate_work_bias_analysis(
     """Find biases across an arbitrarily long work."""
     # Establish a default model
     if "model_id" not in llm_kwargs:
-        llm_kwargs["model_id"] = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        llm_kwargs["model_id"] = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
     original_metadata = None
     # If metadata was provided
     if original_metadata_s3_uri:

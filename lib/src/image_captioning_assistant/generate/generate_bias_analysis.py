@@ -8,7 +8,7 @@ from typing import Any
 
 import boto3
 import image_captioning_assistant.generate.prompts as p
-from image_captioning_assistant.data.data_classes import BiasAnalysisCOT, BiasAnalysisEntry, BiasLevel, BiasType
+from image_captioning_assistant.data.data_classes import BiasAnalysisCOT
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     extract_json_and_cot_from_text,
