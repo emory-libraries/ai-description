@@ -145,11 +145,20 @@ def process_sqs_messages():
                         s3_kwargs=S3_KWARGS,
                         resize_kwargs=RESIZE_KWARGS,
                     )
-                    # Update DynamoDB with all fields from work_structured_metadata
+                    work_bias_analysis = generate_work_bias_analysis(
+                        image_s3_uris=image_s3_uris,
+                        context_s3_uri=context_s3_uri,
+                        original_metadata_s3_uri=original_metadata_s3_uri,
+                        llm_kwargs=LLM_KWARGS,
+                        s3_kwargs=S3_KWARGS,
+                        resize_kwargs=RESIZE_KWARGS,
+                    )
+                    # Update DynamoDB with the bias_analysis field
+                    update_data = work_structured_metadata.model_dump() | work_bias_analysis.model_dump()
                     update_dynamodb_item(
                         job_name=job_name,
                         work_id=work_id,
-                        update_data=work_structured_metadata.model_dump(),
+                        update_data=update_data,
                     )
                 elif job_type == "bias":
                     work_bias_analysis = generate_work_bias_analysis(
