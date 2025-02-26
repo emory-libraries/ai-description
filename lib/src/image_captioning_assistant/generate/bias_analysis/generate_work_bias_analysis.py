@@ -6,6 +6,7 @@
 from typing import Any
 
 from cloudpathlib import S3Path
+
 from image_captioning_assistant.aws.s3 import load_to_str
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysis
 from image_captioning_assistant.generate.bias_analysis.find_biases_in_long_work import find_biases_in_long_work

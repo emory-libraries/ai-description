@@ -7,15 +7,16 @@ from pathlib import Path
 from typing import Any
 
 from cloudpathlib import S3Path
+from jinja2 import Environment, FileSystemLoader
+from loguru import logger
+from retry import retry
+
 from image_captioning_assistant.aws.s3 import load_to_bytes
 from image_captioning_assistant.generate.utils import (
     convert_and_reduce_image,
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
-from jinja2 import Environment, FileSystemLoader
-from loguru import logger
-from retry import retry
 
 COT_TAG_NAME = "object_detail_and_bias_analysis"
 COT_TAG = f"<{COT_TAG_NAME}>"

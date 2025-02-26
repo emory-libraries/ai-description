@@ -12,9 +12,10 @@ This module contains structured data definitions for:
 
 from typing import Annotated, Generic, List, TypeVar
 
-from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 from pydantic import BaseModel, BeforeValidator, Field
 from pydantic.functional_validators import AfterValidator
+
+from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 
 ValueType = TypeVar("ValueType")
 
