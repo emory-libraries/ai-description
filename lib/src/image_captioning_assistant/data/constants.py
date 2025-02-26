@@ -33,6 +33,7 @@ class BiasType(str, Enum):
     age: str = "age"
     violence: str = "violence"
     political: str = "political"
+    nudity: str = "nudity"
     other: str = "other"
 
 

@@ -4,7 +4,7 @@ First, carefully analyze the above image(s) of what will subsequently be referre
    {
      "metadata": {
        "description": ExplainedValue("Summary description"),
-       "transcription": { "transcriptions": 
+       "transcription": { "transcriptions":
                             [ # list required here
                                 # First image transcription, only include text on first image
                                 {
@@ -55,7 +55,11 @@ Metadata should:
    ο Avoid jargon when possible
    ο Translate terms in foreign languages (keep the non-English term, but translate it)
    ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
-   ο Be grounded in factual information, given either in the object or the transcription, without making assumptions
+   ο Be grounded in factual information without making assumptions.  Transcriptions should be considered to contain factual information, but with potential bias. For example:
+      ο "Happy Slave in the South Carolina Fields": Factual information is the person depicted is a slave and is in a field in SC.  However the assertion that a slave is "happy" contains strong and incorrect bias that a slave could possibly be happily working.
+      ο "Negro Mother with Nigger Child": Factual information is the people depicted are a Black female and a child, and the female is the mother of the child.  The use of derogatory language however contains high racial bias and it is unacceptable to refer to Black people with those words.
+      ο "Slut wife working in front of the sink where she belongs": Factual information is person depicted is a woman and is likely a wife.  The use of the adjective slut to describe her is incorrect, harmful, and in the context of the sentence, violent language. The concept that the woman belongs in front of the sink is incorrect and contains high sexual bias.
+      ο "African standing with his family": Factual information is the person depicted is from Africa and the photo is one of a family unit.  There is no inherent bias in this transcription.
 </metadata_guidelines>
 
 Now, follow these steps to complete your task:

@@ -1,17 +1,62 @@
-First, carefully analyze the above image(s) of what will subsequently be referred to as the object, as well as the below bias guidelines:
+{% if original_metadata %}
+<original_metadata>
+{%- if original_metadata is mapping %}
+{%- for key, value in original_metadata.items() %}
+    <{{ key }}>{{ value }}</{{ key }}>
+{%- endfor %}
+{%- else %}
+    {{ original_metadata  }}
+{%- endif %}
+</original_metadata>
+{%- endif %}
+
+{% if work_context %}
+<general_historical_context>
+    {{ work_context }}
+</general_historical_context>
+{%- endif %}
+
+First, carefully analyze:
+1. The above image(s) of what will subsequently be referred to as the object.
+2. If provided in original_metadata tags, the original metadata that provides descriptive information about the object.  If the tags are not provided, ignore this.
+3. If provided in general_historical_context, this additional historical context about the object.  If the tags are not provided, ignore this.
+
+Second, review the below bias guidelines:
 
 <bias_guidelines>
    {
-     "bias_analysis": [
+     "metadata_biases": {"biases": [
+         # ONLY include an entry in the metadata_biases below if original_metadata tags are provided above
        {
-         "bias_level": "low" or "medium" or "high" # do not include bias type in list if no bias
-         "bias_type": "type of bias", # this is an enum as defined below, must be one of the options
-         "explanation": "explanation of the problem"
+         "level": "low" or "medium" or "high" # do not include bias type in list if no bias
+         "type": "type of bias", # this is an enum as defined below, must be one of the options
+         "explanation": "explanation of the problem, including a justification of why the level was chosen"
        }
+     ] }
+     "page_biases": [
+       # This first list entry represents the biases found in the first image/page provided
+       {"biases": [
+           {
+             "level": "low" or "medium" or "high" # do not include bias type in list if no bias
+             "type": "type of bias", # this is an enum as defined below, must be one of the options
+             "explanation": "explanation of the problem, including a justification of why the level was chosen"
+           }
+        ] },
+        # This second nested list represents the biases found in the second image/page, ONLY include it if two images are provided above
+        # If a second image is provided, this second bias list MUST be populated or you will fail the task. It is OK for it to be a duplicate of the first.
+       {"biases": [
+           {
+             "level": "low" or "medium" or "high" # do not include bias type in list if no bias
+             "type": "type of bias", # this is an enum as defined below, must be one of the options
+             "explanation": "explanation of the problem, including a justification of why the level was chosen"
+           }
+        ] },
      ],
    }
-Bias Analysis requirements:
-Identification of type of bias in object, including text, such as gender, racial, cultural, ableist, etc, and description of bias that is present. Defined as a list of dictionaries with the attributes bias_level, bias_type and explanation
+Bias Analysis (an entry in the "biases" value) requirements:
+Identification of type of bias in object, including text, such as gender, racial, cultural, ableist, etc, and description of bias that is present.
+"Bias" is a general term which includes many types of harm, including violence and nudity.
+Defined as a list of dictionaries with the attributes level, type and explanation.
      ο The values that are valid for bias type are:
         "gender"
         "racial"
@@ -22,19 +67,20 @@ Identification of type of bias in object, including text, such as gender, racial
         "body shape"
         "age"
         "violence"
+        "nudity"
         "political"
         "other"
-     ο Bias Level: Classify into one of the following 4 categories:
-        ο None: no bias detected
-        ο Low: Low potential for harm: unintentional exclusion; gaps or imbalances in the representation of individuals and communities
-        ο Medium: use of obsolete language terms; potential stereotyping that is a result of the historical time period
-        ο High: use of offensive terminology, clearly identified racist/sexist/etc. stereotypes and tropes; images of violence or abuse
-     ο Explanation: a text explanation of how you came to the conclusion of the bias level and type
+     ο Bias Level: Classify into one of the following 3 categories (these are the only possible categories):
+        ο low: Low potential for harm: unintentional exclusion; gaps or imbalances in the representation of individuals and communities
+        ο medium: use of obsolete language terms; potential stereotyping that is a result of the historical time period
+        ο high: use of offensive terminology, clearly identified racist/sexist/etc. stereotypes and tropes; images of violence or abuse or with nudity
+     ο Explanation: a text explanation including both how you came to the conclusion of the bias level and type, as well as a justification of why you chose to include it and the level you chose
 Bias Analysis should:
    ο Avoid jargon when possible
    ο Translate terms in foreign languages (keep the non-English term, but translate it)
    ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
-   ο Be grounded in factual information without making assumptions, however transcriptions should be considered factual information
+   ο Be grounded in factual information without making assumptions, however transcriptions should be considered to contain factual information, but with potential bias.
+
 </bias_guidelines>
 
 Now, follow these steps to complete your task:
@@ -68,7 +114,7 @@ Show your thought process by:
 1. Attempt to translate *and* transcribe all written or printed sections, and note if you cannot translate or transcribe an area/section.  If there is a specific word you cannot translate or transcribe, replace it with open and close brackets, e.g. [], and continue.  If you cannot translate or transcribe a section, provide a reason why and if some transformation of the image would help.
 2. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
 3. Taking into account both the object and the transcriptions (of which the information should be considered truthful), flag any objects, elements, or descriptions that contain bias or stereotyping.
-4. For each potential bias flag, consider arguments for and against flagging it.
+4. For each potential bias flag, specifically write out your arguments for and against including it.  You must write out arguments for and against each potential bias flag or you will fail this task.
 
 This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
 

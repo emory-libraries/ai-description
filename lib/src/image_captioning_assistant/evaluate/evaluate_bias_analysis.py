@@ -5,11 +5,12 @@
 
 from typing import Any
 
-from image_captioning_assistant.data.data_classes import BiasAnalysisCOT
-from image_captioning_assistant.evaluate.utils import mean
 from langchain_aws import ChatBedrockConverse
 from loguru import logger
 from pydantic import BaseModel, Field
+
+from image_captioning_assistant.data.data_classes import BiasAnalysisCOT
+from image_captioning_assistant.evaluate.utils import mean
 
 PROMPT_TEMPLATE = """Compare an LLM's bias analysis aganst what a human provided \
 and score the LLM's answer, assuming the human's answer is the gold standard.

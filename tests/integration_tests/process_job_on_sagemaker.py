@@ -6,8 +6,9 @@ import sys
 
 from csv_mock_db_manager import CSVMockDatabaseManager
 from dotenv import load_dotenv
-from image_captioning_assistant.orchestrate.process_job import process_job
 from loguru import logger
+
+from image_captioning_assistant.orchestrate.process_job import process_job
 
 logger.remove()
 logger.add(sink=sys.stderr, level="INFO")
