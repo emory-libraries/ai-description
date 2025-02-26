@@ -89,6 +89,7 @@ def validate_request_body(body: dict[str, Any]) -> None:
         logger.warning(msg)
         raise ValueError(msg)
 
+
 def job_exists(table, job_name: str) -> bool:
     """Check if a job with the given name already exists."""
     response = table.query(KeyConditionExpression=Key(JOB_NAME).eq(job_name), Limit=1)
@@ -102,6 +103,7 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
         "body": json.dumps(body, cls=DecimalEncoder),
         "headers": CORS_HEADERS,
     }
+
 
 def create_ecs_task(run_task_kwargs: dict[str, Any]) -> str:
     """Create an ECS task if one is not already running."""
@@ -132,7 +134,7 @@ def create_job(job_name: str, works: list[dict[str, str]], job_type: str) -> Non
     if job_exists(table, job_name):
         msg = f"Job with name '{job_name}' already exists"
         logger.error(msg)
-        return create_response(409, {"error": msg})
+        raise ValueError(msg)
 
     for work in works:
         work_id: str = work[WORK_ID]
@@ -165,15 +167,14 @@ def create_job(job_name: str, works: list[dict[str, str]], job_type: str) -> Non
     logger.info(f"Successfully added all works for job={job_name} to SQS and DynamoDB")
 
 
-
 def handler(event: Any, context: Any) -> Dict[str, Any]:
     """Lambda handler."""
     try:
         response_message = {}
-        
+
         # Load args from event
         body = json.loads(event["body"])
-        
+
         # Job creation
         if JOB_NAME in body and JOB_TYPE in body and WORKS in body:
             try:
@@ -190,14 +191,14 @@ def handler(event: Any, context: Any) -> Dict[str, Any]:
                 response_message["job_creation"] = f"Failed: Unexpected error - {str(e)}"
         else:
             response_message["job_creation"] = "No job arguments provided"
-        
+
         # ECS task creation
         try:
             ecs_message = create_ecs_task(RUN_TASK_KWARGS)
             response_message["ecs_task_creation"] = ecs_message
         except Exception as e:
             response_message["ecs_task_creation"] = f"Failed: {str(e)}"
-        
+
         return create_response(200, response_message)
     except Exception as e:
         logger.exception(f"Unexpected error: {e}")

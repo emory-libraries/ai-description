@@ -4,14 +4,16 @@
 """Generate bias analysis for an image."""
 
 import json
+import logging
 from typing import Any
 
 import boto3
-from loguru import logger
 
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysisCOT
 from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_images
 from image_captioning_assistant.generate.utils import extract_json_and_cot_from_text, format_request_body
+
+logger = logging.getLogger(__name__)
 
 
 def find_biases_in_short_work(

@@ -3,12 +3,12 @@
 
 """Generate bias analysis for an image."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
 from cloudpathlib import S3Path
 from jinja2 import Environment, FileSystemLoader
-from loguru import logger
 from retry import retry
 
 from image_captioning_assistant.aws.s3 import load_to_bytes
@@ -17,6 +17,8 @@ from image_captioning_assistant.generate.utils import (
     format_prompt_for_claude,
     format_prompt_for_nova,
 )
+
+logger = logging.getLogger(__name__)
 
 COT_TAG_NAME = "object_detail_and_bias_analysis"
 COT_TAG = f"<{COT_TAG_NAME}>"
