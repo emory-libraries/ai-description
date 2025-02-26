@@ -1,23 +1,26 @@
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
 """Utils for the api_gateway_demo notebook."""
-import os
 import json
 import logging
+import os
 
-import requests
 import boto3
+import requests
 
 
 def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     # Initialize S3 client
-    s3_client = boto3.client('s3')
-    
+    s3_client = boto3.client("s3")
+
     # Upload image file
     image_filename = os.path.basename(image_fpath)
     image_key = f"images/{image_filename}"
     s3_client.upload_file(image_fpath, bucket_name, image_key)
     # Create image S3 URI
     image_s3_uri = f"s3://{bucket_name}/{image_key}"
-    
+
     # Create metadata
     original_metadata = {
         "title": "foo",
@@ -40,6 +43,7 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     context_s3_uri = f"s3://{bucket_name}/{context_key}"
 
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
+
 
 def create_dummy_job(
     api_url: str,
@@ -88,6 +92,7 @@ def create_dummy_job(
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
+
 
 def get_job_progress(api_url: str, job_name: str):
     """Query the job_progress endpoint with the given job_name.
