@@ -10,10 +10,7 @@ import boto3
 from loguru import logger
 
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysisCOT
-from image_captioning_assistant.generate.bias_analysis.utils import (
-    create_messages,
-    load_and_resize_images,
-)
+from image_captioning_assistant.generate.bias_analysis.utils import create_messages, load_and_resize_images
 from image_captioning_assistant.generate.utils import extract_json_and_cot_from_text, format_request_body
 
 
@@ -28,13 +25,13 @@ def find_biases_in_short_work(
     """Find biases in one or two images and, optionally, their existing metadata."""
     #     # connect to runtime
     if "region_name" in llm_kwargs:
-        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs.pop("region_name"))
+        bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs["region_name"])
     else:
         bedrock_runtime = boto3.client("bedrock-runtime")
     # Load and resize image bytes
     img_bytes_list = load_and_resize_images(image_s3_uris, s3_kwargs, resize_kwargs)
     # Create messages and request body
-    model_name = llm_kwargs.pop("model_id")
+    model_name = llm_kwargs["model_id"]
     messages = create_messages(
         img_bytes_list=img_bytes_list,
         work_context=work_context,
@@ -65,5 +62,5 @@ def find_biases_in_short_work(
             logger.warning(f"Exception:\n{str(e)}\n")
             logger.debug(f"Model Output:\n```\n{llm_output}\n```\n")
             logger.warning(f"trying again, retry number {attempt+1}")
-    
+
     raise RuntimeError("Unable to generate response, enable debug and check log")

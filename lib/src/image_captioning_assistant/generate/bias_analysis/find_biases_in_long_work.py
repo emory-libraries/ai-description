@@ -20,7 +20,7 @@ def find_biases_in_original_metadata(
     original_metadata: str,
     structured_llm: Any,
     work_context: str | None = None,
-):
+) -> Biases:
     """Find biases in original metadata."""
     logger.info(f"Analyzing original metadata")
     messages = create_messages(
@@ -31,13 +31,13 @@ def find_biases_in_original_metadata(
     return invoke_with_retry(structured_llm, messages)
 
 
-def find_biases_in_image(
+def find_biases_in_images(
     image_s3_uris: list[str],
     s3_kwargs: dict[str, Any],
     resize_kwargs: dict[str, Any],
     structured_llm: Any,
     work_context: str | None = None,
-):
+) -> list[Biases]:
     """Find biases in an image."""
     logger.info(f"Analyzing {len(image_s3_uris)} images")
     page_biases = []
@@ -49,7 +49,7 @@ def find_biases_in_image(
             resize_kwargs=resize_kwargs,
         )
         messages = create_messages(img_bytes_list=[resized_img_bytes], work_context=work_context)
-        image_biases = invoke_with_retry(structured_llm, messages)
+        image_biases: Biases = invoke_with_retry(structured_llm, messages)
         page_biases.extend(image_biases)
 
     return page_biases
@@ -66,16 +66,15 @@ def find_biases_in_long_work(
     """Find image and metadata biases independently."""
     llm = ChatBedrockConverse(**llm_kwargs)
     structured_llm = llm.with_structured_output(Biases)
+    metadata_biases: Biases = Biases(biases=[])
     if original_metadata:
-        metadata_biases = find_biases_in_original_metadata(
+        metadata_biases.biases = find_biases_in_original_metadata(
             original_metadata=original_metadata,
             work_context=work_context,
             structured_llm=structured_llm,
         )
-    else:
-        metadata_biases = []
 
-    page_biases = find_biases_in_image(
+    page_biases: list[Biases] = find_biases_in_images(
         image_s3_uris=image_s3_uris,
         structured_llm=structured_llm,
         resize_kwargs=resize_kwargs,

@@ -141,7 +141,6 @@ def process_sqs_messages():
                     work_structured_metadata = generate_work_structured_metadata(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
-                        original_metadata_s3_uri=original_metadata_s3_uri,
                         llm_kwargs=LLM_KWARGS,
                         s3_kwargs=S3_KWARGS,
                         resize_kwargs=RESIZE_KWARGS,
