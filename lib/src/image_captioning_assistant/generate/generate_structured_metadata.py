@@ -124,7 +124,7 @@ def generate_work_structured_metadata(
     """Generate structured metadata for a work."""
     # Enforce max length of two
     if len(image_s3_uris) > 2:
-        msg = "Structured metadata only supports documents of 1-2 pages, " f"{len(image_s3_uris)} pages provided."
+        msg = f"Structured metadata only supports documents of 1-2 pages, {len(image_s3_uris)} pages provided."
         logger.warning(msg)
         raise ValueError(msg)
     # Establish a default model
