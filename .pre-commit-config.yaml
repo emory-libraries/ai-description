@@ -76,8 +76,8 @@ repos:
       - id: isort
         name: isort (python)
         args:
-          - --profile
-          - black
+          - --profile=black
+          - --src=lib/src/
 
   - repo: https://github.com/psf/black
     rev: 24.3.0
