@@ -12,7 +12,6 @@ from loguru import logger
 from image_captioning_assistant.data.data_classes import WorkBiasAnalysisCOT
 from image_captioning_assistant.generate.bias_analysis.utils import (
     create_messages,
-    invoke_with_retry,
     load_and_resize_images,
 )
 from image_captioning_assistant.generate.utils import extract_json_and_cot_from_text, format_request_body
@@ -66,3 +65,4 @@ def find_biases_in_short_work(
             logger.warning(f"Exception:\n{str(e)}\n")
             logger.debug(f"Model Output:\n```\n{llm_output}\n```\n")
             logger.warning(f"trying again, retry number {attempt+1}")
+        raise RuntimeError("Unable to generate response, enable debug and check log")
