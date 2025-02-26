@@ -74,7 +74,7 @@ class Metadata(BaseModel):
 class MetadataCOT(Metadata):
     """Composite metadata structure combining Chain of Thought and Metadata."""
 
-    cot: str = Field(..., description="Chain of thought of model")
+    metadata_cot: str = Field(..., description="Chain of thought of model")
 
 
 class Bias(BaseModel):
@@ -101,13 +101,13 @@ class WorkBiasAnalysis(BaseModel):
 class BiasAnalysisCOT(Biases):
     """Composite metadata structure combining Chain of Thought and Bias Analysis."""
 
-    cot: str = Field(..., description="Chain of thought of model")
+    bias_cot: str = Field(..., description="Chain of thought of model")
 
 
 class WorkBiasAnalysisCOT(WorkBiasAnalysis):
     """Composite metadata structure combining Chain of Thought and WorkBiasAnalysis"""
 
-    cot: str = Field(..., description="Chain of thought of model")
+    bias_cot: str = Field(..., description="Chain of thought of model")
 
 
 # class StructuredMetadata(BaseModel):
