@@ -65,4 +65,5 @@ def find_biases_in_short_work(
             logger.warning(f"Exception:\n{str(e)}\n")
             logger.debug(f"Model Output:\n```\n{llm_output}\n```\n")
             logger.warning(f"trying again, retry number {attempt+1}")
-        raise RuntimeError("Unable to generate response, enable debug and check log")
+    
+    raise RuntimeError("Unable to generate response, enable debug and check log")
