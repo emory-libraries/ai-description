@@ -4,10 +4,15 @@
 import base64
 import json
 from io import BytesIO
+from typing import Any
 
 from PIL import Image
+from cloudpathlib import S3Path
+from loguru import logger
+from retry import retry
 
 import image_captioning_assistant.generate.prompts as p
+from image_captioning_assistant.aws.s3 import load_to_bytes
 
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
@@ -174,3 +179,48 @@ def format_request_body(model_name: str, messages: list[dict]) -> dict:
     else:
         raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
     return request_body
+
+
+def load_and_resize_image(
+    image_s3_uri: str,
+    s3_kwargs: dict[str, Any],
+    resize_kwargs: dict[str, Any],
+) -> bytes:
+    """Load and resize image."""
+    s3_path = S3Path(image_s3_uri)
+    img_bytes = load_to_bytes(
+        s3_bucket=s3_path.bucket,
+        s3_key=s3_path.key,
+        s3_client_kwargs=s3_kwargs,
+    )
+    resized_image = convert_and_reduce_image(
+        image_bytes=img_bytes,
+        **resize_kwargs,
+    )
+    return resized_image
+
+
+def load_and_resize_images(
+    image_s3_uris: list[str],
+    s3_kwargs: dict[str, Any],
+    resize_kwargs: dict[str, Any],
+) -> list[bytes]:
+    """Load and resize images."""
+    # Load all img bytes into list
+    resized_img_bytes_list = []
+    for image_s3_uri in image_s3_uris:
+        resized_img_bytes = load_and_resize_image(
+            image_s3_uri=image_s3_uri,
+            s3_kwargs=s3_kwargs,
+            resize_kwargs=resize_kwargs,
+        )
+        resized_img_bytes_list.append(resized_img_bytes)
+    return resized_img_bytes_list
+
+
+@retry(exceptions=Exception, tries=5, delay=10, backoff=2)
+def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
+    logger.info("Invoking structured LLM...")
+    response = structured_llm.invoke(messages)
+    logger.info("Invocation successful")
+    return response
