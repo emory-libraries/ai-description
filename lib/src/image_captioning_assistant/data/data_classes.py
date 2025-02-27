@@ -10,10 +10,9 @@ This module contains structured data definitions for:
 - Composite structured metadata format
 """
 
-from typing import Annotated, Generic, List, TypeVar
+from typing import Generic, List, TypeVar
 
-from pydantic import BaseModel, BeforeValidator, Field
-from pydantic.functional_validators import AfterValidator
+from pydantic import BaseModel, Field
 
 from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 
@@ -71,12 +70,6 @@ class Metadata(BaseModel):
     topics: ExplainedValue[List[str]] = Field(..., description="Clear high level topics")
 
 
-# class MetadataCOT(Metadata):
-#     """Composite metadata structure combining Chain of Thought and Metadata."""
-
-#     cot: str = Field(..., description="Chain of thought of model")
-
-
 class Bias(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
 
@@ -89,12 +82,6 @@ class Biases(BaseModel):
     """All biases detected."""
 
     biases: list[Bias] = Field(default_factory=list, description="All biases detected")
-
-
-# class BiasAnalysisCOT(Biases):
-#     """Composite metadata structure combining Chain of Thought and Bias Analysis."""
-
-#     cot: str = Field(..., description="Chain of thought of model")
 
 
 class WorkBiasAnalysis(BaseModel):
