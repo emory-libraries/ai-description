@@ -13,7 +13,10 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from image_captioning_assistant.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
-from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata, DocumentLengthError
+from image_captioning_assistant.generate.generate_structured_metadata import (
+    DocumentLengthError,
+    generate_work_structured_metadata,
+)
 
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
