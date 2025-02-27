@@ -94,29 +94,3 @@ def find_biases_in_short_work(
                     court_order = True
 
     raise RuntimeError("Failed to parse model output after 5 attempts")
-
-    for attempt in range(5):
-        response = bedrock_runtime.invoke_model(modelId=model_name, body=json.dumps(request_body))
-
-        # Process the response
-        result = json.loads(response["body"].read())
-        if "claude" in model_name:
-            llm_output = result["content"][0]["text"]
-        elif "nova" in model_name:
-            llm_output = result["output"]["message"]["content"][0]["text"]
-        else:
-            raise ValueError("ModelId " + model_name + " not supported, must be set up")
-        # Try parsing output and if structured output fails to hold, try again up to 5x
-        try:
-            cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            # validate correct number of biases output
-            if len(image_s3_uris) != len(json_dict["page_biases"]):
-                raise LLMResponseParsingError(f"incorrect number of bias lists for {len(image_s3_uris)} pages")
-            return WorkBiasAnalysis(cot=cot, **json_dict)
-        except Exception as e:
-            # TODO: add detailed logging of llm_output somewhere
-            logger.warning(f"Exception:\n{str(e)}\n")
-            logger.debug(f"Model Output:\n```\n{llm_output}\n```\n")
-            logger.warning(f"trying again, retry number {attempt+1}")
-
-    raise RuntimeError("Unable to generate response, enable debug and check log")
