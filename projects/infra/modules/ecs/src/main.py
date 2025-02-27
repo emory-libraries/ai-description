@@ -182,7 +182,9 @@ def process_sqs_messages():
                 sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
             except Exception as exc:
                 if isinstance(exc, DocumentLengthError):
+                    # If it's a document length issue, remove from the queue, we don't intend to handle it
                     logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
+                    sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
                 else:
                     logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
 
