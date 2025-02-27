@@ -46,9 +46,9 @@ data "aws_subnets" "private" {
 }
 
 data "aws_route_tables" "private" {
-  count = local.create_vpc ? 0 : 1
+  count  = local.create_vpc ? 0 : 1
   vpc_id = var.vpc_id
-  
+
   filter {
     name   = "tag:Tier"
     values = ["Private"]
@@ -277,5 +277,18 @@ resource "aws_vpc_endpoint" "cloudwatch" {
 
   tags = {
     Name = "${var.deployment_prefix}-cloudwatch-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "bedrock" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.bedrock-runtime"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-bedrock-runtime-endpoint"
   }
 }
