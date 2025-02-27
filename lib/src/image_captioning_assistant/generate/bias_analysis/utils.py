@@ -50,11 +50,13 @@ def create_messages(
         messages = format_prompt_for_claude(
             prompt=prompt,
             img_bytes_list=img_bytes_list,
+            assistant_start=COT_TAG,
         )
     elif "nova" in model_name:
         messages = format_prompt_for_nova(
             prompt=prompt,
             img_bytes_list=img_bytes_list,
+            assistant_start=COT_TAG,
         )
     else:
         raise ValueError(f"model {model_name} not supported")

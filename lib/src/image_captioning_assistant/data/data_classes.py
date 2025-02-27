@@ -10,10 +10,9 @@ This module contains structured data definitions for:
 - Composite structured metadata format
 """
 
-from typing import Annotated, Generic, List, TypeVar
+from typing import Generic, List, TypeVar
 
-from pydantic import BaseModel, BeforeValidator, Field
-from pydantic.functional_validators import AfterValidator
+from pydantic import BaseModel, Field
 
 from image_captioning_assistant.data.constants import BiasLevel, BiasType, LibraryFormat
 
@@ -71,12 +70,6 @@ class Metadata(BaseModel):
     topics: ExplainedValue[List[str]] = Field(..., description="Clear high level topics")
 
 
-class MetadataCOT(Metadata):
-    """Composite metadata structure combining Chain of Thought and Metadata."""
-
-    cot: str = Field(..., description="Chain of thought of model")
-
-
 class Bias(BaseModel):
     """Individual bias assessment with classification and contextual explanation."""
 
@@ -96,28 +89,3 @@ class WorkBiasAnalysis(BaseModel):
 
     metadata_biases: Biases = Field(..., description="Biases in the metadata itself")
     page_biases: list[Biases] = Field(..., description="Biases found in each page of a work")
-
-
-class BiasAnalysisCOT(Biases):
-    """Composite metadata structure combining Chain of Thought and Bias Analysis."""
-
-    cot: str = Field(..., description="Chain of thought of model")
-
-
-class WorkBiasAnalysisCOT(WorkBiasAnalysis):
-    """Composite metadata structure combining Chain of Thought and WorkBiasAnalysis"""
-
-    cot: str = Field(..., description="Chain of thought of model")
-
-
-# class StructuredMetadata(BaseModel):
-#     """Composite metadata structure combining descriptive and analytical components.
-#     Metadata field is optional as generation can happen for only bias analysis.
-#     """
-
-#     cot: str = Field(..., description="Chain of thought of model")
-#     metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
-#     bias_analysis: List[BiasAnalysisEntry] = Field(
-#         ...,
-#         description="Aggregated bias assessments",
-#     )
