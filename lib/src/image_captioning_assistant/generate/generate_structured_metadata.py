@@ -107,7 +107,7 @@ def generate_structured_metadata(
                 llm_output = result["output"]["message"]["content"][0]["text"]
 
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
-            return MetadataCOT(cot=cot, **json_dict["metadata"])
+            return MetadataCOT(metadata_cot=cot, **json_dict["metadata"])
 
         except Exception as e:
             logger.debug(f"Attempt {attempt+1}/5 failed: {str(e)}")

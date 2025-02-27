@@ -58,7 +58,7 @@ def find_biases_in_short_work(
             assert len(image_s3_uris) == len(
                 json_dict["page_biases"]
             ), f"incorrect number of bias lists for {len(image_s3_uris)} pages"
-            return WorkBiasAnalysisCOT(cot=cot, **json_dict)
+            return WorkBiasAnalysisCOT(bias_cot=cot, **json_dict)
         except Exception as e:
             # TODO: add detailed logging of llm_output somewhere
             logger.warning(f"Exception:\n{str(e)}\n")
