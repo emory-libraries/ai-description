@@ -1,11 +1,13 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+import logging
 from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
-from loguru import logger
+
+logger = logging.getLogger(__name__)
 
 
 def list_contents_of_folder(
@@ -34,18 +36,37 @@ def list_contents_of_folder(
     return [obj["Key"] for obj in response["Contents"]]
 
 
-def load_image_bytes(
+def load_to_bytes(
     s3_bucket: str,
     s3_key: str,
     s3_client_kwargs: dict[str, Any],
 ) -> bytes:
-    """Load image bytes."""
-    s3_client = boto3.client("s3", **s3_client_kwargs)
-    image_bytes = s3_client.get_object(
-        Bucket=s3_bucket,
-        Key=s3_key,
-    )["Body"].read()
-    return image_bytes
+    """Load bytes directly into memory."""
+    try:
+        s3_client = boto3.client("s3", **s3_client_kwargs)
+        file_bytes = s3_client.get_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+        )["Body"].read()
+        return file_bytes
+    except Exception as exc:
+        logger.warning(f"Failed to load {s3_key} from {s3_bucket}")
+        raise exc
+
+
+def load_to_str(
+    s3_bucket: str,
+    s3_key: str,
+    s3_client_kwargs: dict[str, Any],
+    encoding: str = "utf-8",
+) -> str:
+    """Load a plain-text file into string."""
+    file_bytes = load_to_bytes(
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+        s3_client_kwargs=s3_client_kwargs,
+    )
+    return file_bytes.decode(encoding)
 
 
 def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str):

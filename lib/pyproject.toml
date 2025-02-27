@@ -11,6 +11,7 @@ packages = [
 python = "^3.10"
 aiobotocore = "*"           # TODO: Pin this
 boto3 = "^1.36.2"
+cloudpathlib = "*"          # TODO: Pin this
 Jinja2 = "*"                # TODO: Pin this
 langchain-aws = "^0.2.11"
 load_dotenv = "^0.1.0"
@@ -20,8 +21,7 @@ pdf2image = "*"             # TODO: Pin this
 pillow = "*"                # TODO: Pin this
 pydantic = "^2.10.5"
 pydantic-settings = "*"     # TODO: Pin this
-psycopg2-binary = "^2.9.10"
-sqlalchemy = "^2.0.36"
+retry = "*"                 # TODO: Pin this
 tqdm = "^4.67.1"
 
 

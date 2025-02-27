@@ -33,15 +33,25 @@ class BiasType(str, Enum):
     age: str = "age"
     violence: str = "violence"
     political: str = "political"
+    nudity: str = "nudity"
     other: str = "other"
 
 
 class LibraryFormat(str, Enum):
     """Allowed format values for library materials."""
 
-    still_image = "Still Image"
-    text = "Text"
     artifact = "Artifact"
+    audio = "Audio"
     cartographic = "Cartographic"
-    notated_music = "Notated Music"
+    collection = "Collection"
+    dataset = "Dataset"
+    digital = "Digital"
+    manuscript = "Manuscript"
     mixed_material = "Mixed Material"
+    moving_image = "Moving Image"
+    multimedia = "Multimedia"
+    notated_music = "Notated Music"
+    still_image = "Still Image"
+    tactile = "Tactile"
+    text = "Text"
+    unspecified = "Unspecified"

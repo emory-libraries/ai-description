@@ -3,10 +3,18 @@
 
 import base64
 import json
+import logging
 from io import BytesIO
+from typing import Any
+
+from cloudpathlib import S3Path
+from PIL import Image
+from retry import retry
 
 import image_captioning_assistant.generate.prompts as p
-from PIL import Image
+from image_captioning_assistant.aws.s3 import load_to_bytes
+
+logger = logging.getLogger(__name__)
 
 
 def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
@@ -79,18 +87,29 @@ def encode_image_from_path(image_full_path, max_size=2048, jpeg_quality=95):
     return image_data
 
 
+class LLMResponseParsingError(Exception):
+    def __init__(self, message, error_code=None):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"LLMResponseParsingError: {self.message} (Error Code: {self.error_code})"
+
+
 def extract_json_and_cot_from_text(text):
     # split chain of thought
     cot, text = text.split(p.COT_TAG_END)
     try:
         return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
     except json.JSONDecodeError:
-        print("Could not decode")
-        print(text)
-        raise json.JSONDecodeError
+        logger.warning(f"Could not parse {text}")
+        raise LLMResponseParsingError
 
 
-def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes], assistant_start: str = '') -> list[dict]:
+def format_prompt_for_claude(
+    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
+) -> list[dict]:
     """Format prompt for Anthropic Claude LLM.
 
     Args:
@@ -112,12 +131,12 @@ def format_prompt_for_claude(prompt: str, img_bytes_list: list[bytes], assistant
         }
         content.append(img_message)
     msg_list = [{"role": "user", "content": content}]
-    if len(assistant_start)>0:
+    if assistant_start:
         msg_list.append({"role": "assistant", "content": assistant_start})
     return msg_list
 
 
-def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str = '') -> list[dict]:
+def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None) -> list[dict]:
     """Format prompt for Amazon Nova models.
 
     Args:
@@ -137,6 +156,82 @@ def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_s
         }
         content.append(img_message)
     msg_list = [{"role": "user", "content": content}]
-    if len(assistant_start)>0:
+    if assistant_start:
         msg_list.append({"role": "assistant", "content": assistant_start})
     return msg_list
+
+
+def format_request_body(model_name: str, messages: list[dict]) -> dict:
+    if "nova" in model_name:
+        request_body = {
+            "schemaVersion": "messages-v1",
+            "messages": messages,
+            "system": [{"text": p.system_prompt}],
+            "toolConfig": {},
+            "inferenceConfig": {
+                "max_new_tokens": 4096,
+                "top_p": 0.6,
+                # "top_k": 250,
+                "temperature": 0.1,
+                # ,"stopSequences": ['']
+            },
+        }
+    elif "claude" in model_name:
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "system": p.system_prompt,
+            "max_tokens": 4096,
+            "temperature": 0.1,
+            "top_p": 0.6,
+            # "top_k": 250,
+            # "stop_sequences": [''],
+            "messages": messages,
+        }
+    else:
+        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
+    return request_body
+
+
+def load_and_resize_image(
+    image_s3_uri: str,
+    s3_kwargs: dict[str, Any],
+    resize_kwargs: dict[str, Any],
+) -> bytes:
+    """Load and resize image."""
+    s3_path = S3Path(image_s3_uri)
+    img_bytes = load_to_bytes(
+        s3_bucket=s3_path.bucket,
+        s3_key=s3_path.key,
+        s3_client_kwargs=s3_kwargs,
+    )
+    resized_image = convert_and_reduce_image(
+        image_bytes=img_bytes,
+        **resize_kwargs,
+    )
+    return resized_image
+
+
+def load_and_resize_images(
+    image_s3_uris: list[str],
+    s3_kwargs: dict[str, Any],
+    resize_kwargs: dict[str, Any],
+) -> list[bytes]:
+    """Load and resize images."""
+    # Load all img bytes into list
+    resized_img_bytes_list = []
+    for image_s3_uri in image_s3_uris:
+        resized_img_bytes = load_and_resize_image(
+            image_s3_uri=image_s3_uri,
+            s3_kwargs=s3_kwargs,
+            resize_kwargs=resize_kwargs,
+        )
+        resized_img_bytes_list.append(resized_img_bytes)
+    return resized_img_bytes_list
+
+
+@retry(exceptions=Exception, tries=5, delay=10, backoff=2)
+def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
+    logger.info("Invoking structured LLM...")
+    response = structured_llm.invoke(messages)
+    logger.info("Invocation successful")
+    return response
