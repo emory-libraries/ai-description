@@ -71,10 +71,10 @@ class Metadata(BaseModel):
     topics: ExplainedValue[List[str]] = Field(..., description="Clear high level topics")
 
 
-class MetadataCOT(Metadata):
-    """Composite metadata structure combining Chain of Thought and Metadata."""
+# class MetadataCOT(Metadata):
+#     """Composite metadata structure combining Chain of Thought and Metadata."""
 
-    cot: str = Field(..., description="Chain of thought of model")
+#     cot: str = Field(..., description="Chain of thought of model")
 
 
 class Bias(BaseModel):
@@ -91,33 +91,14 @@ class Biases(BaseModel):
     biases: list[Bias] = Field(default_factory=list, description="All biases detected")
 
 
+# class BiasAnalysisCOT(Biases):
+#     """Composite metadata structure combining Chain of Thought and Bias Analysis."""
+
+#     cot: str = Field(..., description="Chain of thought of model")
+
+
 class WorkBiasAnalysis(BaseModel):
     """Bias analysis for an entire work."""
 
     metadata_biases: Biases = Field(..., description="Biases in the metadata itself")
     page_biases: list[Biases] = Field(..., description="Biases found in each page of a work")
-
-
-class BiasAnalysisCOT(Biases):
-    """Composite metadata structure combining Chain of Thought and Bias Analysis."""
-
-    cot: str = Field(..., description="Chain of thought of model")
-
-
-class WorkBiasAnalysisCOT(WorkBiasAnalysis):
-    """Composite metadata structure combining Chain of Thought and WorkBiasAnalysis"""
-
-    cot: str = Field(..., description="Chain of thought of model")
-
-
-# class StructuredMetadata(BaseModel):
-#     """Composite metadata structure combining descriptive and analytical components.
-#     Metadata field is optional as generation can happen for only bias analysis.
-#     """
-
-#     cot: str = Field(..., description="Chain of thought of model")
-#     metadata: Optional[Metadata] = Field(None, description="Core descriptive metadata")
-#     bias_analysis: List[BiasAnalysisEntry] = Field(
-#         ...,
-#         description="Aggregated bias assessments",
-#     )
