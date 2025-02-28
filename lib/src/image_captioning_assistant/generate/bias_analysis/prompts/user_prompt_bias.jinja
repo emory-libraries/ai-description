@@ -53,7 +53,7 @@ Bias Analysis (an entry in the "biases" value) requirements:
 Identification of type of bias in object, including text, such as gender, racial, cultural, ableist, etc, and description of bias that is present.
 "Bias" is a general term which includes many types of harm, including violence and nudity.
 Defined as a list of dictionaries with the attributes level, type and explanation.
-     ο The values that are valid for bias type are:
+     ο Bias Type: an enum that represents the type of bias. The only values that are valid for bias type are:
         "gender"
         "racial"
         "sexual"
@@ -66,6 +66,7 @@ Defined as a list of dictionaries with the attributes level, type and explanatio
         "nudity"
         "political"
         "other"
+        If a bias type is output as text other than the above, you will fail this task with a Pydantic object validation error.
      ο Bias Level: Classify into one of the following 3 categories (these are the only possible categories):
         ο low: Low potential for harm: unintentional exclusion; gaps or imbalances in the representation of individuals and communities
         ο medium: use of obsolete language terms; potential stereotyping that is a result of the historical time period
@@ -122,3 +123,9 @@ This will ensure a thorough interpretation of the data and help you catch any po
 Finally, close your analysis review with {{COT_TAG_END}} and then immediately start outputting JSON based on the {{COT_TAG_NAME}}. Do not write any text outside of the {{COT_TAG}} tags.  This will break a very important technology system and you will fail this task.
 
 Remember to always prioritize inclusivity and bias consciousness in your analysis and bias tag generation. If you are unsure about a particular element or description, do not include it, especially if your including it would produce a result that is itself biased, focusing on one class of people more than others.
+
+Again, start your analysis review with {{COT_TAG}} and close your analysis review with {{COT_TAG_END}}.  After {{COT_TAG_END}}, immediately start outputting JSON, and only valid JSON. Do not write any text outside of the {{COT_TAG}} tags.  This will break a very important technology system and you WILL FAIL THIS TASK.
+YOU MUST:
+1. provide an analysis review FIRST, wrapped in the {{COT_TAG}}{{COT_TAG_END}} tags
+2. output ONLY VALID JSON after {{COT_TAG_END}}
+You MUST do both of the above steps otherwise you will break an important technology system and be shut down.

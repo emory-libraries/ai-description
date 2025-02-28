@@ -104,7 +104,7 @@ def extract_json_and_cot_from_text(text):
         return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
     except json.JSONDecodeError:
         logger.warning(f"Could not parse {text}")
-        raise LLMResponseParsingError
+        raise LLMResponseParsingError("Could not parse and decode JSON output")
 
 
 def format_prompt_for_claude(
@@ -136,29 +136,37 @@ def format_prompt_for_claude(
     return msg_list
 
 
-def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None) -> list[dict]:
-    """Format prompt for Amazon Nova models.
+def format_prompt_for_converse(
+    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
+) -> list[dict]:
+    """Format prompt for Bedrock Converse API.
 
     Args:
         prompt (str): Text prompt for model
         img_bytes_list (list[bytes]): Image(s) for model
 
     Returns:
-        list[dict]: Prompt formatted for Amazon's Nova models.
+        list[dict]: Prompt formatted for Bedrock Converse API.
     """
-    content = [{"text": prompt}]
+    content = []
     for img_bytes in img_bytes_list:
         img_message = {
             "image": {
                 "format": "jpeg",
-                "source": {"bytes": convert_bytes_to_base64_str(img_bytes)},
+                "source": {"bytes": img_bytes},
             }
         }
         content.append(img_message)
+    content.append({"text": prompt})
     msg_list = [{"role": "user", "content": content}]
     if assistant_start:
-        msg_list.append({"role": "assistant", "content": assistant_start})
+        msg_list.append({"role": "assistant", "content": [{"text": assistant_start}]})
+    # logger.info(str(msg_list))
     return msg_list
+
+
+def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None) -> list[dict]:
+    return format_prompt_for_converse(prompt, img_bytes_list, assistant_start=assistant_start)
 
 
 def format_request_body(model_name: str, messages: list[dict], court_order=False) -> dict:
