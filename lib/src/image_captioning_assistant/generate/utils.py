@@ -161,30 +161,27 @@ def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_s
     return msg_list
 
 
-def format_request_body(model_name: str, messages: list[dict]) -> dict:
+def format_request_body(model_name: str, messages: list[dict], court_order=False) -> dict:
+    system_prompt = p.system_prompt_court_order if court_order else p.system_prompt
     if "nova" in model_name:
         request_body = {
             "schemaVersion": "messages-v1",
             "messages": messages,
-            "system": [{"text": p.system_prompt}],
+            "system": [{"text": system_prompt}],
             "toolConfig": {},
             "inferenceConfig": {
                 "max_new_tokens": 4096,
                 "top_p": 0.6,
-                # "top_k": 250,
                 "temperature": 0.1,
-                # ,"stopSequences": ['']
             },
         }
     elif "claude" in model_name:
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
-            "system": p.system_prompt,
+            "system": system_prompt,
             "max_tokens": 4096,
             "temperature": 0.1,
             "top_p": 0.6,
-            # "top_k": 250,
-            # "stop_sequences": [''],
             "messages": messages,
         }
     else:

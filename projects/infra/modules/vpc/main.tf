@@ -45,6 +45,16 @@ data "aws_subnets" "private" {
   }
 }
 
+data "aws_route_tables" "private" {
+  count  = local.create_vpc ? 0 : 1
+  vpc_id = var.vpc_id
+
+  filter {
+    name   = "tag:Tier"
+    values = ["Private"]
+  }
+}
+
 # Create VPC if needed
 resource "aws_vpc" "main" {
   count = local.create_vpc ? 1 : 0
@@ -134,7 +144,8 @@ resource "aws_route_table_association" "private" {
   count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.private[0].ids)
 
   subnet_id      = local.create_vpc ? aws_subnet.private[count.index].id : data.aws_subnets.private[0].ids[count.index]
-  route_table_id = local.create_vpc ? aws_route_table.private[count.index].id : aws_route_table.private[count.index % length(aws_route_table.private)].id
+  route_table_id = local.create_vpc ? aws_route_table.private[count.index].id : data.aws_route_tables.private[0].ids[count.index % length(data.aws_route_tables.private[0].ids)]
+
 }
 
 resource "aws_route_table_association" "public" {
@@ -186,7 +197,7 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : [aws_route_table.private[0].id]
+  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : data.aws_route_tables.private[0].ids
 
   tags = {
     Name = "${var.deployment_prefix}-s3-endpoint"
@@ -197,7 +208,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : [aws_route_table.private[0].id]
+  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : data.aws_route_tables.private[0].ids
 
   tags = {
     Name = "${var.deployment_prefix}-dynamodb-endpoint"
@@ -266,5 +277,18 @@ resource "aws_vpc_endpoint" "cloudwatch" {
 
   tags = {
     Name = "${var.deployment_prefix}-cloudwatch-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "bedrock" {
+  vpc_id              = local.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.bedrock-runtime"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.deployment_prefix}-bedrock-runtime-endpoint"
   }
 }

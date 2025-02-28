@@ -13,7 +13,10 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from image_captioning_assistant.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
-from image_captioning_assistant.generate.generate_structured_metadata import generate_work_structured_metadata
+from image_captioning_assistant.generate.generate_structured_metadata import (
+    DocumentLengthError,
+    generate_work_structured_metadata,
+)
 
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
@@ -145,11 +148,20 @@ def process_sqs_messages():
                         s3_kwargs=S3_KWARGS,
                         resize_kwargs=RESIZE_KWARGS,
                     )
-                    # Update DynamoDB with all fields from work_structured_metadata
+                    work_bias_analysis = generate_work_bias_analysis(
+                        image_s3_uris=image_s3_uris,
+                        context_s3_uri=context_s3_uri,
+                        original_metadata_s3_uri=original_metadata_s3_uri,
+                        llm_kwargs=LLM_KWARGS,
+                        s3_kwargs=S3_KWARGS,
+                        resize_kwargs=RESIZE_KWARGS,
+                    )
+                    # Update DynamoDB with the bias_analysis field
+                    update_data = work_structured_metadata.model_dump() | work_bias_analysis.model_dump()
                     update_dynamodb_item(
                         job_name=job_name,
                         work_id=work_id,
-                        update_data=work_structured_metadata.model_dump(),
+                        update_data=update_data,
                     )
                 elif job_type == "bias":
                     work_bias_analysis = generate_work_bias_analysis(
@@ -172,7 +184,12 @@ def process_sqs_messages():
                 # Delete the message from the queue
                 sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
             except Exception as exc:
-                logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
+                if isinstance(exc, DocumentLengthError):
+                    # If it's a document length issue, remove from the queue, we don't intend to handle it
+                    logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
+                    sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
+                else:
+                    logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
 
                 # Parse the message body
                 message_body = json.loads(message["Body"])
