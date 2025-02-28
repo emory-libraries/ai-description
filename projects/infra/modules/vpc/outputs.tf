@@ -27,21 +27,6 @@ output "private_subnet_ids" {
   )
 }
 
-output "vpc_s3_endpoint_id" {
-  description = "The ID of the VPC's S3 endpoint"
-  value       = aws_vpc_endpoint.s3.id
-}
-
-output "vpc_ecr_api_endpoint_id" {
-  description = "The ID of the VPC's ECR API endpoint"
-  value       = aws_vpc_endpoint.ecr_api.id
-}
-
-output "vpc_ecr_dkr_endpoint_id" {
-  description = "The ID of the VPC's ECR DKR endpoint"
-  value       = aws_vpc_endpoint.ecr_dkr.id
-}
-
 output "ecs_security_group_id" {
   description = "ID of ECS Security Group"
   value       = aws_security_group.ecs_service_sg.id
@@ -49,7 +34,7 @@ output "ecs_security_group_id" {
 
 output "vpc_endpoints_security_group_id" {
   description = "ID of VPC Endpoints Security Group"
-  value       = aws_security_group.vpc_endpoints.id
+  value       = aws_security_group.vpc_endpoints_sg.id
 }
 
 output "private_route_table_ids" {
@@ -65,10 +50,13 @@ output "public_route_table_ids" {
 output "vpc_endpoint_ids" {
   description = "Map of VPC Endpoint IDs"
   value = {
-    s3      = aws_vpc_endpoint.s3.id
-    ecr_api = aws_vpc_endpoint.ecr_api.id
-    ecr_dkr = aws_vpc_endpoint.ecr_dkr.id
-    logs    = aws_vpc_endpoint.logs.id
+    s3         = var.enable_vpc_endpoints ? aws_vpc_endpoint.s3[0].id : null
+    ecr_api    = var.enable_vpc_endpoints ? aws_vpc_endpoint.ecr_api[0].id : null
+    ecr_dkr    = var.enable_vpc_endpoints ? aws_vpc_endpoint.ecr_dkr[0].id : null
+    logs       = var.enable_vpc_endpoints ? aws_vpc_endpoint.logs[0].id : null
+    sqs        = var.enable_vpc_endpoints ? aws_vpc_endpoint.sqs[0].id : null
+    cloudwatch = var.enable_vpc_endpoints ? aws_vpc_endpoint.cloudwatch[0].id : null
+    bedrock    = var.enable_vpc_endpoints ? aws_vpc_endpoint.bedrock[0].id : null
   }
 }
 
