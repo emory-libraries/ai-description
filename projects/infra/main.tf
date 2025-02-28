@@ -107,6 +107,7 @@ module "iam" {
   vpc_ecr_api_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_api
   vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_dkr
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
+  enable_vpc_endpoints          = var.enable_vpc_endpoints
 }
 
 # ECS module

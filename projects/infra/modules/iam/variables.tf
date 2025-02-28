@@ -42,3 +42,8 @@ variable "ecr_processor_repository_name" {
   description = "Name of ECR repository for processor image"
   type        = string
 }
+
+variable "enable_vpc_endpoints" {
+  description = "Whether or not the application uses VPC endpoints"
+  type        = bool
+}

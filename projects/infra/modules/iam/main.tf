@@ -268,7 +268,7 @@ resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
 
 # VPC Endpoint policies
 resource "aws_vpc_endpoint_policy" "s3_policy" {
-  count           = var.vpc_s3_endpoint_id != null ? 1 : 0
+  count           = var.enable_vpc_endpoints ? 1 : 0
   vpc_endpoint_id = var.vpc_s3_endpoint_id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -288,7 +288,7 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
 }
 
 resource "aws_vpc_endpoint_policy" "ecr_api_policy" {
-  count           = var.vpc_ecr_api_endpoint_id != null ? 1 : 0
+  count           = var.enable_vpc_endpoints ? 1 : 0
   vpc_endpoint_id = var.vpc_ecr_api_endpoint_id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -310,7 +310,7 @@ resource "aws_vpc_endpoint_policy" "ecr_api_policy" {
 }
 
 resource "aws_vpc_endpoint_policy" "ecr_dkr_policy" {
-  count           = var.vpc_ecr_dkr_endpoint_id != null ? 1 : 0
+  count           = var.enable_vpc_endpoints ? 1 : 0
   vpc_endpoint_id = var.vpc_ecr_dkr_endpoint_id
   policy = jsonencode({
     Version = "2012-10-17"
