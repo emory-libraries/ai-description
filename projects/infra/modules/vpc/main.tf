@@ -49,9 +49,8 @@ data "aws_route_tables" "private" {
   count  = local.create_vpc ? 0 : 1
   vpc_id = var.vpc_id
 
-  filter {
-    name   = "tag:Tier"
-    values = ["Private"]
+  tags = {
+    Tier = "Private"
   }
 }
 
@@ -145,14 +144,13 @@ resource "aws_route_table_association" "private" {
 
   subnet_id      = local.create_vpc ? aws_subnet.private[count.index].id : data.aws_subnets.private[0].ids[count.index]
   route_table_id = local.create_vpc ? aws_route_table.private[count.index].id : data.aws_route_tables.private[0].ids[count.index % length(data.aws_route_tables.private[0].ids)]
-
 }
 
 resource "aws_route_table_association" "public" {
   count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.public[0].ids)
 
   subnet_id      = local.create_vpc ? aws_subnet.public[count.index].id : data.aws_subnets.public[0].ids[count.index]
-  route_table_id = local.create_vpc ? aws_route_table.public[count.index].id : aws_route_table.public[count.index % length(aws_route_table.public)].id
+  route_table_id = local.create_vpc ? aws_route_table.public[count.index].id : data.aws_route_tables.public[0].ids[count.index % length(data.aws_route_tables.public[0].ids)]
 }
 
 # Security Groups
