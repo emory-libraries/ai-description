@@ -45,8 +45,9 @@ module "cloudwatch" {
 module "vpc" {
   source = "./modules/vpc"
 
-  deployment_prefix = local.deployment_prefix
-  vpc_id            = var.vpc_id
+  deployment_prefix    = local.deployment_prefix
+  vpc_id               = var.vpc_id
+  enable_vpc_endpoints = var.enable_vpc_endpoints
 }
 
 # ECR module
@@ -102,9 +103,9 @@ module "iam" {
   works_table_arn               = module.dynamodb.works_table_arn
   uploads_bucket_arn            = module.s3.uploads_bucket_arn
   sqs_works_queue_arn           = module.sqs.queue_arn
-  vpc_s3_endpoint_id            = module.vpc.vpc_s3_endpoint_id
-  vpc_ecr_api_endpoint_id       = module.vpc.vpc_ecr_api_endpoint_id
-  vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_ecr_dkr_endpoint_id
+  vpc_s3_endpoint_id            = module.vpc.vpc_endpoint_ids.s3
+  vpc_ecr_api_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_api
+  vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_dkr
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
 }
 

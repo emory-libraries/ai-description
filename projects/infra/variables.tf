@@ -52,3 +52,8 @@ variable "vpc_id" {
   type        = string
   default     = ""
 }
+
+variable "enable_vpc_endpoints" {
+  type    = bool
+  default = true
+}

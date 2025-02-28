@@ -25,3 +25,7 @@ variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
 }
+
+variable "enable_vpc_endpoints" {
+  type = bool
+}

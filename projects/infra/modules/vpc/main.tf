@@ -156,24 +156,6 @@ resource "aws_route_table_association" "public" {
 }
 
 # Security Groups
-resource "aws_security_group" "vpc_endpoints" {
-  name        = "${var.deployment_prefix}-vpc-endpoints-sg"
-  description = "Security group for VPC endpoints"
-  vpc_id      = local.vpc_id
-
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_service_sg.id]
-    description     = "Allow HTTPS from ECS tasks"
-  }
-
-  tags = {
-    Name = "${var.deployment_prefix}-vpc-endpoints-sg"
-  }
-}
-
 resource "aws_security_group" "ecs_service_sg" {
   name        = "${var.deployment_prefix}-ecs-service-sg"
   description = "Security group for ECS tasks"
@@ -192,8 +174,27 @@ resource "aws_security_group" "ecs_service_sg" {
   }
 }
 
+resource "aws_security_group" "vpc_endpoints_sg" {
+  name        = "${var.deployment_prefix}-vpc-endpoints-sg"
+  description = "Security group for VPC endpoints"
+  vpc_id      = local.vpc_id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_service_sg.id]
+    description     = "Allow HTTPS from ECS tasks"
+  }
+
+  tags = {
+    Name = "${var.deployment_prefix}-vpc-endpoints-sg"
+  }
+}
+
 # VPC Endpoints
 resource "aws_vpc_endpoint" "s3" {
+  count             = var.enable_vpc_endpoints ? 1 : 0
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
@@ -205,6 +206,7 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_vpc_endpoint" "dynamodb" {
+  count             = var.enable_vpc_endpoints ? 1 : 0
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
   vpc_endpoint_type = "Gateway"
@@ -216,12 +218,13 @@ resource "aws_vpc_endpoint" "dynamodb" {
 }
 
 resource "aws_vpc_endpoint" "ecr_api" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-ecr-api-endpoint"
@@ -229,12 +232,13 @@ resource "aws_vpc_endpoint" "ecr_api" {
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-ecr-dkr-endpoint"
@@ -242,12 +246,13 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
 }
 
 resource "aws_vpc_endpoint" "sqs" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.sqs"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-sqs-endpoint"
@@ -255,12 +260,13 @@ resource "aws_vpc_endpoint" "sqs" {
 }
 
 resource "aws_vpc_endpoint" "logs" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-logs-endpoint"
@@ -268,12 +274,13 @@ resource "aws_vpc_endpoint" "logs" {
 }
 
 resource "aws_vpc_endpoint" "cloudwatch" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.monitoring"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-cloudwatch-endpoint"
@@ -281,12 +288,13 @@ resource "aws_vpc_endpoint" "cloudwatch" {
 }
 
 resource "aws_vpc_endpoint" "bedrock" {
+  count               = var.enable_vpc_endpoints ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${data.aws_region.current.name}.bedrock-runtime"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.create_vpc ? aws_subnet.private[*].id : data.aws_subnets.private[0].ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
 
   tags = {
     Name = "${var.deployment_prefix}-bedrock-runtime-endpoint"
