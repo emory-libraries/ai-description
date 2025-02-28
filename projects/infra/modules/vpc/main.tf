@@ -2,7 +2,7 @@
 # Terms and the SOW between the parties dated 2025.
 
 # VPC module
-
+# NOTE: If you're bringing your own subnets and route tables, make sure they're tagged with Tier=Public/Private
 locals {
   create_vpc = var.vpc_id == ""
   vpc_id     = local.create_vpc ? aws_vpc.main[0].id : data.aws_vpc.existing[0].id
@@ -51,6 +51,15 @@ data "aws_route_tables" "private" {
 
   tags = {
     Tier = "Private"
+  }
+}
+
+data "aws_route_tables" "public" {
+  count  = local.create_vpc ? 0 : 1
+  vpc_id = var.vpc_id
+
+  tags = {
+    Tier = "Public"
   }
 }
 
@@ -140,17 +149,17 @@ resource "aws_route" "public_igw" {
 
 # Route Table Associations
 resource "aws_route_table_association" "private" {
-  count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.private[0].ids)
+  count = local.create_vpc ? length(var.azs) : 0
 
-  subnet_id      = local.create_vpc ? aws_subnet.private[count.index].id : data.aws_subnets.private[0].ids[count.index]
-  route_table_id = local.create_vpc ? aws_route_table.private[count.index].id : data.aws_route_tables.private[0].ids[count.index % length(data.aws_route_tables.private[0].ids)]
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
 }
 
 resource "aws_route_table_association" "public" {
-  count = local.create_vpc ? length(var.azs) : length(data.aws_subnets.public[0].ids)
+  count = local.create_vpc ? length(var.azs) : 0
 
-  subnet_id      = local.create_vpc ? aws_subnet.public[count.index].id : data.aws_subnets.public[0].ids[count.index]
-  route_table_id = local.create_vpc ? aws_route_table.public[count.index].id : data.aws_route_tables.public[0].ids[count.index % length(data.aws_route_tables.public[0].ids)]
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public[count.index].id
 }
 
 # Security Groups
