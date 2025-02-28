@@ -12,11 +12,7 @@ from jinja2 import Environment, FileSystemLoader
 from retry import retry
 
 from image_captioning_assistant.aws.s3 import load_to_bytes
-from image_captioning_assistant.generate.utils import (
-    convert_and_reduce_image,
-    format_prompt_for_claude,
-    format_prompt_for_nova,
-)
+from image_captioning_assistant.generate.utils import convert_and_reduce_image, format_prompt_for_converse
 
 logger = logging.getLogger(__name__)
 
@@ -45,21 +41,11 @@ def create_messages(
     }
     prompt = prompt_template.render(inputs)
     logger.debug(f"PROMPT:\n```\n{prompt}\n```\n")
-    # Create messages
-    if "claude" in model_name:
-        messages = format_prompt_for_claude(
-            prompt=prompt,
-            img_bytes_list=img_bytes_list,
-            assistant_start=COT_TAG,
-        )
-    elif "nova" in model_name:
-        messages = format_prompt_for_nova(
-            prompt=prompt,
-            img_bytes_list=img_bytes_list,
-            assistant_start=COT_TAG,
-        )
-    else:
-        raise ValueError(f"model {model_name} not supported")
+    messages = format_prompt_for_converse(
+        prompt=prompt,
+        img_bytes_list=img_bytes_list,
+        assistant_start=(COT_TAG if "llama" not in model_name else None),
+    )
     return messages
 
 
