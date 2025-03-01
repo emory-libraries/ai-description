@@ -86,6 +86,28 @@ module "s3" {
   deployment_prefix        = local.deployment_prefix
   deployment_prefix_global = local.deployment_prefix_global
   deployment_stage         = var.deployment_stage
+
+  # For user interface deployment
+  application_uri    = "https://FOO"
+  cognito_domain_url = "https://FOO.auth.${var.aws_region}.amazoncognito.com"
+  cognito_client_id  = "FOO"
+}
+
+# Cloudfront
+module "cloudfront" {
+  source = "./modules/cloudfront"
+
+  deployment_prefix                   = local.deployment_prefix
+  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
+  api_gateway_domain_name             = "${module.api_gateway.api_gateway_id}.execute-api.${var.aws_region}.amazonaws.com"
+}
+
+# S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
+module "s3_policy" {
+  source                      = "./modules/s3_policy"
+  bucket_id                   = module.s3.website_bucket_id
+  bucket_arn                  = module.s3.website_bucket_arn
+  cloudfront_distribution_arn = module.cloudfront.distribution_arn
 }
 
 # IAM module

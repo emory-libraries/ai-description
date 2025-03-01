@@ -12,3 +12,18 @@ output "uploads_bucket_arn" {
   description = "The ARN of the S3 bucket for uploads"
   value       = aws_s3_bucket.uploads.arn
 }
+
+output "website_bucket_id" {
+  description = "Name of the website bucket"
+  value       = aws_s3_bucket.website.id
+}
+
+output "website_bucket_arn" {
+  description = "ARN of the website bucket"
+  value       = aws_s3_bucket.website.arn
+}
+
+output "website_bucket_regional_domain_name" {
+  description = "Regional domain name of the website bucket"
+  value       = aws_s3_bucket.website.bucket_regional_domain_name
+}

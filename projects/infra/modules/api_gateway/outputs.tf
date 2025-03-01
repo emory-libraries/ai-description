@@ -7,3 +7,8 @@ output "api_endpoint" {
   description = "The URL of the API Gateway endpoint"
   value       = "${aws_api_gateway_deployment.api_deployment.invoke_url}${var.deployment_stage}/"
 }
+
+output "api_gateway_id" {
+  description = "The ID of the API Gateway endpoint"
+  value       = aws_api_gateway_rest_api.api.id
+}
