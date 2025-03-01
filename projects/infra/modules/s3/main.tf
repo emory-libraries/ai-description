@@ -148,20 +148,8 @@ resource "null_resource" "frontend_build" {
   triggers = {
     package_json = fileexists("${local.frontend_path}/package.json") ? filemd5("${local.frontend_path}/package.json") : "not-found"
 
-    app_dir = length(fileset("${local.frontend_path}", "app/**/*.{js,jsx,ts,tsx}")) > 0 ? (
-      join("", [for f in fileset("${local.frontend_path}", "app/**/*.{js,jsx,ts,tsx}") :
-        filemd5("${local.frontend_path}/${f}")
-      ])
-    ) : "not-found"
-
-    components_dir = length(fileset("${local.frontend_path}", "components/**/*.{js,jsx,ts,tsx}")) > 0 ? (
-      join("", [for f in fileset("${local.frontend_path}", "components/**/*.{js,jsx,ts,tsx}") :
-        filemd5("${local.frontend_path}/${f}")
-      ])
-    ) : "not-found"
-
-    lib_dir = length(fileset("${local.frontend_path}", "lib/**/*.{js,jsx,ts,tsx}")) > 0 ? (
-      join("", [for f in fileset("${local.frontend_path}", "lib/**/*.{js,jsx,ts,tsx}") :
+    src_dir = length(fileset("${local.frontend_path}", "src/**/*.{js,jsx,ts,tsx}")) > 0 ? (
+      join("", [for f in fileset("${local.frontend_path}", "src/**/*.{js,jsx,ts,tsx}") :
         filemd5("${local.frontend_path}/${f}")
       ])
     ) : "not-found"
@@ -169,29 +157,23 @@ resource "null_resource" "frontend_build" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Building Next.js application..."
+      echo "Building React application..."
       cd "${local.frontend_path}" && \
-      mkdir -p ./out && \
+      mkdir -p ./build && \
       docker run --rm \
-        -v "$(pwd):/asset-input" \
-        -v "$(pwd)/out:/asset-output" \
-        -w /asset-input \
+        -v "$(pwd):/app" \
+        -v "$(pwd)/build:/app/build" \
+        -w /app \
         -e NODE_ENV=production \
         -e npm_config_cache=/.npm \
         node:18 \
         bash -c "mkdir -p /.npm && \
-                chmod -R 777 /.npm && \
-                npm ci --include=dev && \
-                rm -rf out .env.local ./public/env.js && \
-                npm run build && \
-                mkdir -p /asset-output && \
-                chmod 777 /asset-output && \
-                ls -la /asset-output && \
-                cp -r out/* /asset-output/ 2>/dev/null || echo 'No output files to copy' && \
-                if [ -d public ]; then cp -r public/* /asset-output/ 2>/dev/null || echo 'Failed to copy public files'; else echo 'No public directory'; fi && \
-                chmod -R 755 /asset-output"
+          chmod -R 777 /.npm && \
+          npm ci --include=dev && \
+          npm run build && \
+          chmod -R 755 /app/build"
 
-      echo "Next.js build completed successfully"
+      echo "React build completed successfully"
     EOT
   }
 }
@@ -199,11 +181,11 @@ resource "null_resource" "frontend_build" {
 # Upload frontend assets to S3
 resource "aws_s3_object" "frontend_assets" {
   depends_on = [null_resource.frontend_build]
-  for_each   = fileset("${local.frontend_path}/out", "**")
+  for_each   = fileset("${local.frontend_path}/build", "**")
 
   bucket       = aws_s3_bucket.website.id
   key          = each.value
-  source       = "${local.frontend_path}/out/${each.value}"
-  etag         = filemd5("${local.frontend_path}/out/${each.value}")
+  source       = "${local.frontend_path}/build/${each.value}"
+  etag         = filemd5("${local.frontend_path}/build/${each.value}")
   content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), null)
 }
