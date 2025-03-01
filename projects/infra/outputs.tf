@@ -27,3 +27,8 @@ output "lambda_function_names" {
   description = "The names of the Lambda functions"
   value       = module.lambda.function_names
 }
+
+output "cloudfront_url" {
+  description = "URL of Cloudfront"
+  value       = module.cloudfront.distribution_domain_name
+}
