@@ -8,9 +8,11 @@ import logging
 import os
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlparse
 
 import boto3
 from boto3.dynamodb.types import TypeDeserializer
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 # Constants
@@ -22,11 +24,22 @@ CORS_HEADERS = {
     "Access-Control-Allow-Methods": "*",
     "Access-Control-Allow-Credentials": True,
 }
+S3_CONFIG = Config(
+    s3={"addressing_style": "virtual"},
+    signature_version="s3v4",
+)
+S3_KWARGS = {
+    "config": S3_CONFIG,
+    "region_name": AWS_REGION,
+}
 JOB_NAME = "job_name"
 WORK_ID = "work_id"
+IMAGE_S3_URIS = "image_s3_uris"
+IMAGE_S3_PRESIGNED_URLS = "image_presigned_urls"
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+s3 = boto3.client("s3", config=S3_CONFIG, region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
 # Set up logging
@@ -44,6 +57,28 @@ class DecimalEncoder(json.JSONEncoder):
         if isinstance(obj, Decimal):
             return str(obj)
         return super(DecimalEncoder, self).default(obj)
+
+
+def generate_presigned_urls(s3_uris: list[str]) -> list[str]:
+    """Generate presigned URLS from S3 URIs."""
+    s3 = boto3.client("s3", config=S3_CONFIG, region_name=AWS_REGION)
+    presigned_urls = []
+
+    for uri in s3_uris:
+        parsed_uri = urlparse(uri)
+        bucket_name = parsed_uri.netloc
+        object_key = parsed_uri.path.lstrip("/")
+
+        try:
+            presigned_url = s3.generate_presigned_url(
+                "get_object", Params={"Bucket": bucket_name, "Key": object_key}, ExpiresIn=60
+            )
+            presigned_urls.append(presigned_url)
+        except Exception as e:
+            print(f"Error generating presigned URL for {uri}: {str(e)}")
+            presigned_urls.append(None)
+
+    return presigned_urls
 
 
 def deserialize_dynamodb_item(raw_data: dict[str, Any] | list[dict[str, Any]]) -> Any:
@@ -95,6 +130,10 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         item = response.get("Item")
         if item:
             deserialized_item = deserialize_dynamodb_item(item)
+
+            image_s3_uris = deserialized_item[IMAGE_S3_URIS]
+            deserialized_item[IMAGE_S3_PRESIGNED_URLS] = generate_presigned_urls(image_s3_uris)
+
             return create_response(200, {"item": deserialized_item})
 
         else:

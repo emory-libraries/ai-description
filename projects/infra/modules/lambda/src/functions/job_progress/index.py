@@ -98,7 +98,6 @@ def organize_items(items: list[dict]) -> tuple[dict[str, list[str]], str]:
     return dict(work_ids_by_status), job_type
 
 
-
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
     """Create a standardized API response."""
     return {
