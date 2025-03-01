@@ -45,7 +45,6 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
-
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
     """Create a standardized API response."""
     return {
@@ -54,29 +53,28 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
         "headers": CORS_HEADERS,
     }
 
+
 def handler(event: Any, context: Any) -> dict[str, Any]:
-    """Lambda handler."""        
+    """Lambda handler."""
     # Get username and password from the event
     for key in ("username", "password"):
         if key not in event:
             return create_response(400, {"Error": f"{key} not found in request"})
 
-    username = event['username']
-    password = event['password']
-    
+    username = event["username"]
+    password = event["password"]
+
     try:
         # Query the DynamoDB table for the given username
-        response = table.query(
-            KeyConditionExpression=Key('username').eq(username)
-        )
-        
+        response = table.query(KeyConditionExpression=Key("username").eq(username))
+
         # Check if the user exists and the password matches
-        if response['Items']:
-            stored_password = response['Items'][0]['password']
+        if response["Items"]:
+            stored_password = response["Items"][0]["password"]
             if stored_password == password:
                 return create_response(200, "Success")
 
         return create_response(401, {"Error": "Invalid username or password"})
-    
+
     except Exception as e:
         return create_response(500, {"Error": str(e)})
