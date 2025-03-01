@@ -4,11 +4,8 @@
 */
 
 import React, { useState, useCallback } from 'react';
-import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { S3Client, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
-import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import {
   View,
   Card,
@@ -24,7 +21,6 @@ import {
 import '@aws-amplify/ui-react/styles.css';
 
 function App() {
-  const auth = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { s3Uris = [], jobName } = location.state || {};
@@ -39,15 +35,12 @@ function App() {
   const initializeS3Client = useCallback(() => {
     return new S3Client({
       region: "us-east-1",
-      credentials: fromCognitoIdentityPool({
-        client: new CognitoIdentityClient({ region: "us-east-1" }),
-        identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
-        logins: {
-          [`cognito-idp.us-east-1.amazonaws.com/${process.env.REACT_APP_COGNITO_USER_POOL_ID}`]: auth.user?.id_token
-        }
-      })
+      credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
+      }
     });
-  }, [auth.user?.id_token]);
+  }, []);
 
   const fetchImage = async (uri) => {
     try {

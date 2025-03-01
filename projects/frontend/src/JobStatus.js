@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from "react-oidc-context";
 import {
   View,
   Card,
@@ -38,7 +37,6 @@ const mockDynamoDB = {
 };
 
 const JobStatus = () => {
-  const auth = useAuth();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,60 +71,19 @@ const JobStatus = () => {
   };
 
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      const interval = setInterval(pollJobStatus, 5000);
-      pollJobStatus(); // Initial poll
-      return () => clearInterval(interval);
-    }
-  }, [auth.isAuthenticated]);
+    const interval = setInterval(pollJobStatus, 5000);
+    pollJobStatus(); // Initial poll
+    return () => clearInterval(interval);
+  }, []);
 
   const handleViewResults = (job) => {
-    navigate(`/results/${job.job_name}`, {
+    navigate(`/results/\${job.job_name}`, {
       state: {
         s3Uris: job.s3_uris,
         jobName: job.job_name
       }
     });
   };
-
-  if (auth.isLoading) {
-    return (
-      <View padding="medium">
-        <Flex direction="column" alignItems="center">
-          <Loader size="large" />
-          <Text>Loading...</Text>
-        </Flex>
-      </View>
-    );
-  }
-
-  if (auth.error) {
-    return (
-      <View padding="medium">
-        <Alert variation="error">
-          Oops... {auth.error.message}
-        </Alert>
-      </View>
-    );
-  }
-
-  if (!auth.isAuthenticated) {
-    return (
-      <View padding="medium">
-        <Card variation="elevated">
-          <Flex direction="column" alignItems="center" gap="medium">
-            <Button
-              onClick={() => auth.signinRedirect()}
-              variation="primary"
-              size="large"
-            >
-              Log in
-            </Button>
-          </Flex>
-        </Card>
-      </View>
-    );
-  }
 
   return (
     <View padding="medium">
