@@ -18,3 +18,14 @@ resource "aws_dynamodb_table" "works" {
     type = "S"
   }
 }
+
+resource "aws_dynamodb_table" "accounts" {
+  name         = "${var.deployment_prefix}-accounts-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "username"
+
+  attribute {
+    name = "username"
+    type = "S"
+  }
+}

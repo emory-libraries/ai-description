@@ -16,7 +16,6 @@ AWS_REGION = os.environ["AWS_REGION"]
 ECS_CLUSTER_NAME = os.environ["ECS_CLUSTER_NAME"]
 ECS_TASK_DEFINITION_ARN = os.environ["ECS_TASK_DEFINITION_ARN"]
 ECS_TASK_FAMILY_NAME = ECS_TASK_DEFINITION_ARN.split("/")[-1].split(":")[0]
-ECS_CONTAINER_NAME = os.environ["ECS_CONTAINER_NAME"]
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -46,13 +45,12 @@ class DecimalEncoder(json.JSONEncoder):
 
 def get_ecs_status(cluster_name: str, task_family_name: str) -> str:
     """Checks if ECS task is running."""
-    running_tasks = ecs_client.list_tasks(
-        cluster=cluster_name, family=task_family_name, desiredStatus="RUNNING"
-    )
+    running_tasks = ecs_client.list_tasks(cluster=cluster_name, family=task_family_name, desiredStatus="RUNNING")
     if running_tasks["taskArns"]:
         return "Active"
     else:
         return "Inactive"
+
 
 def get_queue_status(queue_url: str) -> tuple[int, int]:
     """
@@ -67,22 +65,19 @@ def get_queue_status(queue_url: str) -> tuple[int, int]:
         age_of_oldest_item (int): Approximate age of the oldest message in seconds
     """
     # Create SQS client
-    sqs = boto3.client('sqs')
+    sqs = boto3.client("sqs")
 
     # Get queue attributes
     response = sqs.get_queue_attributes(
-        QueueUrl=queue_url,
-        AttributeNames=[
-            'ApproximateNumberOfMessages',
-            'ApproximateAgeOfOldestMessage'
-        ]
+        QueueUrl=queue_url, AttributeNames=["ApproximateNumberOfMessages", "ApproximateAgeOfOldestMessage"]
     )
 
     # Extract the values
-    queue_length = int(response['Attributes']['ApproximateNumberOfMessages'])
-    age_of_oldest_item = int(response['Attributes']['ApproximateAgeOfOldestMessage'])
+    queue_length = int(response["Attributes"]["ApproximateNumberOfMessages"])
+    age_of_oldest_item = int(response["Attributes"]["ApproximateAgeOfOldestMessage"])
 
     return queue_length, age_of_oldest_item
+
 
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
     """Create a standardized API response."""
@@ -96,9 +91,7 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler for getting SQS and ECS status."""
     try:
-        ecs_status = get_ecs_status(
-            cluster_name=ECS_CLUSTER_NAME, task_family_name=ECS_TASK_FAMILY_NAME
-        )
+        ecs_status = get_ecs_status(cluster_name=ECS_CLUSTER_NAME, task_family_name=ECS_TASK_FAMILY_NAME)
         queue_length, age_of_oldest_item = get_queue_status(SQS_QUEUE_URL)
 
         # Return success response

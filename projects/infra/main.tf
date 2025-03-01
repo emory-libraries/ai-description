@@ -123,6 +123,7 @@ module "iam" {
 
   deployment_prefix             = local.deployment_prefix
   works_table_arn               = module.dynamodb.works_table_arn
+  accounts_table_arn            = module.dynamodb.accounts_table_arn
   uploads_bucket_arn            = module.s3.uploads_bucket_arn
   sqs_works_queue_arn           = module.sqs.queue_arn
   vpc_s3_endpoint_id            = module.vpc.vpc_endpoint_ids.s3
@@ -173,6 +174,7 @@ module "lambda" {
   deployment_prefix       = local.deployment_prefix
   sqs_queue_url           = module.sqs.queue_url
   private_subnet_ids      = module.vpc.private_subnet_ids
+  accounts_table_name     = module.dynamodb.accounts_table_name
   works_table_name        = module.dynamodb.works_table_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
   base_lambda_role_arn    = module.iam.base_lambda_role_arn

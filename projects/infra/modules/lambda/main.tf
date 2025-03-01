@@ -23,6 +23,14 @@ resource "null_resource" "create_dist_dirs" {
 # Lambda function configurations
 locals {
   lambda = {
+    login = {
+      source_dir  = "${path.module}/src/functions/login"
+      description = "Log in"
+      timeout     = 30
+      environment = {
+        ACCOUNTS_TABLE_NAME = var.accounts_table_name
+      }
+    }
     create_job = {
       source_dir  = "${path.module}/src/functions/create_job"
       description = "Create new batch job"
@@ -44,6 +52,16 @@ locals {
       timeout     = 15
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
+      }
+    }
+    overall_progress = {
+      source_dir  = "${path.module}/src/functions/overall_progress"
+      description = "Checks SQS and ECS status"
+      timeout     = 15
+      environment = {
+        SQS_QUEUE_URL           = var.sqs_queue_url
+        ECS_CLUSTER_NAME        = var.ecs_cluster_name
+        ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
       }
     }
     get_results = {

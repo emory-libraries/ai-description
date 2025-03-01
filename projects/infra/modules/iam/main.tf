@@ -81,7 +81,8 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "dynamodb:Scan",
         ]
         Resource = [
-          "arn:aws:dynamodb:*:*:table/*",
+          var.works_table_arn,
+          var.accounts_table_arn
         ]
       },
       {

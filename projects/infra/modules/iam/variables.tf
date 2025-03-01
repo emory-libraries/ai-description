@@ -4,7 +4,12 @@
 # IAM variables
 
 variable "works_table_arn" {
-  description = "ARN of the DynamoDB table"
+  description = "ARN of the DynamoDB works table"
+  type        = string
+}
+
+variable "accounts_table_arn" {
+  description = "ARN of the DynamoDB accounts table"
   type        = string
 }
 

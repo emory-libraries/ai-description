@@ -10,7 +10,6 @@ from decimal import Decimal
 from typing import Any
 
 import boto3
-from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import ClientError
 
 # Constants
@@ -33,8 +32,6 @@ table = dynamodb.Table(WORKS_TABLE_NAME)
 # Set up logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-deserializer = TypeDeserializer()
 
 
 class DecimalEncoder(json.JSONEncoder):

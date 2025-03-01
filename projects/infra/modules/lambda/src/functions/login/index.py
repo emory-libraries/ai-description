@@ -11,12 +11,10 @@ from typing import Any
 
 import boto3
 from boto3.dynamodb.conditions import Key
-from boto3.dynamodb.types import TypeDeserializer
-from botocore.exceptions import ClientError
 
 # Constants
 AWS_REGION = os.environ["AWS_REGION"]
-ACCOUNT_TABLE_NAME = os.environ["ACCOUNT_TABLE_NAME"]
+ACCOUNTS_TABLE_NAME = os.environ["ACCOUNTS_TABLE_NAME"]
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "*",
@@ -26,13 +24,11 @@ CORS_HEADERS = {
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-table = dynamodb.Table(ACCOUNT_TABLE_NAME)
+table = dynamodb.Table(ACCOUNTS_TABLE_NAME)
 
 # Set up logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-deserializer = TypeDeserializer()
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -56,13 +52,15 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler."""
+    # Load args from event
+    body = json.loads(event["body"])
     # Get username and password from the event
     for key in ("username", "password"):
-        if key not in event:
+        if key not in body:
             return create_response(400, {"Error": f"{key} not found in request"})
 
-    username = event["username"]
-    password = event["password"]
+    username = body["username"]
+    password = body["password"]
 
     try:
         # Query the DynamoDB table for the given username
