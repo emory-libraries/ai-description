@@ -26,6 +26,7 @@ provider "aws" {
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 locals {
   account_id               = data.aws_caller_identity.current.account_id
@@ -44,9 +45,9 @@ module "cloudwatch" {
 module "secrets_manager" {
   source = "./modules/secrets_manager"
 
-  secret_name             = "${local.deployment_prefix}-jwt-secret"
+  secret_name             = "${local.deployment_prefix}-jwt-secret2"
   description             = "JWT secret for ai-description application"
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
   generate_random_secret  = true
 }
 
@@ -57,14 +58,6 @@ module "vpc" {
   deployment_prefix    = local.deployment_prefix
   vpc_id               = var.vpc_id
   enable_vpc_endpoints = var.enable_vpc_endpoints
-}
-
-# ECR module
-module "ecr" {
-  source = "./modules/ecr"
-
-  deployment_prefix = local.deployment_prefix
-  deployment_stage  = var.deployment_stage
 }
 
 # DynamoDB module
@@ -102,23 +95,6 @@ module "s3" {
   cognito_client_id  = "FOO"
 }
 
-# Cloudfront
-module "cloudfront" {
-  source = "./modules/cloudfront"
-
-  deployment_prefix                   = local.deployment_prefix
-  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
-  api_gateway_domain_name             = "${module.api_gateway.api_gateway_id}.execute-api.${var.aws_region}.amazonaws.com"
-}
-
-# S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
-module "s3_policy" {
-  source                      = "./modules/s3_policy"
-  bucket_id                   = module.s3.website_bucket_id
-  bucket_arn                  = module.s3.website_bucket_arn
-  cloudfront_distribution_arn = module.cloudfront.distribution_arn
-}
-
 # IAM module
 module "iam" {
   source = "./modules/iam"
@@ -128,7 +104,8 @@ module "iam" {
     module.s3,
     module.vpc,
     module.ecr,
-    module.secrets_manager
+    module.secrets_manager,
+    module.cloudfront
   ]
 
   deployment_prefix             = local.deployment_prefix
@@ -142,6 +119,15 @@ module "iam" {
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
   enable_vpc_endpoints          = var.enable_vpc_endpoints
   jwt_secret_arn                = module.secrets_manager.jwt_secret_arn
+  cloudfront_distribution_arn   = module.cloudfront.distribution_arn
+}
+
+# ECR module
+module "ecr" {
+  source = "./modules/ecr"
+
+  deployment_prefix = local.deployment_prefix
+  deployment_stage  = var.deployment_stage
 }
 
 # ECS module
@@ -203,8 +189,104 @@ module "api_gateway" {
   source     = "./modules/api_gateway"
   depends_on = [module.lambda, module.iam]
 
-  deployment_prefix   = local.deployment_prefix
-  deployment_stage    = var.deployment_stage
-  lambda              = module.lambda.function_arns
-  cloudwatch_role_arn = module.iam.api_gateway_cloudwatch_role_arn
+  deployment_prefix = local.deployment_prefix
+  deployment_stage  = var.deployment_stage
+  lambda            = module.lambda.function_arns
+}
+
+# Cloudfront
+module "cloudfront" {
+  source = "./modules/cloudfront"
+  depends_on = [
+    module.s3,
+  ]
+
+  deployment_prefix                   = local.deployment_prefix
+  api_gateway_deployment_stage        = var.deployment_stage
+  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
+  api_gateway_invoke_url              = "https://placeholder.com"
+}
+
+# S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
+module "s3_policy" {
+  source = "./modules/s3_policy"
+  depends_on = [
+    module.s3,
+    module.cloudfront
+  ]
+  bucket_id                   = module.s3.website_bucket_id
+  bucket_arn                  = module.s3.website_bucket_arn
+  cloudfront_distribution_arn = module.cloudfront.distribution_arn
+}
+
+# API Gateway policy
+resource "aws_api_gateway_rest_api_policy" "cloudfront_access" {
+  depends_on  = [module.cloudfront, module.api_gateway]
+  rest_api_id = module.api_gateway.api_gateway_id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "execute-api:Invoke"
+        Resource = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*"
+
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" = module.cloudfront.distribution_arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Update Cloudfront distribution to point to API Gateway (avoiding circular dependency)
+resource "null_resource" "update_cloudfront_origin" {
+  depends_on = [module.api_gateway, module.cloudfront]
+
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOF
+      set -e
+      TEMP_FILE=$(mktemp)
+      aws cloudfront get-distribution-config --id ${module.cloudfront.distribution_id} > $TEMP_FILE
+      ETAG=$(jq -r '.ETag' $TEMP_FILE)
+      ORIGIN_ID="api-gateway"
+      API_DOMAIN=$(echo "${module.api_gateway.api_gateway_invoke_url}" | sed -e 's|^https://||' -e 's|/.*$||')
+      jq --arg origin_id "$ORIGIN_ID" --arg domain "$API_DOMAIN" '
+        .DistributionConfig.Origins.Items = [
+          .DistributionConfig.Origins.Items[] | 
+          if .Id == $origin_id then 
+            . + {
+              DomainName: $domain,
+              OriginPath: "/dev",
+              CustomHeaders: {Quantity: 0, Items: []},
+              CustomOriginConfig: {
+                HTTPPort: 80,
+                HTTPSPort: 443,
+                OriginProtocolPolicy: "https-only",
+                OriginSslProtocols: {Quantity: 1, Items: ["TLSv1.2"]},
+                OriginReadTimeout: 30,
+                OriginKeepaliveTimeout: 5
+              }
+            }
+          else 
+            .
+          end
+        ] |
+        .DistributionConfig.Origins.Quantity = (.DistributionConfig.Origins.Items | length) |
+        .DistributionConfig.DefaultCacheBehavior.TargetOriginId = $origin_id
+      ' $TEMP_FILE | jq '.DistributionConfig' > ${module.cloudfront.distribution_id}_updated_config.json
+      aws cloudfront update-distribution --id ${module.cloudfront.distribution_id} --distribution-config file://${module.cloudfront.distribution_id}_updated_config.json --if-match $ETAG
+      rm $TEMP_FILE ${module.cloudfront.distribution_id}_updated_config.json
+    EOF
+  }
 }

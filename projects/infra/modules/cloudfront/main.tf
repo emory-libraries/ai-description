@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# CloudFront module
+# CloudFront main module
 
 data "aws_region" "current" {}
 
@@ -59,19 +59,27 @@ resource "aws_cloudfront_origin_request_policy" "api" {
 resource "aws_cloudfront_function" "url_rewriter" {
   name    = "${var.deployment_prefix}-url-rewriter"
   runtime = "cloudfront-js-1.0"
-  comment = "Rewrite URLs for SPA routing"
+  comment = "Rewrite URLs for SPA routing and API requests"
   publish = true
   code    = <<-EOT
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
 
+      // Handle API requests
+      if (uri.startsWith('/api/')) {
+        // Remove '/api' prefix for API Gateway
+        request.uri = uri.slice(4);
+        return request;
+      }
+
+      // SPA routing
       // Check if URI ends with a slash or is empty (root)
       if (uri.endsWith('/') || uri === '') {
         request.uri += 'index.html';
       }
-      // Check if URI doesn't contain a file extension and doesn't start with /api
-      else if (!uri.includes('.') && !uri.startsWith('/api')) {
+      // Check if URI doesn't contain a file extension
+      else if (!uri.includes('.')) {
         request.uri = '/index.html';
       }
 
@@ -96,8 +104,9 @@ resource "aws_cloudfront_distribution" "main" {
 
   # API Gateway origin
   origin {
-    domain_name = var.api_gateway_domain_name
+    domain_name = replace(var.api_gateway_invoke_url, "/^https?://([^/]*).*/", "$1")
     origin_id   = "api-gateway"
+    origin_path = "/${var.api_gateway_deployment_stage}"
 
     custom_origin_config {
       http_port              = 80
@@ -128,10 +137,23 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "api-gateway"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+    compress               = true
     viewer_protocol_policy = "redirect-to-https"
 
-    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
-    origin_request_policy_id = aws_cloudfront_origin_request_policy.api.id
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.url_rewriter.arn
+    }
   }
 
   # Error responses

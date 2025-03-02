@@ -98,7 +98,6 @@ resource "aws_s3_bucket" "lambda_code" {
 }
 
 # Frontend bucket
-
 resource "aws_s3_bucket" "website" {
   bucket = "${var.deployment_prefix_global}-website"
 
@@ -157,6 +156,7 @@ resource "null_resource" "frontend_build" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       echo "Building React application..."
       cd "${local.frontend_path}" && \
       mkdir -p ./build && \

@@ -3,9 +3,9 @@
 
 # Main outputs
 
-output "api_endpoint" {
+output "api_gateway_invoke_url" {
   description = "The URL of the API Gateway endpoint"
-  value       = module.api_gateway.api_endpoint
+  value       = module.api_gateway.api_gateway_invoke_url
 }
 
 output "uploads_bucket_name" {

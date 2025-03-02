@@ -249,8 +249,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
 }
 
 # API Gateway Role
-resource "aws_iam_role" "api_gateway_cloudwatch_role" {
-  name = "${var.deployment_prefix}-api-gateway-cloudwatch-role"
+resource "aws_iam_role" "api_gateway_role" {
+  name = "${var.deployment_prefix}-api-gateway-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -269,7 +269,7 @@ resource "aws_iam_role" "api_gateway_cloudwatch_role" {
 # API Gateway Role-Policy Attachment
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
-  role       = aws_iam_role.api_gateway_cloudwatch_role.name
+  role       = aws_iam_role.api_gateway_role.name
 }
 
 # VPC Endpoint policies

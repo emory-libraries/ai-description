@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# API Gateway module
+# API Gateway main module
 
 data "aws_region" "current" {}
 
@@ -9,6 +9,10 @@ data "aws_region" "current" {}
 resource "aws_api_gateway_rest_api" "api" {
   name        = "${var.deployment_prefix}-rest-api"
   description = "REST API for Image Captioning Assistant"
+
+  endpoint_configuration {
+    types = ["EDGE"]
+  }
 
   binary_media_types = [
     "multipart/form-data",
@@ -187,7 +191,11 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/${each.value.method}/*"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Lambda integrations
@@ -283,8 +291,4 @@ resource "aws_api_gateway_method_settings" "all" {
     metrics_enabled = true
     logging_level   = "INFO"
   }
-}
-
-resource "aws_api_gateway_account" "main" {
-  cloudwatch_role_arn = var.cloudwatch_role_arn
 }

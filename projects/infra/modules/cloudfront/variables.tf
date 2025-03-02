@@ -13,7 +13,12 @@ variable "website_bucket_regional_domain_name" {
   type        = string
 }
 
-variable "api_gateway_domain_name" {
-  description = "Domain name of API Gateway"
+variable "api_gateway_deployment_stage" {
+  description = "Deployment stage of API Gateway"
+  type        = string
+}
+
+variable "api_gateway_invoke_url" {
+  description = "Invoke URL of API Gateway"
   type        = string
 }
