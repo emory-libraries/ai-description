@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import time
-import datetime
 import secrets
 from decimal import Decimal
 from typing import Any
@@ -72,10 +71,7 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
     }
 
 def generate_token(username: str, secret: str) -> str:
-    """Generate a secure token."""
-    secret_dict = json.loads(secret)
-    secret_key = secret_dict.get("token_secret", "")
-    
+    """Generate a secure token."""    
     # Generate a secure random token
     random_part = secrets.token_hex(16)
     # Add an expiration time (e.g., 1 hour from now)
@@ -85,7 +81,7 @@ def generate_token(username: str, secret: str) -> str:
     token_parts = f"{username}.{random_part}.{expiration}"
     
     # Create a signature using the secret
-    signature = hmac.new(secret_key.encode(), token_parts.encode(), hashlib.sha256).hexdigest()
+    signature = hmac.new(secret.encode(), token_parts.encode(), hashlib.sha256).hexdigest()
     
     # Combine all parts
     return f"{token_parts}.{signature}"
@@ -119,4 +115,5 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         return create_response(401, {"Error": "Invalid username or password"})
 
     except Exception as e:
+        logger.exception(str(e))
         return create_response(500, {"Error": str(e)})

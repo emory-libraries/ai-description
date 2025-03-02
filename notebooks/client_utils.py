@@ -64,8 +64,9 @@ def log_in(api_url: str, username: str, password: str):
         # Parse the JSON response
         data = response.json()
         logging.info("API Response:", data)
+        return data
     else:
-        logging.error(f"Error: API request failed with status code {response.status_code}: {response.text}")
+        response.raise_for_status()
 
 
 def create_dummy_job(
