@@ -99,6 +99,11 @@ resource "aws_iam_policy" "service_lambda_policy" {
         ]
       },
       {
+        Effect   = "Allow"
+        Action   = "secretsmanager:GetSecretValue"
+        Resource = [var.jwt_secret_arn]
+      },
+      {
         Effect = "Allow"
         Action = "iam:PassRole"
         Resource = [

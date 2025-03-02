@@ -45,6 +45,29 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
+def log_in(api_url: str, username: str, password: str):
+    """Authenticate identity."""
+    # Construct the full URL
+    api_url = api_url.rstrip("/")
+    endpoint = f"{api_url}/log_in"
+
+    # Headers
+    headers = {"Content-Type": "application/json"}
+
+    request_body = {"username": username, "password": password}
+
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info("API Response:", data)
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}: {response.text}")
+
+
 def create_dummy_job(
     api_url: str,
     job_name: str,
@@ -77,21 +100,17 @@ def create_dummy_job(
     ]
     request_body = {"job_name": job_name, "job_type": job_type, "works": works}
 
-    try:
-        # Make the POST request
-        response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the JSON response
-            data = response.json()
-            print("API Response:", data)
-        else:
-            print(f"Error: API request failed with status code {response.status_code}")
-            print("Response:", response.text)
-
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info("API Response:", data)
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.info("Response:", response.text)
 
 
 def get_job_progress(api_url: str, job_name: str):
@@ -111,21 +130,40 @@ def get_job_progress(api_url: str, job_name: str):
     # Set up the query parameters
     params = {"job_name": job_name}
 
-    try:
-        # Make the GET request
-        response = requests.get(endpoint, params=params)
+    # Make the GET request
+    response = requests.get(endpoint, params=params)
 
-        # Check the status code
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            logging.info(f"No data found for job_name: {job_name}")
-            return response.json()
-        else:
-            response.raise_for_status()
+    # Check the status code
+    if response.status_code == 200:
+        return response.json()
+    elif response.status_code == 404:
+        logging.info(f"No data found for job_name: {job_name}")
+        return response.json()
+    else:
+        response.raise_for_status()
 
-    except requests.RequestException as e:
-        logging.exception(f"An error occurred: {e}")
+
+def get_overall_progress(api_url: str):
+    """Query the overall_progress endpoint
+
+    Args:
+    api_url (str): The base URL of your API Gateway
+
+    Returns:
+    dict: The JSON response from the API, or None if an error occurred
+    """
+    api_url = api_url.rstrip("/")
+    # Construct the full URL
+    endpoint = f"{api_url}/overall_progress"
+
+    # Make the GET request
+    response = requests.get(endpoint)
+
+    # Check the status code
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
 
 
 def get_job_results(api_url: str, job_name: str, work_id: str):
@@ -172,18 +210,14 @@ def update_job_results(api_url: str, job_name: str, work_id: str):
     updated_fields = {"work_status": "REVIEWED"}
     request_body = {"job_name": job_name, "work_id": work_id, "updated_fields": updated_fields}
 
-    try:
-        # Make the POST request
-        response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the JSON response
-            data = response.json()
-            print("API Response:", data)
-        else:
-            print(f"Error: API request failed with status code {response.status_code}")
-            print("Response:", response.text)
-
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info("API Response:", data)
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.info("Response:", response.text)

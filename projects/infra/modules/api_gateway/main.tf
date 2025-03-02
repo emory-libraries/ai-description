@@ -20,10 +20,10 @@ resource "aws_api_gateway_rest_api" "api" {
 locals {
   # Base resources (no parent dependencies)
   base_resources = {
-    "login" = {
-      path_part = "login"
+    "log_in" = {
+      path_part = "log_in"
       methods = {
-        "POST" = var.lambda["login"]
+        "POST" = var.lambda["log_in"]
       }
     }
     "create_job" = {

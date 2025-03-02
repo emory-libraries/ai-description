@@ -41,6 +41,15 @@ module "cloudwatch" {
   deployment_prefix_logs = local.deployment_prefix_logs
 }
 
+module "secrets_manager" {
+  source = "./modules/secrets_manager"
+
+  secret_name             = "${local.deployment_prefix}-jwt-secret"
+  description             = "JWT secret for ai-description application"
+  recovery_window_in_days = 7
+  generate_random_secret  = true
+}
+
 # VPC module
 module "vpc" {
   source = "./modules/vpc"
@@ -119,6 +128,7 @@ module "iam" {
     module.s3,
     module.vpc,
     module.ecr,
+    module.secrets_manager
   ]
 
   deployment_prefix             = local.deployment_prefix
@@ -131,6 +141,7 @@ module "iam" {
   vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_dkr
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
   enable_vpc_endpoints          = var.enable_vpc_endpoints
+  jwt_secret_arn                = module.secrets_manager.jwt_secret_arn
 }
 
 # ECS module
@@ -168,7 +179,8 @@ module "lambda" {
     module.dynamodb,
     module.s3,
     module.iam,
-    module.ecs
+    module.ecs,
+    module.secrets_manager
   ]
 
   deployment_prefix       = local.deployment_prefix
@@ -183,6 +195,7 @@ module "lambda" {
   ecs_task_definition_arn = module.ecs.task_definition_arn
   ecs_security_group_id   = module.vpc.ecs_security_group_id
   vpc_security_group_id   = module.vpc.vpc_endpoints_security_group_id
+  jwt_secret_name         = module.secrets_manager.jwt_secret_name
 }
 
 # API Gateway module

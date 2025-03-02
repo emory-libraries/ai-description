@@ -52,31 +52,25 @@ def get_ecs_status(cluster_name: str, task_family_name: str) -> str:
         return "Inactive"
 
 
-def get_queue_status(queue_url: str) -> tuple[int, int]:
-    """
-    Get the approximate length of the queue and age of the oldest message.
+def get_queue_length(queue_url: str) -> int:
+    """Get the approximate length of the queue
 
     Args:
     queue_url (str): The URL of the SQS queue
 
     Returns:
-    tuple: (queue_length, age_of_oldest_item)
-        queue_length (int): Approximate number of messages in the queue
-        age_of_oldest_item (int): Approximate age of the oldest message in seconds
+        int: Approximate number of messages in the queue
     """
     # Create SQS client
     sqs = boto3.client("sqs")
 
     # Get queue attributes
-    response = sqs.get_queue_attributes(
-        QueueUrl=queue_url, AttributeNames=["ApproximateNumberOfMessages", "ApproximateAgeOfOldestMessage"]
-    )
+    response = sqs.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["ApproximateNumberOfMessages"])
 
     # Extract the values
     queue_length = int(response["Attributes"]["ApproximateNumberOfMessages"])
-    age_of_oldest_item = int(response["Attributes"]["ApproximateAgeOfOldestMessage"])
 
-    return queue_length, age_of_oldest_item
+    return queue_length
 
 
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
@@ -91,14 +85,16 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler for getting SQS and ECS status."""
     try:
-        ecs_status = get_ecs_status(cluster_name=ECS_CLUSTER_NAME, task_family_name=ECS_TASK_FAMILY_NAME)
-        queue_length, age_of_oldest_item = get_queue_status(SQS_QUEUE_URL)
+        ecs_status = get_ecs_status(
+            cluster_name=ECS_CLUSTER_NAME,
+            task_family_name=ECS_TASK_FAMILY_NAME,
+        )
+        queue_length = get_queue_length(SQS_QUEUE_URL)
 
         # Return success response
         response = {
             "ecs_status": ecs_status,
             "queue_length": queue_length,
-            "age_of_oldest_item": age_of_oldest_item,
         }
         return create_response(200, response)
 

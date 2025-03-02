@@ -52,3 +52,8 @@ variable "enable_vpc_endpoints" {
   description = "Whether or not the application uses VPC endpoints"
   type        = bool
 }
+
+variable "jwt_secret_arn" {
+  description = "ARN of Secret used for JWT"
+  type        = string
+}
