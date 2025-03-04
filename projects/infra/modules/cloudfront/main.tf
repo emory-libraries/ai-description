@@ -88,6 +88,46 @@ resource "aws_cloudfront_function" "url_rewriter" {
   EOT
 }
 
+resource "aws_cloudfront_cache_policy" "caching_disabled" {
+  name        = "CachingDisabled"
+  min_ttl     = 0
+  default_ttl = 0
+  max_ttl     = 0
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_brotli = false
+    enable_accept_encoding_gzip   = false
+
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "none"
+    }
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+  }
+}
+
+resource "aws_cloudfront_origin_request_policy" "all_viewer_except_host_header" {
+  name    = "AllViewerExceptHostHeader"
+  comment = "Send all viewer headers except Host header"
+
+  cookies_config {
+    cookie_behavior = "all"
+  }
+  headers_config {
+    header_behavior = "allExcept"
+    headers {
+      items = ["Host"]
+    }
+  }
+  query_strings_config {
+    query_string_behavior = "all"
+  }
+}
+
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -137,19 +177,12 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "api-gateway"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
 
-    forwarded_values {
-      query_string = true
-      headers      = ["*"]
-      cookies {
-        forward = "all"
-      }
-    }
+    cache_policy_id          = aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id
+
     function_association {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.url_rewriter.arn

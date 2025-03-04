@@ -32,6 +32,14 @@ locals {
         SECRET_NAME         = var.jwt_secret_name
       }
     }
+    authorize = {
+      source_dir  = "${path.module}/src/functions/authorize"
+      description = "Authorize"
+      timeout     = 30
+      environment = {
+        SECRET_NAME = var.jwt_secret_name
+      }
+    }
     create_job = {
       source_dir  = "${path.module}/src/functions/create_job"
       description = "Create new batch job"

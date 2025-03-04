@@ -5,6 +5,7 @@
 
 data "aws_region" "current" {}
 
+
 # Create a REST API
 resource "aws_api_gateway_rest_api" "api" {
   name        = "${var.deployment_prefix}-rest-api"
@@ -18,6 +19,15 @@ resource "aws_api_gateway_rest_api" "api" {
     "multipart/form-data",
     "application/octet-stream"
   ]
+}
+
+resource "aws_api_gateway_authorizer" "jwt_authorizer" {
+  name                   = "jwt-authorizer"
+  rest_api_id            = aws_api_gateway_rest_api.api.id
+  authorizer_uri         = var.lambda["authorize"]
+  authorizer_credentials = var.authorizer_iam_role_arn
+  type                   = "TOKEN"
+  identity_source        = "method.request.header.Authorization"
 }
 
 # Define resources and methods
@@ -84,7 +94,8 @@ resource "aws_api_gateway_method" "api_methods" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.base_resources[each.value.resource_key].id
   http_method   = each.value.method
-  authorization = "NONE"
+  authorization = each.value.resource_key == "log_in" ? "NONE" : "CUSTOM"
+  authorizer_id = each.value.resource_key == "log_in" ? null : aws_api_gateway_authorizer.jwt_authorizer.id
 }
 
 # Create OPTIONS method for CORS

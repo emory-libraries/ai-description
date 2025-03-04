@@ -189,9 +189,10 @@ module "api_gateway" {
   source     = "./modules/api_gateway"
   depends_on = [module.lambda, module.iam]
 
-  deployment_prefix = local.deployment_prefix
-  deployment_stage  = var.deployment_stage
-  lambda            = module.lambda.function_arns
+  deployment_prefix       = local.deployment_prefix
+  deployment_stage        = var.deployment_stage
+  lambda                  = module.lambda.function_arns
+  authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 
 # Cloudfront
@@ -263,8 +264,8 @@ resource "null_resource" "update_cloudfront_origin" {
       API_DOMAIN=$(echo "${module.api_gateway.api_gateway_invoke_url}" | sed -e 's|^https://||' -e 's|/.*$||')
       jq --arg origin_id "$ORIGIN_ID" --arg domain "$API_DOMAIN" '
         .DistributionConfig.Origins.Items = [
-          .DistributionConfig.Origins.Items[] | 
-          if .Id == $origin_id then 
+          .DistributionConfig.Origins.Items[] |
+          if .Id == $origin_id then
             . + {
               DomainName: $domain,
               OriginPath: "/dev",
@@ -278,7 +279,7 @@ resource "null_resource" "update_cloudfront_origin" {
                 OriginKeepaliveTimeout: 5
               }
             }
-          else 
+          else
             .
           end
         ] |

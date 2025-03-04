@@ -4,15 +4,15 @@
 """Log in."""
 
 import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
-import time
 import secrets
+import time
 from decimal import Decimal
 from typing import Any
-import hmac
-import hashlib
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -70,19 +70,20 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
         "headers": CORS_HEADERS,
     }
 
+
 def generate_token(username: str, secret: str) -> str:
-    """Generate a secure token."""    
+    """Generate a secure token."""
     # Generate a secure random token
     random_part = secrets.token_hex(16)
     # Add an expiration time (e.g., 1 hour from now)
     expiration = int(time.time()) + 3600
-    
+
     # Combine parts
     token_parts = f"{username}.{random_part}.{expiration}"
-    
+
     # Create a signature using the secret
     signature = hmac.new(secret.encode(), token_parts.encode(), hashlib.sha256).hexdigest()
-    
+
     # Combine all parts
     return f"{token_parts}.{signature}"
 
@@ -110,7 +111,7 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
                 # Generate JWT
                 secret = get_secret(SECRET_NAME)
                 session_token = generate_token(username=username, secret=secret)
-                return create_response(200, {"sessionToken": session_token})
+                return create_response(200, {"sessionToken": session_token, "tokenType": "Bearer"})
 
         return create_response(401, {"Error": "Invalid username or password"})
 

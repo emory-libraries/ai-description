@@ -63,10 +63,12 @@ def log_in(api_url: str, username: str, password: str):
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info("API Response:", data)
+        logging.info(f"API Response: {data}")
         return data
     else:
-        response.raise_for_status()
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        return response
 
 
 def create_dummy_job(
@@ -108,10 +110,10 @@ def create_dummy_job(
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info("API Response:", data)
+        logging.info(f"API Response: {data}")
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
-        logging.info("Response:", response.text)
+        logging.error(f"Response: {response.text}")
 
 
 def get_job_progress(api_url: str, job_name: str):
@@ -194,7 +196,7 @@ def get_job_results(api_url: str, job_name: str, work_id: str):
         return response.json()["item"]
     elif response.status_code == 404:
         msg = f"No data found for job_name={job_name} and work_id={work_id}"
-        logging.exception(f"No data found for job_name={job_name} and work_id={work_id}")
+        logging.error(f"No data found for job_name={job_name} and work_id={work_id}")
         raise Exception(msg)
     else:
         response.raise_for_status()
@@ -218,7 +220,7 @@ def update_job_results(api_url: str, job_name: str, work_id: str):
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info("API Response:", data)
+        logging.info(f"API Response: {data}")
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
-        logging.info("Response:", response.text)
+        logging.error(f"Response: {response.text}")

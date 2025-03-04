@@ -18,3 +18,8 @@ variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
 }
+
+variable "authorizer_iam_role_arn" {
+  description = "ARN for authorizer lambda role"
+  type        = string
+}
