@@ -10,6 +10,13 @@ output "function_arns" {
   }
 }
 
+output "invoke_arns" {
+  description = "Map of Lambda function invoke ARNs"
+  value = {
+    for k, v in aws_lambda_function.functions : k => v.invoke_arn
+  }
+}
+
 output "function_names" {
   description = "Map of Lambda function names"
   value = {

@@ -3,11 +3,6 @@
 
 # API Gateway variables
 
-variable "lambda" {
-  description = "Map of Lambda function ARNs"
-  type        = map(string)
-}
-
 variable "deployment_stage" {
   description = "Deployment stage name for the environment"
   type        = string
@@ -17,6 +12,16 @@ variable "deployment_stage" {
 variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
+}
+
+variable "lambda_function_arns" {
+  description = "Map of Lambda function ARNs"
+  type        = map(string)
+}
+
+variable "lambda_invoke_arns" {
+  description = "Map of Lambda invoke ARNs"
+  type        = map(string)
 }
 
 variable "authorizer_iam_role_arn" {

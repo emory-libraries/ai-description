@@ -24,7 +24,7 @@ resource "aws_api_gateway_rest_api" "api" {
 resource "aws_api_gateway_authorizer" "jwt_authorizer" {
   name                   = "jwt-authorizer"
   rest_api_id            = aws_api_gateway_rest_api.api.id
-  authorizer_uri         = var.lambda["authorize"]
+  authorizer_uri         = var.lambda_invoke_arns["authorize"]
   authorizer_credentials = var.authorizer_iam_role_arn
   type                   = "TOKEN"
   identity_source        = "method.request.header.Authorization"
@@ -37,32 +37,32 @@ locals {
     "log_in" = {
       path_part = "log_in"
       methods = {
-        "POST" = var.lambda["log_in"]
+        "POST" = var.lambda_function_arns["log_in"]
       }
     }
     "create_job" = {
       path_part = "create_job"
       methods = {
-        "POST" = var.lambda["create_job"]
+        "POST" = var.lambda_function_arns["create_job"]
       }
     }
     "job_progress" = {
       path_part = "job_progress"
       methods = {
-        "GET" = var.lambda["job_progress"]
+        "GET" = var.lambda_function_arns["job_progress"]
       }
     }
     "overall_progress" = {
       path_part = "overall_progress"
       methods = {
-        "GET" = var.lambda["overall_progress"]
+        "GET" = var.lambda_function_arns["overall_progress"]
       }
     }
     "results" = {
       path_part = "results"
       methods = {
-        "GET" = var.lambda["get_results"]
-        "PUT" = var.lambda["update_results"]
+        "GET" = var.lambda_function_arns["get_results"]
+        "PUT" = var.lambda_function_arns["update_results"]
       }
     }
   }
@@ -202,7 +202,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
 
   lifecycle {
     create_before_destroy = true
