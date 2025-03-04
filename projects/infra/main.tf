@@ -193,6 +193,7 @@ module "api_gateway" {
   deployment_stage        = var.deployment_stage
   lambda_function_arns    = module.lambda.function_arns
   lambda_invoke_arns      = module.lambda.invoke_arns
+  api_gateway_role_arn    = module.iam.api_gateway_role_arn
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 

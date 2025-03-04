@@ -24,7 +24,7 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     # Create metadata
     original_metadata = {
         "title": "foo",
-        "desription": "offensive image",
+        "description": "offensive image",
     }
     # Convert metadata to JSON
     original_metadata_json = json.dumps(original_metadata)
@@ -45,8 +45,8 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
-def log_in(api_url: str, username: str, password: str):
-    """Authenticate identity."""
+def get_session_token(api_url: str, username: str, password: str) -> str:
+    """Get JWT."""
     # Construct the full URL
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/log_in"
@@ -64,11 +64,11 @@ def log_in(api_url: str, username: str, password: str):
         # Parse the JSON response
         data = response.json()
         logging.info(f"API Response: {data}")
-        return data
+        return data["sessionToken"]
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")
-        return response
+        response.raise_for_status()
 
 
 def create_dummy_job(
@@ -78,6 +78,7 @@ def create_dummy_job(
     original_metadata_s3_uri: str,
     context_s3_uri: str,
     image_s3_uri: str,
+    session_token: str,
 ):
     """Create dummy job."""
     # Construct the full URL
@@ -85,8 +86,10 @@ def create_dummy_job(
     endpoint = f"{api_url}/create_job"
 
     # Headers
-    headers = {"Content-Type": "application/json"}
-
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": session_token,
+    }
     works = [
         {
             "work_id": f"{job_name}_short_work",
@@ -116,7 +119,7 @@ def create_dummy_job(
         logging.error(f"Response: {response.text}")
 
 
-def get_job_progress(api_url: str, job_name: str):
+def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     """Query the job_progress endpoint with the given job_name.
 
     Args:
@@ -133,8 +136,11 @@ def get_job_progress(api_url: str, job_name: str):
     # Set up the query parameters
     params = {"job_name": job_name}
 
+    # Headers
+    headers = {"Authorization": session_token}
+
     # Make the GET request
-    response = requests.get(endpoint, params=params)
+    response = requests.get(endpoint, params=params, headers=headers)
 
     # Check the status code
     if response.status_code == 200:
@@ -146,7 +152,7 @@ def get_job_progress(api_url: str, job_name: str):
         response.raise_for_status()
 
 
-def get_overall_progress(api_url: str):
+def get_overall_progress(api_url: str, session_token: str) -> dict:
     """Query the overall_progress endpoint
 
     Args:
@@ -159,8 +165,11 @@ def get_overall_progress(api_url: str):
     # Construct the full URL
     endpoint = f"{api_url}/overall_progress"
 
+    # Headers
+    headers = {"Authorization": session_token}
+
     # Make the GET request
-    response = requests.get(endpoint)
+    response = requests.get(endpoint, headers=headers)
 
     # Check the status code
     if response.status_code == 200:
@@ -169,7 +178,7 @@ def get_overall_progress(api_url: str):
         response.raise_for_status()
 
 
-def get_job_results(api_url: str, job_name: str, work_id: str):
+def get_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> dict:
     """
     Query the results endpoint with the given job_name and work_id.
 
@@ -188,8 +197,11 @@ def get_job_results(api_url: str, job_name: str, work_id: str):
     # Set up the query parameters
     params = {"job_name": job_name, "work_id": work_id}
 
+    # Headers
+    headers = {"Authorization": session_token}
+
     # Make the GET request
-    response = requests.get(endpoint, params=params)
+    response = requests.get(endpoint, params=params, headers=headers)
 
     # Check the status code
     if response.status_code == 200:
@@ -202,13 +214,16 @@ def get_job_results(api_url: str, job_name: str, work_id: str):
         response.raise_for_status()
 
 
-def update_job_results(api_url: str, job_name: str, work_id: str):
+def update_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> None:
     # Construct the full URL
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/results"
 
     # Headers
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": session_token,
+    }
 
     updated_fields = {"work_status": "REVIEWED"}
     request_body = {"job_name": job_name, "work_id": work_id, "updated_fields": updated_fields}

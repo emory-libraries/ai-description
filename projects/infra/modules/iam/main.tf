@@ -269,11 +269,34 @@ resource "aws_iam_role" "api_gateway_role" {
   })
 }
 
-# API Gateway Role-Policy Attachment
-resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
-  role       = aws_iam_role.api_gateway_role.name
+# IAM Policy for invoking Lambda
+resource "aws_iam_policy" "lambda_invocation_policy" {
+  name        = "lambda_invocation_policy"
+  path        = "/"
+  description = "IAM policy for invoking Lambda function from API Gateway"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "lambda:InvokeFunction"
+        Effect   = "Allow"
+        Resource = "arn:aws:lambda:*:${data.aws_caller_identity.current.account_id}:function:*"
+      }
+    ]
+  })
 }
+
+# API Gateway Role-Policy Attachments
+resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+resource "aws_iam_role_policy_attachment" "api_gateway_lambda_invocation_attachment" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = aws_iam_policy.lambda_invocation_policy.arn
+}
+
 
 # VPC Endpoint policies
 resource "aws_vpc_endpoint_policy" "s3_policy" {

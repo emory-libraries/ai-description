@@ -85,7 +85,7 @@ def validate_request_body(body: dict[str, Any]) -> None:
     job_keys = (JOB_NAME, JOB_TYPE, WORKS)
     job_keys_present = [key in body for key in job_keys]
     if any(job_keys_present) and not all(job_keys_present):
-        msg = f"Request body requires the following keys: {job_keys}. Request body keys recieved: {body.keys()}"
+        msg = f"Request body requires the following keys: {job_keys}. Request body keys received: {body.keys()}"
         logger.warning(msg)
         raise ValueError(msg)
 

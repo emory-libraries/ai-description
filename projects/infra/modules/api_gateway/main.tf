@@ -25,7 +25,7 @@ resource "aws_api_gateway_authorizer" "jwt_authorizer" {
   name                   = "jwt-authorizer"
   rest_api_id            = aws_api_gateway_rest_api.api.id
   authorizer_uri         = var.lambda_invoke_arns["authorize"]
-  authorizer_credentials = var.authorizer_iam_role_arn
+  authorizer_credentials = var.api_gateway_role_arn
   type                   = "TOKEN"
   identity_source        = "method.request.header.Authorization"
 }
@@ -198,11 +198,11 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
       ]
     ]) : entry.key => entry
   }
-  statement_id  = "AllowAPIGatewayInvoke-${each.key}"
+  statement_id  = "AllowAPIGatewayInvoke-${each.key}-2"
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
 
   lifecycle {
     create_before_destroy = true

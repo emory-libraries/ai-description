@@ -20,8 +20,13 @@ variable "lambda_function_arns" {
 }
 
 variable "lambda_invoke_arns" {
-  description = "Map of Lambda invoke ARNs"
+  description = "Map of Lambda invocation function ARNs"
   type        = map(string)
+}
+
+variable "api_gateway_role_arn" {
+  description = "API Gateway's role ARN"
+  type        = string
 }
 
 variable "authorizer_iam_role_arn" {
