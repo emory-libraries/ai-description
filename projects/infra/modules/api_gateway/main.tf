@@ -50,7 +50,6 @@ resource "aws_api_gateway_resource" "base_resources" {
   path_part   = each.value.path_part
 }
 
-
 # Create methods for actual endpoints
 resource "aws_api_gateway_method" "api_methods" {
   for_each = {
@@ -167,6 +166,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
           key    = "${k}_${method}"
           method = method
           lambda = lambda
+          path   = k
         }
       ]
     ]) : entry.key => entry
@@ -175,7 +175,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/${each.value.method}/*"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/${each.value.method}/${each.value.path}"
 }
 
 # Lambda integrations
