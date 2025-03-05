@@ -21,7 +21,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/login`, {
+      const response = await fetch(`/api/log_in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -30,11 +30,11 @@ const Login = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.Error || 'Login failed');
       }
 
-      if (data.token) {
-        login(data.token);
+      if (data.sessionToken) {
+        login(data.sessionToken);
         navigate('/');
       } else {
         throw new Error('No token received');
