@@ -117,15 +117,20 @@ function Bias() {
   }, [jobName]);
   
   const handleWorkSelect = useCallback(async (work) => {
+    if (!work || (selectedWork && work.work_id === selectedWork.work_id)) {
+      return; 
+    }
+    
     setIsLoading(true);
     setSelectedWork(work);
     setSelectedBias(null);
     setBiasData(null);
     setError(null);
-  
+    setImageData({}); 
+    
     try {
       const response = await fetch(
-        `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${work.work_id}`,
+        `${API_ENDPOINT}/results?job_name=${work.job_name}&work_id=${work.work_id}`,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -136,9 +141,11 @@ function Bias() {
       if (!response.ok) {
         throw new Error(`Failed to fetch bias details: ${response.status}`);
       }
+
+      console.log('this is the work id: ', work.work_id);
   
       const data = await response.json();
-      const image_s3_uris = data.item.image_s3_uris; 
+      const image_s3_uris = data.item.image_s3_uris;
       const biasEntries = data.item.page_biases.flatMap((page, pageIndex) => 
         page.biases.map(bias => ({
           ...bias,
@@ -146,13 +153,11 @@ function Bias() {
         }))
       );
       setBiasData(biasEntries);
-  
       if (image_s3_uris && image_s3_uris.length > 0) {
         const imagePromises = image_s3_uris.map(async uri => {
           const imageUrl = await fetchImage(uri);
           return { uri, imageUrl };
         });
-  
         const images = await Promise.all(imagePromises);
         const newImageData = {};
         images.forEach(({ uri, imageUrl }) => {
@@ -165,7 +170,7 @@ function Bias() {
     } finally {
       setIsLoading(false);
     }
-  }, [jobName, fetchImage]);
+  }, [fetchImage, API_ENDPOINT]); 
 
   const handleBiasSelect = (biasEntry) => {
     setSelectedBias(biasEntry);
@@ -240,15 +245,11 @@ function Bias() {
     setSelectedBias(null);
   };
 
-  const workNavigationItems = allWorks.map(work => ({
+  const workNavigationItems = allWorks.map(work => ({    
     type: 'link',
     text: `Work ID: ${work.work_id}`,
-    href: '#',
+    href: `#${work.work_id}`,
     info: <StatusIndicator type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} />,
-    onFollow: e => {
-      e.preventDefault();
-      handleWorkSelect(work);
-    }
   }));
 
   const biasTableItems = biasData || [];
@@ -303,6 +304,15 @@ function Bias() {
                     header={{
                       text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
                       href: '#'
+                    }}
+                    onFollow={({ detail }) => {
+                      if (!detail.external) {                        
+                        const workId = detail.href.substring(1);
+                        const selectedWork = allWorks.find(work => work.work_id === workId);
+                        if (selectedWork) {
+                          handleWorkSelect(selectedWork);
+                        }
+                      }
                     }}
                   />
                 )}

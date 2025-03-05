@@ -89,7 +89,7 @@ function Metadata() {
     }
   }, [initializeS3Client]);
 
-  const fetchWorkDetails = useCallback(async (workId) => {
+  const fetchWorkDetails = useCallback(async (workId, jobName) => {
     try {
       const response = await fetch(
         `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${workId}`,
@@ -110,7 +110,7 @@ function Metadata() {
       console.error('Error fetching work details:', err);
       throw err;
     }
-  }, [jobName]);
+  }, []);
 
   const handleWorkSelect = useCallback(async (work) => {
     setIsLoading(true);
@@ -121,7 +121,7 @@ function Metadata() {
     setModifiedFields({});
 
     try {
-      const workDetails = await fetchWorkDetails(work.work_id);
+      const workDetails = await fetchWorkDetails(work.work_id, work.job_name);
       setMetadata(workDetails);
 
       if (workDetails.image_s3_uris && workDetails.image_s3_uris.length > 0) {
@@ -145,21 +145,16 @@ function Metadata() {
 
   const handleMetadataEdit = (key, value) => {
     if (key === 'job_name' || key === 'work_id') return;    
-
     let processedValue = value;
-    
-    if (typeof value === 'object' && value !== null && 
-        'value' in value && Array.isArray(value.value)) {
+    if (typeof value === 'object' && value !== null && 'value' in value) {
       processedValue = {
         ...value
       };
     }
-    
     setMetadata(prev => ({
       ...prev,
       [key]: processedValue
     }));
-    
     setModifiedFields(prev => ({
       ...prev,
       [key]: processedValue
@@ -167,41 +162,49 @@ function Metadata() {
   };
 
   const updateMetadata = async () => {
-    if (!auth.user?.access_token || !jobName || !selectedWork) {
+    if (!auth.user?.access_token || !selectedWork) {
       setError('Unable to update: Missing required data');
       return;
     }
-
-    const preparedModifiedFields = {};
-    Object.entries(modifiedFields).forEach(([key, value]) => {
-      if (typeof value === 'object' && value !== null && 'value' in value) {
-        if (typeof value.value === 'string') {
-          preparedModifiedFields[key] = {
-            ...value,
-            value: value.value.split(',').map(item => item.trim())
+    try {
+      setIsLoading(true);   
+      const processedModifiedFields = {};
+      Object.entries(modifiedFields).forEach(([key, value]) => {
+        if (typeof value === 'object' && value !== null && 'value' in value) {
+          if (typeof value.value === 'string') {
+            processedModifiedFields[key] = {
+              ...value,
+              value: value.value.includes(',') ? 
+                value.value.split(',').map(item => item.trim()) : 
+                value.value
+            };
+          } else {
+            processedModifiedFields[key] = value;
+          }
+        } else if (typeof value === 'string' && 
+                  metadata[key] && 
+                  typeof metadata[key] === 'object' && 
+                  Array.isArray(metadata[key].value)) {
+          processedModifiedFields[key] = {
+            ...metadata[key],
+            value: value.includes(',') ? 
+              value.split(',').map(item => item.trim()) : 
+              [value]
           };
         } else {
-          preparedModifiedFields[key] = value;
+          processedModifiedFields[key] = value;
         }
-      } else {
-        preparedModifiedFields[key] = value;
-      }
-    });
-
-    const requestBody = {
-      job_name: jobName,
-      work_id: selectedWork.work_id,
-      updated_fields: preparedModifiedFields
-    };
+      });
   
-    try {
-      setIsLoading(true);
+      console.log("Sending update with fields:", processedModifiedFields);
+      
       const url = `${API_ENDPOINT}/results`;
       const requestBody = {
-        job_name: jobName,
+        job_name: selectedWork.job_name,
         work_id: selectedWork.work_id,
-        updated_fields: modifiedFields
-      };      
+        updated_fields: processedModifiedFields
+      };
+      
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
@@ -294,10 +297,14 @@ function Metadata() {
     try {
       setIsLoading(true);  
       const allMetadataResults = [];
+      const currentJobName = selectedWork?.job_name || jobName;
+      if (!currentJobName) {
+        throw new Error('Job name is undefined. Please select a work first.');
+      }
       for (let i = 0; i < allWorks.length; i++) {
         const work = allWorks[i];
         try {
-          const metadata = await fetchWorkDetails(work.work_id);          
+          const metadata = await fetchWorkDetails(work.work_id, work.job_name);          
           allMetadataResults.push({
             ...metadata,
             work_id: work.work_id,
@@ -342,7 +349,7 @@ function Metadata() {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${jobName}-all-results-${new Date().toISOString()}.csv`;
+      link.download = `${currentJobName}-all-results-${new Date().toISOString()}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -360,6 +367,10 @@ function Metadata() {
       return '';
     }
   
+    if (Array.isArray(val) && val.length === 0) {
+      return ''; 
+    }
+
     if (Array.isArray(val) && val.length > 0 && 
         typeof val[0] === 'object' && val[0] !== null && 
         'biases' in val[0]) {
@@ -428,12 +439,8 @@ function Metadata() {
   const workNavigationItems = allWorks.map(work => ({
     type: 'link',
     text: `Work ID: ${work.work_id}`,
-    href: '#',
+    href: `#${work.work_id}`,
     info: <StatusIndicator type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} />,
-    onFollow: e => {
-      e.preventDefault();
-      handleWorkSelect(work);
-    }
   }));
 
   const breadcrumbItems = [
@@ -447,58 +454,120 @@ function Metadata() {
         key === 'job_name' || key === 'work_status') {
       return null;
     }
-
-    const isNestedStructure = value && 
-      typeof value === 'object' && 
-      ('explanation' in value || 'value' in value);
-
+  
     const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-    if (!isNestedStructure) {
+    
+    if (Array.isArray(value) && value.length === 0) {
       return (
         <Container
           key={key}
           header={<Header variant="h3">{formattedKey}</Header>}
         >
-          <FormField label="Value">
+          <FormField 
+            label="Value" 
+            description="Enter comma-separated values for this field. Currently empty."
+          >
             <Textarea
-              value={formatValue(value)}
-              onChange={({ detail }) => handleMetadataEdit(key, detail.value)}
-              rows={4}
+              value=""
+              onChange={({ detail }) => handleMetadataEdit(key, 
+                detail.value.split(',').filter(item => item.trim().length > 0)
+              )}
+              rows={2}
+              placeholder="Enter comma-separated values..."
             />
           </FormField>
         </Container>
       );
     }
-
+    
+    const isNestedStructure = value && 
+      typeof value === 'object' && 
+      ('explanation' in value || 'value' in value);
+  
+    if (isNestedStructure) {
+      return (
+        <Container
+          key={key}
+          header={<Header variant="h3">{formattedKey}</Header>}
+        >
+          <SpaceBetween size="m">
+            <FormField label="Explanation">
+              <Textarea
+                value={value.explanation || ''}
+                onChange={({ detail }) => handleMetadataEdit(key, {
+                  ...value,
+                  explanation: detail.value
+                })}
+                rows={3}
+              />
+            </FormField>
+  
+            <FormField 
+              label="Value" 
+              description={Array.isArray(value.value) ? 
+                "Enter values separated by commas" : 
+                "Enter value for this field"}
+            >
+              <Textarea
+                value={value.value ? formatValue(value.value) : ''}
+                onChange={({ detail }) => handleMetadataEdit(key, {
+                  ...value,
+                  value: detail.value 
+                })}
+                rows={3}
+                placeholder={Array.isArray(value.value) ? 
+                  "e.g. value1, value2, value3" : 
+                  "Enter value here..."}
+              />
+            </FormField>
+          </SpaceBetween>
+        </Container>
+      );
+    }
+    
+    if (Array.isArray(value)) {
+      return (
+        <Container
+          key={key}
+          header={<Header variant="h3">{formattedKey}</Header>}
+        >
+          <FormField 
+            label="Value" 
+            description="Enter values separated by commas"
+          >
+            <Textarea
+              value={formatValue(value)}
+              onChange={({ detail }) => handleMetadataEdit(key, 
+                detail.value.split(',').map(item => item.trim()).filter(item => item)
+              )}
+              rows={4}
+              placeholder="e.g. value1, value2, value3"
+            />
+          </FormField>
+        </Container>
+      );
+    }
+    
     return (
       <Container
         key={key}
         header={<Header variant="h3">{formattedKey}</Header>}
       >
-        <SpaceBetween size="m">
-          <FormField label="Explanation">
-            <Textarea
-              value={value.explanation || ''}
-              onChange={({ detail }) => handleMetadataEdit(key, {
-                ...value,
-                explanation: detail.value
-              })}
-              rows={3}
-            />
-          </FormField>
-
-          <FormField label="Value">
-            <Textarea
-              value={value.value ? formatValue(value.value) : ''}
-              onChange={({ detail }) => handleMetadataEdit(key, {
-                ...value,
-                value: detail.value 
-              })}
-              rows={3}
-            />
-          </FormField>
-        </SpaceBetween>
+        <FormField 
+          label="Value"
+          description={
+            typeof value === 'object' ? 
+              "JSON object - Edit carefully" : 
+              `Enter ${typeof value} value`
+          }
+        >
+          <Textarea
+            value={formatValue(value)}
+            onChange={({ detail }) => handleMetadataEdit(key, detail.value)}
+            rows={4}
+            placeholder={`Enter ${formattedKey.toLowerCase()} here...`}
+          />
+        </FormField>
       </Container>
     );
   };
@@ -562,6 +631,22 @@ function Metadata() {
                       text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
                       href: '#'
                     }}
+                    onFollow={({ detail }) => {
+                      if (!detail.external) {
+                        // Extract the work_id from the href
+                        const workId = detail.href.substring(1);
+                        console.log("Selected work ID from navigation:", workId);
+                        
+                        // Find the work with this ID
+                        const workToSelect = allWorks.find(work => work.work_id === workId);
+                        
+                        // If found, select this work
+                        if (workToSelect) {
+                          console.log("Found work to select:", workToSelect);
+                          handleWorkSelect(workToSelect);
+                        }
+                      }
+                    }}
                   />
                 )}
               </Container>
@@ -598,13 +683,24 @@ function Metadata() {
                       }
                     >
                       <Grid
-                        gridDefinition={[
-                          { colspan: { default: 12, xxs: 6 } },
-                          { colspan: { default: 12, xxs: 6 } }
-                        ]}
+                        gridDefinition={
+                          metadata.image_s3_uris.length === 1 
+                            ? [{ colspan: 12 }]
+                            : [
+                                { colspan: { default: 12, xxs: 6 } },
+                                { colspan: { default: 12, xxs: 6 } }
+                              ]
+                        }
                       >
                         {metadata?.image_s3_uris?.slice(0, 2).map((uri, index) => (
-                          <div key={uri} style={{ padding: '1rem', textAlign: 'center' }}>
+                          <div 
+                            key={uri} 
+                            style={{ 
+                              padding: '1rem', 
+                              textAlign: 'center',
+                              margin: metadata.image_s3_uris.length === 1 ? '0 auto' : '0'  // Center if single image
+                            }}
+                          >
                             {imageData[uri] ? (
                               <img
                                 src={imageData[uri]}
