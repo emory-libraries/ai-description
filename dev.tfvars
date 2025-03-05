@@ -10,4 +10,4 @@ app_name = "ai-description"
 deployment_stage = "dev"
 
 # Deployment name (ENTER HERE OR REQUIRED TO INPUT BEFORE DEPLOYMENT)
-# deployment_name = "create"
+# deployment_name = ""

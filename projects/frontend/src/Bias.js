@@ -1,3 +1,7 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate } from 'react-router-dom';

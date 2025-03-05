@@ -16,8 +16,7 @@ resource "null_resource" "create_dist_dirs" {
   }
 
   provisioner "local-exec" {
-    command     = "mkdir .\\modules\\lambda\\dist\\functions 2>nul || exit 0"
-    interpreter = ["cmd", "/C"]
+    command = "mkdir -p ${each.value}"
   }
 
 }
