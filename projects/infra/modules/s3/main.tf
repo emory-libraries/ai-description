@@ -67,6 +67,18 @@ resource "aws_s3_bucket_public_access_block" "uploads_public_access_block" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_cors_configuration" "uploads_cors" {
+  bucket = aws_s3_bucket.uploads.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["http://localhost:3000"] # Add your production domain here as well
+    expose_headers  = ["ETag", "Content-Length", "Content-Type"]
+    max_age_seconds = 3000
+  }
+}
+
 # Logs bucket
 resource "aws_s3_bucket" "logs" {
   bucket        = "${var.deployment_prefix_global}-logs"

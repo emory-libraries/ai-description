@@ -19,6 +19,7 @@ resource "null_resource" "create_dist_dirs" {
   provisioner "local-exec" {
     command = "mkdir -p ${each.value}"
   }
+
 }
 
 # Lambda function configurations

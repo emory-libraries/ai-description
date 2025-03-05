@@ -3,9 +3,9 @@
 
 """Utils for the api_gateway_demo notebook."""
 import json
-import time
 import logging
 import os
+import time
 
 import boto3
 import requests
@@ -90,7 +90,7 @@ def create_dummy_job(
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
     }
     works = [
         {
@@ -142,7 +142,7 @@ def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     # Headers
     headers = {
         "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
     }
 
     # Make the GET request
@@ -176,7 +176,7 @@ def get_overall_progress(api_url: str, session_token: str) -> dict:
     # Headers
     headers = {
         "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
     }
 
     # Make the GET request
@@ -216,7 +216,7 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
     # Headers
     headers = {
         "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
     }
 
     # Make the GET request
@@ -234,7 +234,6 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
         response.raise_for_status()
 
 
-
 def update_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> None:
     # Construct the full URL
     api_url = api_url.rstrip("/")
@@ -244,7 +243,7 @@ def update_job_results(api_url: str, job_name: str, work_id: str, session_token:
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
     }
 
     updated_fields = {"work_status": "REVIEWED"}
