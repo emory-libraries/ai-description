@@ -5,11 +5,32 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { 
-  View, Card, Button, Heading, Flex, Text, Alert, Loader, Collection, ScrollView
-} from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
+  AppLayout,
+  Container,
+  ContentLayout,
+  SpaceBetween,
+  Header,
+  Box,
+  Button,
+  Alert,
+  HelpPanel,
+  Spinner,
+  SideNavigation,
+  ExpandableSection,
+  Grid,
+  Tabs,
+  TextContent,
+  Textarea,
+  FormField,
+  StatusIndicator,
+  ColumnLayout,
+  Link,
+  Cards,
+  BreadcrumbGroup
+} from "@cloudscape-design/components";
+import { AWSSideNavigation } from './components/Navigation';
 
-function App() {
+function Metadata() {
   const auth = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,7 +42,7 @@ function App() {
   const [modifiedFields, setModifiedFields] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://pn17lumhd3.execute-api.us-east-1.amazonaws.com/dev';
+  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
     return new S3Client({
@@ -51,14 +72,12 @@ function App() {
         return null;
       }
     
-      const [, bucket, key] = matches;
+      const [, bucket, key] = matches;      
       const command = new GetObjectCommand({ Bucket: bucket, Key: key });
       const response = await s3Client.send(command);
-      
       const arrayBuffer = await response.Body.transformToByteArray();
       const blob = new Blob([arrayBuffer]);
       const imageUrl = URL.createObjectURL(blob);
-      
       return imageUrl;
     } catch (err) {
       console.error('Error fetching image:', err);
@@ -87,7 +106,7 @@ function App() {
       console.error('Error fetching work details:', err);
       throw err;
     }
-  }, [jobName, API_ENDPOINT]);
+  }, [jobName]);
 
   const handleWorkSelect = useCallback(async (work) => {
     setIsLoading(true);
@@ -95,6 +114,7 @@ function App() {
     setMetadata(null);
     setImageData({});
     setError(null);
+    setModifiedFields({});
 
     try {
       const workDetails = await fetchWorkDetails(work.work_id);
@@ -105,26 +125,109 @@ function App() {
           const imageUrl = await fetchImage(uri);
           return { uri, imageUrl };
         });
-
         const images = await Promise.all(imagePromises);
         const newImageData = {};
         images.forEach(({ uri, imageUrl }) => {
           if (imageUrl) newImageData[uri] = imageUrl;
         });
-
         setImageData(newImageData);
       }
     } catch (err) {
-      setError(`Failed to load work details: ${err.message}`);
+      console.error('Error in handleWorkSelect:', err);
     } finally {
       setIsLoading(false);
     }
   }, [fetchWorkDetails, fetchImage]);
 
+  const handleMetadataEdit = (key, value) => {
+    if (key === 'job_name' || key === 'work_id') return;    
+
+    let processedValue = value;
+    
+    if (typeof value === 'object' && value !== null && 
+        'value' in value && Array.isArray(value.value)) {
+      processedValue = {
+        ...value
+      };
+    }
+    
+    setMetadata(prev => ({
+      ...prev,
+      [key]: processedValue
+    }));
+    
+    setModifiedFields(prev => ({
+      ...prev,
+      [key]: processedValue
+    }));
+  };
+
+  const updateMetadata = async () => {
+    if (!auth.user?.access_token || !jobName || !selectedWork) {
+      setError('Unable to update: Missing required data');
+      return;
+    }
+
+    const preparedModifiedFields = {};
+    Object.entries(modifiedFields).forEach(([key, value]) => {
+      if (typeof value === 'object' && value !== null && 'value' in value) {
+        if (typeof value.value === 'string') {
+          preparedModifiedFields[key] = {
+            ...value,
+            value: value.value.split(',').map(item => item.trim())
+          };
+        } else {
+          preparedModifiedFields[key] = value;
+        }
+      } else {
+        preparedModifiedFields[key] = value;
+      }
+    });
+
+    const requestBody = {
+      job_name: jobName,
+      work_id: selectedWork.work_id,
+      updated_fields: preparedModifiedFields
+    };
+  
+    try {
+      setIsLoading(true);
+      const url = `${API_ENDPOINT}/results`;
+      const requestBody = {
+        job_name: jobName,
+        work_id: selectedWork.work_id,
+        updated_fields: modifiedFields
+      };      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${auth.user.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+      }
+
+      const data = await response.json();
+      setMetadata(data.item);
+      setModifiedFields({});
+      setError(null);
+    } catch (err) {
+      console.error('Error updating metadata:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   useEffect(() => {
     const fetchAllWorks = async () => {
       try {
         setIsLoading(true);
+        
         const response = await fetch(
           `${API_ENDPOINT}/job_progress?job_name=${jobName}`,
           {
@@ -138,7 +241,7 @@ function App() {
           throw new Error(`Failed to fetch job data: ${response.status}`);
         }
 
-        const jobData = await response.json();
+        const jobData = await response.json();        
         const works = [];
         
         if (jobData.job_progress) {
@@ -156,12 +259,18 @@ function App() {
 
         setAllWorks(works);
 
-        if (works.length > 0) {
+        if (location.state?.workId) {
+          const workToSelect = works.find(w => w.work_id === location.state.workId);
+          if (workToSelect) {
+            await handleWorkSelect(workToSelect);
+          } else if (works.length > 0) {
+            await handleWorkSelect(works[0]);
+          }
+        } else if (works.length > 0) {
           await handleWorkSelect(works[0]);
         }
       } catch (err) {
         console.error('Error fetching all works:', err);
-        setError(`Error fetching works: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
@@ -170,158 +279,62 @@ function App() {
     if (auth.user?.access_token && jobName) {
       fetchAllWorks();
     }
-  }, [auth.user?.access_token, jobName, API_ENDPOINT, handleWorkSelect]);
-
-  const handleMetadataEdit = (key, value, isNestedObject = false) => {
-    if (key === 'job_name' || key === 'work_id') return;
-  
-    let parsedValue = isNestedObject ? 
-      (value.trim() === '' ? {} : JSON.parse(value)) : 
-      value;
-  
-    setMetadata(prev => ({
-      ...prev,
-      [key]: parsedValue
-    }));
-    
-    setModifiedFields(prev => ({
-      ...prev,
-      [key]: parsedValue
-    }));
-  };
-  
-  const updateMetadata = async () => {
-    if (!auth.user?.access_token || !jobName || !selectedWork) {
-      setError('Unable to update: Missing required data');
-      return;
-    }
-  
-    try {
-      setIsLoading(true);
-      const url = `${API_ENDPOINT}/results`;
-      
-      if (Object.keys(modifiedFields).length === 0) {
-        setError('No fields have been modified');
-        return;
-      }
-  
-      const requestBody = {
-        job_name: jobName,
-        work_id: selectedWork.work_id,
-        updated_fields: modifiedFields
-      };
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${auth.user.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-  
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
-  
-      const data = await response.json();
-      setMetadata(data.item);
-      setModifiedFields({});
-      setError(null);
-    } catch (err) {
-      console.error('Error updating metadata:', err);
-      setError(`Error updating metadata: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [auth.user?.access_token, jobName, handleWorkSelect, location.state]);
 
   const downloadAllMetadata = async () => {
     if (!allWorks || allWorks.length === 0) {
-      setError('No works available to download');
+      console.error('No works available to download metadata.');
       return;
     }
   
     try {
-      setIsLoading(true);
-      setError(`Preparing download for ${allWorks.length} works...`);
-  
+      setIsLoading(true);  
       const allMetadataResults = [];
       for (let i = 0; i < allWorks.length; i++) {
         const work = allWorks[i];
-        setError(`Fetching data for work ${i + 1} of ${allWorks.length}...`);
-        
         try {
-          const metadata = await fetchWorkDetails(work.work_id);
+          const metadata = await fetchWorkDetails(work.work_id);          
           allMetadataResults.push({
-            ...metadata
+            ...metadata,
+            work_id: work.work_id,
+            work_status: work.work_status
           });
         } catch (err) {
           console.error(`Error fetching work ${work.work_id}:`, err);
           allMetadataResults.push({
+            work_id: work.work_id,
+            work_status: 'ERROR',
             error: 'Failed to fetch metadata'
           });
         }
       }
   
-      const allKeys = new Set();
+      const headers = ['work_id', 'work_status'];
+      const metadataKeys = new Set();
       allMetadataResults.forEach(metadata => {
         Object.keys(metadata).forEach(key => {
-          if (key !== 'image_s3_uris') { 
-            allKeys.add(key);
+          if (!['work_id', 'work_status', 'image_s3_uris'].includes(key)) {
+            metadataKeys.add(key);
           }
         });
       });
-  
-      const headers = [
-        'work_id',
-        'work_status',
-        ...Array.from(allKeys).filter(key => 
-          !['work_id', 'work_status'].includes(key)
-        )
-      ];
-  
+      headers.push(...Array.from(metadataKeys));
+        
       const rows = allMetadataResults.map(metadata => {
         return headers.map(header => {
           const value = metadata[header];
-          if (value === undefined || value === null) {
-            return '""';
-          }
-          if (typeof value === 'object') {
-            try {
-              const jsonValue = typeof value === 'string' ? JSON.parse(value) : value;
-              if (Array.isArray(jsonValue)) {
-                return `"${jsonValue.join(', ')}"`;
-              } else {
-                const readableValue = Object.entries(jsonValue)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(', ');
-                return `"${readableValue.replace(/"/g, '""')}"`;
-              }
-            } catch (e) {
-              return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+          if (!value) return '""';
+          if (typeof value === 'object' && value !== null) {
+            if ('explanation' in value && 'value' in value) {
+              return `"${formatValue(value.value)} (${value.explanation.replace(/"/g, '""')})"`;
             }
-          }
-          if (typeof value === 'string' && value.startsWith('{')) {
-            try {
-              const jsonValue = JSON.parse(value);
-              if (Array.isArray(jsonValue)) {
-                return `"${jsonValue.join(', ')}"`;
-              } else {
-                const readableValue = Object.entries(jsonValue)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join('; ');
-                return `"${readableValue.replace(/"/g, '""')}"`;
-              }
-            } catch (e) {
-              return `"${String(value).replace(/"/g, '""')}"`;
-            }
+            return `"${formatValue(value).replace(/"/g, '""')}"`;
           }
           return `"${String(value).replace(/"/g, '""')}"`;
         }).join(',');
       });
-
-      const csvContent = [headers.join(','), ...rows].join('\n');
+  
+      const csvContent = [headers.join(','), ...rows].join('\n');      
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -329,245 +342,330 @@ function App() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-  
+      URL.revokeObjectURL(link.href);    
       setError(null);
     } catch (error) {
       console.error('Error downloading all metadata:', error);
-      setError(`Error downloading all metadata: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const formatValue = (val) => {
+    if (val === null || val === undefined) {
+      return '';
+    }
   
+    if (Array.isArray(val) && val.length > 0 && 
+        typeof val[0] === 'object' && val[0] !== null && 
+        'biases' in val[0]) {
+      return val.map((page, pageIndex) => {
+        return `Page ${pageIndex + 1}:\n` + page.biases.map(bias => 
+          `Type: ${bias.type}\nLevel: ${bias.level}\nExplanation: ${bias.explanation}`
+        ).join('\n\n');
+      }).join('\n\n');
+    }
+  
+    if (typeof val === 'object' && val !== null && 'transcriptions' in val) {
+      const result = [];
+      val.transcriptions.forEach((trans, index) => {
+        result.push(`Page ${index + 1}:`);
+        if (trans.printed_text && trans.printed_text.length > 0) {
+          result.push('Printed text:');
+          trans.printed_text.forEach(text => {
+            result.push(`  ${text}`);
+          });
+        }
+        if (trans.handwriting && trans.handwriting.length > 0) {
+          result.push('Handwriting:');
+          trans.handwriting.forEach(text => {
+            result.push(`  ${text}`);
+          });
+        }
+        result.push('');
+      });
+  
+      if (val.model_notes) {
+        result.push('Notes:');
+        result.push(`${val.model_notes}`);
+      }
+  
+      return result.join('\n');
+    }
+  
+    if (typeof val === 'object' && val !== null && 'biases' in val) {
+      if (Array.isArray(val.biases) && val.biases.length === 0) {
+        return 'No biases found';
+      }
+      return val.biases.map(bias => `${bias}`).join(', ') || 'No biases found';
+    }
+  
+    if (Array.isArray(val)) {
+      if (typeof val[0] === 'string') {
+        return val.map(item => String(item).trim()).join(', ');
+      }
+      return JSON.stringify(val);
+    }
+  
+    if (typeof val === 'object' && val !== null && 'value' in val) {
+      if (Array.isArray(val.value)) {
+        return val.value.map(item => String(item).trim()).join(', ');
+      }
+      return String(val.value);
+    }
+  
+    if (typeof val === 'object' && val !== null) {
+      return JSON.stringify(val, null, 2);
+    }
+  
+    return String(val || '');
+  };
+
+  const workNavigationItems = allWorks.map(work => ({
+    type: 'link',
+    text: `Work ID: ${work.work_id}`,
+    href: '#',
+    info: <StatusIndicator type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} />,
+    onFollow: e => {
+      e.preventDefault();
+      handleWorkSelect(work);
+    }
+  }));
+
+  const breadcrumbItems = [
+    { text: 'Document Analysis Service', href: '/' },
+    { text: 'Job Status', href: '/' },
+    { text: `Metadata Analysis: ${jobName || ''}` }
+  ];
+  
+  const renderMetadataSection = (key, value) => {
+    if (key === 'image_s3_uris' || key === 'work_id' || 
+        key === 'job_name' || key === 'work_status') {
+      return null;
+    }
+
+    const isNestedStructure = value && 
+      typeof value === 'object' && 
+      ('explanation' in value || 'value' in value);
+
+    const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    if (!isNestedStructure) {
+      return (
+        <Container
+          key={key}
+          header={<Header variant="h3">{formattedKey}</Header>}
+        >
+          <FormField label="Value">
+            <Textarea
+              value={formatValue(value)}
+              onChange={({ detail }) => handleMetadataEdit(key, detail.value)}
+              rows={4}
+            />
+          </FormField>
+        </Container>
+      );
+    }
+
+    return (
+      <Container
+        key={key}
+        header={<Header variant="h3">{formattedKey}</Header>}
+      >
+        <SpaceBetween size="m">
+          <FormField label="Explanation">
+            <Textarea
+              value={value.explanation || ''}
+              onChange={({ detail }) => handleMetadataEdit(key, {
+                ...value,
+                explanation: detail.value
+              })}
+              rows={3}
+            />
+          </FormField>
+
+          <FormField label="Value">
+            <Textarea
+              value={value.value ? formatValue(value.value) : ''}
+              onChange={({ detail }) => handleMetadataEdit(key, {
+                ...value,
+                value: detail.value 
+              })}
+              rows={3}
+            />
+          </FormField>
+        </SpaceBetween>
+      </Container>
+    );
+  };
 
   return (
-    <View padding="medium">
-      <Card variation="elevated">
-        <Flex direction="column" gap="medium">
-          <Flex justifyContent="space-between" alignItems="center">
-            <Button onClick={() => navigate('/')} variation="link">
-              ← Back to Jobs
-            </Button>
-            <Heading level={4}>Results for {jobName}</Heading>
-          </Flex>
-
-          {error && <Alert variation="error">{error}</Alert>}
-
-          <Flex direction="row" gap="medium">
-            <Card variation="outlined" width="320px">
-              <Flex direction="column" gap="medium">
-                <Flex direction="row" alignItems="center" justifyContent="space-between">
-                  <Heading level={5}>Works</Heading>
-                  <Flex justifyContent = "flex-end" gap = "small">
-                    <Button
-                      variation="primary"
-                      size="small"
-                      onClick={downloadAllMetadata}
-                      style={{
-                        padding: '4px',  
-                        fontSize: '0.875rem', 
-                        height: '32px',
-                        width: '180px'   
-                      }}
-                    >
-                      {isLoading ? 'Preparing Download...' : 'Download All Metadata'}
-                    </Button>
-                  </Flex>
-                </Flex>
-                {allWorks.length > 0 ? (
-                  <Collection
-                    type="list"
-                    items={allWorks}
-                    gap="small"
+    <AppLayout
+      navigation={<AWSSideNavigation activeHref="/metadata" />}
+      toolsHide = {true}
+      breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
+      content={
+        <ContentLayout
+          header={
+            <Header
+              variant="h1"
+              description="View and edit document metadata"
+              actions={
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button
+                    onClick={() => navigate('/')}
+                    variant="link"
                   >
-                    {(work) => (
-                      <Button
-                        key={work.work_id}
-                        onClick={() => handleWorkSelect(work)}
-                        variation={selectedWork?.work_id === work.work_id ? "primary" : "default"}
-                        style={{
-                          textAlign: 'left',
-                          justifyContent: 'flex-start',
-                          width: '100%',
-                          padding: '12px'
-                        }}
-                      >
-                        <Flex direction="column" gap="small">
-                          <Text>Work ID: {work.work_id}</Text>
-                          <Text 
-                            fontSize="small" 
-                            color={work.work_status === 'FAILED TO PROCESS' ? 'red' : 'gray'}
-                          >
-                            Status: {work.work_status}
-                          </Text>
-                        </Flex>
-                      </Button>
-                    )}
-                  </Collection>
-                ) : (
-                  <Text>No works available</Text>
-                )}
-              </Flex>
-            </Card>
+                    Back to job status
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={downloadAllMetadata}
+                    loading={isLoading}
+                    disabled={!allWorks || allWorks.length === 0}
+                  >
+                    Download All Metadata
+                  </Button>
+                </SpaceBetween>
+              }
+            >
+              Metadata Results: {jobName}
+            </Header>
+          }
+        >
+          <SpaceBetween size="l">
+            {error && (
+              <Alert type="info" dismissible>
+                {error}
+              </Alert>
+            )}
 
-            <Card variation="outlined" flex="1">
-              <Flex direction="column" gap="medium">
-                {isLoading ? (
-                  <Flex direction="column" alignItems="center" justifyContent="center">
-                    <Loader size="large" />
-                    <Text>Loading work details...</Text>
-                  </Flex>
-                ) : selectedWork ? (
+            <Grid gridDefinition={[{ colspan: 3 }, { colspan: 9 }]}>
+              {/* Left panel - Work selection */}
+              <Container header={<Header variant="h2">Works</Header>}>
+                {isLoading && !selectedWork ? (
+                  <Box textAlign="center" padding="l">
+                    <SpaceBetween size="s" direction="vertical" alignItems="center">
+                      <Spinner />
+                      <Box variant="p">Loading works...</Box>
+                    </SpaceBetween>
+                  </Box>
+                ) : (
+                  <SideNavigation
+                    activeHref={selectedWork ? `#${selectedWork.work_id}` : undefined}
+                    items={workNavigationItems}
+                    header={{
+                      text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
+                      href: '#'
+                    }}
+                  />
+                )}
+              </Container>
+
+              {/* Right panel - Metadata display and editing */}
+              <SpaceBetween size="l">
+                {isLoading && selectedWork ? (
+                  <Container>
+                    <Box textAlign="center" padding="l">
+                      <SpaceBetween size="s" direction="vertical" alignItems="center">
+                        <Spinner />
+                        <Box variant="p">Loading metadata details...</Box>
+                      </SpaceBetween>
+                    </Box>
+                  </Container>
+                ) : selectedWork && metadata ? (
                   <>
-                    <Flex justifyContent="flex-end" gap="small">
-                      <Button
-                        variation="primary"
-                        size = "small"
-                        onClick={updateMetadata}
-                        disabled={!metadata || isLoading || Object.keys(modifiedFields).length === 0}
-                      >
-                        Update Metadata
-                      </Button>
-                    </Flex>
-
-                    <Card variation="outlined" padding="medium">
-                      <Flex direction="row" gap="medium" justifyContent="center">
-                        {metadata?.image_s3_uris?.slice(0, 2).map((uri, index) => (
-                          <Card 
-                            key={uri} 
-                            variation="outlined" 
-                            padding="small"
-                            backgroundColor="white"
-                            width="400px"
-                            height="400px"
-                          >
-                            <Flex 
-                              direction="column" 
-                              alignItems="center" 
-                              justifyContent="center"
-                              height="100%"
+                    <Container
+                      header={
+                        <Header
+                          variant="h2"
+                          actions={
+                            <Button
+                              variant="primary"
+                              disabled={Object.keys(modifiedFields).length === 0}
+                              onClick={updateMetadata}
                             >
-                              {imageData[uri] ? (
-                                <img
-                                  src={imageData[uri]}
-                                  alt={`Image ${index + 1}`}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain'
-                                  }}
-                                />
-                              ) : (
-                                <Flex 
-                                  direction="column" 
-                                  alignItems="center" 
-                                  justifyContent="center"
-                                  height="100%"
-                                  width="100%"
-                                >
-                                  <Loader size="large" />
-                                  <Text>Loading image {index + 1}...</Text>
-                                </Flex>
-                              )}
-                            </Flex>
-                          </Card>
-                        ))}
-                      </Flex>
-                    </Card>
-
-                    {metadata ? (
-                      <ScrollView height="400px">
-                        <Collection
-                          type="list"
-                          items={Object.entries(metadata)}
-                          gap="small"
+                              Save Changes
+                            </Button>
+                          }
                         >
-                          {([key, value]) => {
-                            if (key === 'image_s3_uris' || key === 'work_id' || 
-                                key === 'job_name' || key === 'work_status') {
-                              return null;
-                            }
-
-                            const isObject = typeof value === 'object' && value !== null;
-                            const displayValue = isObject ? 
-                              JSON.stringify(value, null, 2) : 
-                              String(value || '');
-
-                            return (
-                              <Card
-                                key={key}
-                                variation="outlined"
-                                padding="small"
-                              >
-                                <Flex direction="column" gap="small">
-                                  <Text fontWeight="bold">
-                                    {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                  </Text>
-                                  <textarea
-                                    value={isObject ? 
-                                      (() => {
-                                        try {
-                                          if (Array.isArray(value)) {
-                                            return value.join(', ');
-                                          } else {
-                                            return Object.entries(value)
-                                              .map(([k, v]) => `${k}: ${v}`)
-                                              .join(', ');
-                                          }
-                                        } catch (e) {
-                                          return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-                                        }
-                                      })()
-                                      : displayValue
-                                    }
-                                    onChange={(e) => handleMetadataEdit(key, e.target.value, isObject)}
-                                    placeholder={`Enter ${key.replace(/_/g, ' ').toLowerCase()}`}
-                                    style={{
-                                      padding: '8px',
-                                      border: '1px solid #ccc',
-                                      borderRadius: '4px',
-                                      width: '100%',
-                                      minHeight: '100px',
-                                      resize: 'vertical',
-                                      fontFamily: 'monotone',
-                                      whiteSpace: 'pre-wrap'
-                                    }}
-                                />
-                                </Flex>
-                              </Card>
-                            );
-                          }}
-                        </Collection>
-                      </ScrollView>
-                    ) : (
-                      <Flex 
-                        direction="column" 
-                        alignItems="center" 
-                        justifyContent="center" 
-                        height="200px"
+                          Document Preview
+                        </Header>
+                      }
+                    >
+                      <Grid
+                        gridDefinition={[
+                          { colspan: { default: 12, xxs: 6 } },
+                          { colspan: { default: 12, xxs: 6 } }
+                        ]}
                       >
-                        <Text>No metadata available</Text>
-                      </Flex>
-                    )}
-                  </>
+                        {metadata?.image_s3_uris?.slice(0, 2).map((uri, index) => (
+                          <div key={uri} style={{ padding: '1rem', textAlign: 'center' }}>
+                            {imageData[uri] ? (
+                              <img
+                                src={imageData[uri]}
+                                alt={`Page ${index + 1}`}
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '400px',
+                                  objectFit: 'contain',
+                                  border: '1px solid #eaeded',
+                                  borderRadius: '4px',
+                                  padding: '8px',
+                                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                padding="xl"
+                                textAlign="center"
+                                color="text-status-inactive"
+                                fontSize="heading-m"
+                                className="custom-document-placeholder"
+                              >
+                                <SpaceBetween size="s" direction="vertical" alignItems="center">
+                                  <Spinner />
+                                  <Box variant="p">Loading image {index + 1}...</Box>
+                                </SpaceBetween>
+                              </Box>
+                            )}
+                          </div>
+                        ))}
+                      </Grid>
+                    </Container>
+    
+                    {/* Metadata fields */}
+                    <Container
+                      header={
+                        <Header variant="h2">
+                          Document Metadata
+                        </Header>
+                      }
+                    >
+                      <SpaceBetween size="l">
+                        {Object.entries(metadata).map(([key, value]) => 
+                          renderMetadataSection(key, value)
+                        )}
+                      </SpaceBetween>
+                    </Container>
+                    </>
                 ) : (
-                  <Flex 
-                    direction="column" 
-                    alignItems="center" 
-                    justifyContent="center" 
-                    height="600px"
-                  >
-                    <Text>Select a work item to view details</Text>
-                  </Flex>
+                  <Container>
+                    <Box textAlign="center" padding="xl">
+                      <Box variant="h3">Select a document</Box>
+                      <Box variant="p">
+                        Please select a document from the list to view and edit its metadata.
+                      </Box>
+                    </Box>
+                  </Container>
                 )}
-              </Flex>
-            </Card>
-          </Flex>
-        </Flex>
-      </Card>
-    </View>
-  );
-}
-
-export default App;
+              </SpaceBetween>
+            </Grid>
+          </SpaceBetween>
+        </ContentLayout>
+      }
+    />
+    ); }
+    
+    export default Metadata;
+      

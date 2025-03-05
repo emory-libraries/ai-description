@@ -5,10 +5,26 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { 
-  View, Card, Button, Heading, Flex, Text, Alert, Loader, Collection, ScrollView,
-  Badge
-} from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
+  AppLayout,
+  Container,
+  ContentLayout,
+  SpaceBetween,
+  Header,
+  Box,
+  Button,
+  Alert,
+  Spinner,
+  SideNavigation,
+  ColumnLayout,
+  Badge,
+  Tabs,
+  Table,
+  Link,
+  StatusIndicator,
+  Grid,
+  BreadcrumbGroup
+} from "@cloudscape-design/components";
+import { AWSSideNavigation } from './components/Navigation';
 
 function Bias() {
   const auth = useAuth();
@@ -22,107 +38,130 @@ function Bias() {
   const [imageData, setImageData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://pn17lumhd3.execute-api.us-east-1.amazonaws.com/dev';
+  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
-      return new S3Client({
-        region: "us-east-1",
-        credentials: fromCognitoIdentityPool({
-          client: new CognitoIdentityClient({ region: "us-east-1" }),
-          identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
-          logins: {
-            [`cognito-idp.us-east-1.amazonaws.com/${process.env.REACT_APP_COGNITO_USER_POOL_ID}`]: auth.user?.id_token
-          }
-        })
-      });
-    }, [auth.user?.id_token]);
-  
-    const fetchImage = useCallback(async (uri) => {
-      if (!uri || typeof uri !== 'string') {
-        console.error('Invalid URI provided:', uri);
-        return null;
-      }
-  
-      try {
-        const s3Client = initializeS3Client();
-        const matches = uri.match(/s3:\/\/([^/]+)\/(.+)/);
-        
-        if (!matches) {
-          console.error('Invalid S3 URI format:', uri);
-          return null;
+    return new S3Client({
+      region: "us-east-1",
+      credentials: fromCognitoIdentityPool({
+        client: new CognitoIdentityClient({ region: "us-east-1" }),
+        identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
+        logins: {
+          [`cognito-idp.us-east-1.amazonaws.com/${process.env.REACT_APP_COGNITO_USER_POOL_ID}`]: auth.user?.id_token
         }
+      })
+    });
+  }, [auth.user?.id_token]);
+  
+  const fetchImage = useCallback(async (uri) => {
+    if (!uri || typeof uri !== 'string') {
+      console.error('Invalid URI provided:', uri);
+      return null;
+    }
+  
+    try {
+      const s3Client = initializeS3Client();
+      const matches = uri.match(/s3:\/\/([^/]+)\/(.+)/);
       
-        const [, bucket, key] = matches;
-        const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-        const response = await s3Client.send(command);
-        
-        const arrayBuffer = await response.Body.transformToByteArray();
-        const blob = new Blob([arrayBuffer]);
-        const imageUrl = URL.createObjectURL(blob);
-        
-        return imageUrl;
-      } catch (err) {
-        console.error('Error fetching image:', err);
+      if (!matches) {
+        console.error('Invalid S3 URI format:', uri);
         return null;
       }
-    }, [initializeS3Client]);
+    
+      const [, bucket, key] = matches;      
+      const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+      const response = await s3Client.send(command);  
+      const arrayBuffer = await response.Body.transformToByteArray();
+      const blob = new Blob([arrayBuffer]);
+      const imageUrl = URL.createObjectURL(blob);
+      return imageUrl;
+    } catch (err) {
+      console.error('Error fetching image:', err);
+      return null;
+    }
+  }, [initializeS3Client]);
 
-    const fetchBiasDetails = useCallback(async (workId) => {
-      try {
-        const response = await fetch(
-          `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${workId}`,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
+  const fetchBiasDetails = useCallback(async (workId) => {
+    try {
+      const response = await fetch(
+        `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${workId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
           }
-        );
-    
-        if (!response.ok) {
-          throw new Error(`Failed to fetch bias details: ${response.status}`);
         }
-    
-        const data = await response.json();
-        console.log('Bias details response:', data);
-        return data.item.bias_analysis; 
-      } catch (err) {
-        console.error('Error fetching bias details:', err);
-        throw err;
+      );
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bias details: ${response.status}`);
       }
-    }, [jobName]);
-    
-
+  
+      const data = await response.json();
+      const biasEntriesWithImages = data.item.page_biases.flatMap((page, pageIndex) => 
+        page.biases.map(bias => ({
+          ...bias,
+          bias_type: bias.type,  
+          bias_level: bias.level,    
+          imageUri: data.item.image_s3_uris[pageIndex]
+        }))
+      );
+      return biasEntriesWithImages;
+    } catch (err) {
+      console.error('Error fetching bias details:', err);
+      throw err;
+    }
+  }, [jobName]);
+  
   const handleWorkSelect = useCallback(async (work) => {
     setIsLoading(true);
     setSelectedWork(work);
     setSelectedBias(null);
     setBiasData(null);
     setError(null);
-
+  
     try {
-      const biasEntries = await fetchBiasDetails(work.work_id);
+      const response = await fetch(
+        `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${work.work_id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bias details: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      const image_s3_uris = data.item.image_s3_uris; 
+      const biasEntries = data.item.page_biases.flatMap((page, pageIndex) => 
+        page.biases.map(bias => ({
+          ...bias,
+          imageUri: image_s3_uris[pageIndex]
+        }))
+      );
       setBiasData(biasEntries);
-
-      if (work.image_s3_uris && work.image_s3_uris.length > 0) {
-        const imagePromises = work.image_s3_uris.map(async uri => {
+  
+      if (image_s3_uris && image_s3_uris.length > 0) {
+        const imagePromises = image_s3_uris.map(async uri => {
           const imageUrl = await fetchImage(uri);
           return { uri, imageUrl };
         });
-
+  
         const images = await Promise.all(imagePromises);
         const newImageData = {};
         images.forEach(({ uri, imageUrl }) => {
           if (imageUrl) newImageData[uri] = imageUrl;
         });
-
         setImageData(newImageData);
       }
     } catch (err) {
-      setError(`Failed to load bias details: ${err.message}`);
+      console.error('Error in handleWorkSelect:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [fetchBiasDetails, fetchImage]);
+  }, [jobName, fetchImage]);
 
   const handleBiasSelect = (biasEntry) => {
     setSelectedBias(biasEntry);
@@ -147,7 +186,6 @@ function Bias() {
 
         const jobData = await response.json();
         const works = [];
-        
         if (jobData.job_progress) {
           Object.entries(jobData.job_progress).forEach(([status, ids]) => {
             ids.forEach(id => {
@@ -162,159 +200,239 @@ function Bias() {
         }
 
         setAllWorks(works);
+        
+        if (workId) {
+          const workToSelect = works.find(w => w.work_id === workId);
+          if (workToSelect) {
+            await handleWorkSelect(workToSelect);
+          }
+        } else if (works.length > 0) {
+          await handleWorkSelect(works[0]);
+        }
       } catch (err) {
         console.error('Error fetching all works:', err);
-        setError(`Error fetching works: ${err.message}`);
       } finally {
         setIsLoading(false);
-      }
+      } 
     };
 
     if (auth.user?.access_token && jobName) {
       fetchAllWorks();
     }
-  }, [auth.user?.access_token, jobName, API_ENDPOINT]);
+  }, [auth.user?.access_token, jobName, workId, handleWorkSelect, API_ENDPOINT]);
 
   const getBiasLevelColor = (level) => {
+    if (!level) return "grey";
+
     switch (level.toLowerCase()) {
-      case 'high': return 'red';
-      case 'medium': return 'orange';
-      case 'low': return 'green';
-      default: return 'grey';
+      case 'high': return "error";
+      case 'medium': return "warning";
+      case 'low': return "success";
+      default: return "grey";
     }
   };
 
+  const handleBackToBiasList = () => {
+    setSelectedBias(null);
+  };
+
+  const workNavigationItems = allWorks.map(work => ({
+    type: 'link',
+    text: `Work ID: ${work.work_id}`,
+    href: '#',
+    info: <StatusIndicator type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} />,
+    onFollow: e => {
+      e.preventDefault();
+      handleWorkSelect(work);
+    }
+  }));
+
+  const biasTableItems = biasData || [];
+  const breadcrumbItems = [
+    { text: 'Document Analysis Service', href: '/' },
+    { text: 'Job Status', href: '/' },
+    { text: `Bias Analysis: ${jobName || ''}` }
+  ];
+
   return (
-    <View padding="medium">
-      <Card variation="elevated">
-        <Flex direction="column" gap="medium">
-          <Flex justifyContent="space-between" alignItems="center">
-            <Button onClick={() => navigate('/')} variation="link">
-              ← Back to Jobs
-            </Button>
-            <Heading level={4}>Bias Analysis for {jobName}</Heading>
-          </Flex>
+    <AppLayout
+      toolsHide = {true}
+      navigation={<AWSSideNavigation activeHref="/bias" />}
+      breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
+      content={
+        <ContentLayout
+          header={
+            <Header
+              variant="h1" 
+              description={`Bias analysis results for the specified document set`}
+              actions={
+                <Button variant="link" onClick={() => navigate('/')}>
+                  Back to Job Status
+                </Button>
+              }
+            >
+              Bias Analysis: {jobName}
+            </Header>
+          }
+        >
+          <SpaceBetween size="l">
+            {error && (
+              <Alert type="error" header="Error">
+                {error}
+              </Alert>
+            )}
 
-          {error && <Alert variation="error">{error}</Alert>}
-
-          <Flex direction="row" gap="medium">
-            {/* Left Panel */}
-            <Card variation="outlined" width="320px">
-              <Flex direction="column" gap="medium">
-                <Flex justifyContent="space-between" alignItems="center">
-                  <Heading level={5}>
-                    {selectedWork ? 'Bias Entries' : 'Works'}
-                  </Heading>
-                  {selectedWork && (
-                    <Button
-                      onClick={() => {
-                        setSelectedWork(null);
-                        setSelectedBias(null);
-                        setBiasData(null);
-                      }}
-                      variation="link"
-                    >
-                      ← Back to Works
-                    </Button>
-                  )}
-                </Flex>
-                {selectedWork ? (
-                  // Show bias entries for selected work
-                  <Collection
-                    type="list"
-                    items={biasData || []}
-                    gap="small"
-                  >
-                    {(biasEntry) => (
-                      <Button
-                        key={`${biasEntry.bias_type}-${biasEntry.bias_level}`}
-                        onClick={() => handleBiasSelect(biasEntry)}
-                        variation={selectedBias === biasEntry ? "primary" : "default"}
-                        style={{
-                          textAlign: 'left',
-                          justifyContent: 'flex-start',
-                          width: '100%',
-                          padding: '12px'
-                        }}
-                      >
-                        <Flex direction="column" gap="small">
-                          <Text fontWeight="bold">{biasEntry.bias_type}</Text>
-                          <Badge
-                            backgroundColor={getBiasLevelColor(biasEntry.bias_level)}
-                            color="white"
-                          >
-                            {biasEntry.bias_level} Risk
-                          </Badge>
-                        </Flex>
-                      </Button>
-                    )}
-                  </Collection>
+            <Grid gridDefinition={[{ colspan: 3 }, { colspan: 9 }]}>
+              {/* Left panel - Navigation */}
+              <Container header={<Header variant="h2">Works</Header>}>
+                {isLoading && !selectedWork ? (
+                  <Box textAlign="center" padding="l">
+                    <SpaceBetween size="s" direction="vertical" alignItems="center">
+                      <Spinner />
+                      <Box variant="p">Loading works...</Box>
+                    </SpaceBetween>
+                  </Box>
                 ) : (
-                  <Collection
-                    type="list"
-                    items={allWorks}
-                    gap="small"
-                  >
-                    {(work) => (
-                      <Button
-                        key={work.work_id}
-                        onClick={() => handleWorkSelect(work)}
-                        variation="default"
-                        style={{
-                          textAlign: 'left',
-                          justifyContent: 'flex-start',
-                          width: '100%',
-                          padding: '12px'
-                        }}
-                      >
-                        <Text>Work ID: {work.work_id}</Text>
-                      </Button>
-                    )}
-                  </Collection>
+                  <SideNavigation
+                    activeHref={selectedWork ? `#${selectedWork.work_id}` : undefined}
+                    items={workNavigationItems}
+                    header={{
+                      text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
+                      href: '#'
+                    }}
+                  />
                 )}
-              </Flex>
-            </Card>
+              </Container>
 
-            {/* Right Panel */}
-            <Card variation="outlined" flex="1">
-              <Flex direction="column" gap="medium">
-                {isLoading ? (
-                  <Flex direction="column" alignItems="center" justifyContent="center" height="600px">
-                    <Loader size="large" />
-                    <Text>Loading...</Text>
-                  </Flex>
-                ) : selectedBias ? (
-                  <Card variation="outlined" padding="medium">
-                    <Flex direction="column" gap="medium">
-                      <Heading level={4}>{selectedBias.bias_type} Bias Analysis</Heading>
-                      <Badge
-                        backgroundColor={getBiasLevelColor(selectedBias.bias_level)}
-                        color="white"
-                        size="large"
-                      >
-                        {selectedBias.bias_level} Risk Level
-                      </Badge>
-                      <Card variation="outlined" padding="medium">
-                        <Text fontWeight="bold">Explanation:</Text>
-                        <Text>{selectedBias.explanation}</Text>
-                      </Card>
-                    </Flex>
-                  </Card>
+              {/* Right panel - Bias details */}
+              <Container 
+                header={
+                  <Header 
+                    variant="h2"
+                    actions={
+                      selectedBias ? (
+                        <Button onClick={handleBackToBiasList} variant="normal">
+                          Back to bias list
+                        </Button>
+                      ) : null
+                    }
+                  >
+                    Bias Analysis Results
+                  </Header>
+                }
+              >
+                {isLoading && selectedWork ? (
+                  <Box textAlign="center" padding="l">
+                    <SpaceBetween size="s" direction="vertical" alignItems="center">
+                      <Spinner />
+                      <Box variant="p">Loading bias details...</Box>
+                    </SpaceBetween>
+                  </Box>
                 ) : selectedWork ? (
-                  <Flex direction="column" alignItems="center" justifyContent="center" height="400px">
-                    <Text>Select a bias entry to view details</Text>
-                  </Flex>
+                  <SpaceBetween size="l">
+                    {selectedBias ? (
+                      <Grid gridDefinition={[{ colspan: 6 }, { colspan: 6 }]}>
+                        {/* Left side - Image */}
+                        <Container>
+                          {imageData[selectedBias.imageUri] ? (
+                            <img
+                              src={imageData[selectedBias.imageUri]}
+                              alt="Content with detected bias"
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '500px',
+                                objectFit: 'contain'
+                              }}
+                            />
+                          ) : (
+                            <Box textAlign="center" padding="l">
+                              <SpaceBetween size="s" direction="vertical" alignItems="center">
+                                <Spinner />
+                                <Box variant="p">Loading image...</Box>
+                              </SpaceBetween>
+                            </Box>
+                          )}
+                        </Container>
+
+                        {/* Right side - Bias details */}
+                        <Container header={<Header variant="h3">Bias Details</Header>}>
+                          <SpaceBetween size="l">
+                            <ColumnLayout columns={2} variant="text-grid">
+                              <div>
+                                <Box variant="awsui-key-label">Type</Box>
+                                <Box variant="awsui-value-large">{selectedBias.type}</Box>
+                              </div>
+                              <div>
+                                <Box variant="awsui-key-label">Level</Box>
+                                <Box>
+                                  <StatusIndicator type={getBiasLevelColor(selectedBias.level)}>
+                                    {selectedBias.level} Risk
+                                  </StatusIndicator>
+                                </Box>
+                              </div>
+                            </ColumnLayout>
+                            <div>
+                              <Box variant="awsui-key-label">Explanation</Box>
+                              <Box variant="p">{selectedBias.explanation}</Box>
+                            </div>
+                          </SpaceBetween>
+                        </Container>
+                      </Grid>
+                    ) : (
+                      <Table
+                        header={<Header variant="h3">Identified Biases</Header>}
+                        columnDefinitions={[
+                          {
+                            id: "type",
+                            header: "Bias Type",
+                            cell: item => item.type || item.bias_type,
+                            sortingField: "type"
+                          },
+                          {
+                            id: "level",
+                            header: "Risk Level",
+                            cell: item => (
+                              <StatusIndicator type={getBiasLevelColor(item.level || item.bias_level)}>
+                                {item.level || item.bias_level}
+                              </StatusIndicator>
+                            )
+                          },
+                          {
+                            id: "explanation",
+                            header: "Explanation",
+                            cell: item => item.explanation
+                          }
+                        ]}
+                        items={biasTableItems}
+                        selectionType="single"
+                        onSelectionChange={({ detail }) => {
+                          if (detail.selectedItems.length > 0) {
+                            handleBiasSelect(detail.selectedItems[0]);
+                          }
+                        }}
+                        empty={
+                          <Box textAlign="center" color="text-body-secondary">
+                            <b>No biases found</b>
+                            <Box padding={{ bottom: "s" }}>
+                              No biases were detected in this document
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    )}
+                  </SpaceBetween>
                 ) : (
-                  <Flex direction="column" alignItems="center" justifyContent="center" height="400px">
-                    <Text>Select a work to view bias analysis</Text>
-                  </Flex>
+                  <Box textAlign="center" padding="l">
+                    <Box variant="h3">Select a work</Box>
+                    <Box variant="p">Please select a work from the list to view bias analysis results.</Box>
+                  </Box>
                 )}
-              </Flex>
-            </Card>
-          </Flex>
-        </Flex>
-      </Card>
-    </View>
+              </Container>
+            </Grid>
+          </SpaceBetween>
+        </ContentLayout>
+      }
+    />
   );
 }
 

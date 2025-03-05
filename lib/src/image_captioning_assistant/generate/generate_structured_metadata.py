@@ -127,7 +127,6 @@ def generate_work_structured_metadata(
     resize_kwargs: dict[str, Any],
     context_s3_uri: str | None = None,
 ) -> Metadata:
-<<<<<<< Updated upstream
     """Generate structured metadata for a work."""
     # Enforce max length of two
     if len(image_s3_uris) > 2:
@@ -154,24 +153,4 @@ def generate_work_structured_metadata(
         img_bytes_list=img_bytes_list,
         llm_kwargs=llm_kwargs,
         work_context=work_context,
-=======
-    logger.info("Processing work")
-    logger.info(context_s3_uri)
-    logger.info(image_s3_uris)
-    logger.info(original_metadata)
-    logger.info("Processing work complete")
-    return Metadata(
-        description="description",
-        transcription=Transcription(printed_text=["printed_text"], handwriting=["handwriting"]),
-        date="date",
-        location="location",
-        publication_info=["pub_info"],
-        contextual_info=["context_info"],
-        format=LibraryFormat.mixed_material,
-        genre=["genre"],
-        objects=["object"],
-        actions=["action"],
-        people=["people"],
-        topics=["topic"]
->>>>>>> Stashed changes
     )

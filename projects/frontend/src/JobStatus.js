@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "react-oidc-context";
-import { 
-  View,
-  Card, 
-  Button, 
-  Heading, 
-  Flex, 
-  Text,
+import {
+  AppLayout,
+  Container,
+  ContentLayout,
+  SpaceBetween,
+  Header,
+  Box,
+  Button,
+  Form,
+  FormField,
+  Input,
   Alert,
-  Loader,
-  Collection,
-  Divider,
-  TextField
-} from '@aws-amplify/ui-react';
+  Spinner,
+  Cards,
+  ProgressBar,
+  ColumnLayout,
+  ExpandableSection,
+  Badge,
+  BreadcrumbGroup
+} from "@cloudscape-design/components";
+import { AWSSideNavigation } from './components/Navigation';
 
-const API_ENDPOINT = 'https://pn17lumhd3.execute-api.us-east-1.amazonaws.com/dev';
+const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
 const JobStatus = () => {
   const auth = useAuth();
@@ -43,7 +51,6 @@ const JobStatus = () => {
     e.preventDefault();
     const trimmedJobName = jobName.trim();
     if (trimmedJobName) {
-      // Only clear jobs if submitting a different job name
       if (trimmedJobName !== submittedJobName) {
         setJobs(new Map());
         setError(null);
@@ -57,28 +64,35 @@ const JobStatus = () => {
   
     try {
       setIsLoading(true);
+      console.log(`Fetching from: ${API_ENDPOINT}/job_progress?job_name=${submittedJobName}`);
+      
       const response = await fetch(
         `${API_ENDPOINT}/job_progress?job_name=${submittedJobName}`,
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           }
         }
       );
-  
+        
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
         setJobs(new Map());
-        setError(null);
         return;
       }
   
-      const data = await response.json();
-      console.log('API Response:', data); // Debug log to see the response
-  
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        return;
+      }
+        
       const newJobs = new Map();
       const jobKey = submittedJobName;
-  
-      // Handle the job_progress structure from the Lambda
       const workItems = [];
       if (data.job_progress) {
         Object.entries(data.job_progress).forEach(([status, ids]) => {
@@ -95,7 +109,7 @@ const JobStatus = () => {
   
       const jobData = {
         job_name: jobKey,
-        job_type: data.job_type,
+        job_type: data.job_type || 'unknown',
         works: workItems
       };
   
@@ -104,12 +118,10 @@ const JobStatus = () => {
   
     } catch (err) {
       console.error('Error checking job progress:', err);
-      setError(`Failed to check job progress: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-  
   
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.access_token && submittedJobName) {
@@ -145,156 +157,219 @@ const JobStatus = () => {
     }
   };
 
+  const getStatusCounts = (job) => {
+    const inQueue = job.works.filter(w => w.status === 'IN_QUEUE').length;
+    const inProgress = job.works.filter(w => w.status === 'IN_PROGRESS' || w.status === 'PROCESSING').length;
+    const completed = job.works.filter(w => w.status === 'READY FOR REVIEW').length;
+    const failed = job.works.filter(w => w.status === 'FAILED TO PROCESS').length;
+    return { inQueue, inProgress, completed, failed };
+  };
+
+  const breadcrumbItems = [
+    { text: 'Document Analysis Service', href: '/' },
+    { text: 'Job Status', href: '/' }
+  ];
+
   if (!auth.isAuthenticated) {
     return (
-      <View padding="medium">
-        <Card variation="elevated">
-          <Flex direction="column" gap="medium" alignItems="center">
-            <Heading level={3}>Please sign in to continue</Heading>
-            <Button
-              variation="primary"
-              onClick={() => auth.signinRedirect()}
-              loadingText="Redirecting..."
+      <AppLayout
+        navigationHide={true}
+        content={
+          <ContentLayout>
+            <Container
+              header={<Header variant="h2">Authentication Required</Header>}
             >
-              Sign In
-            </Button>
-          </Flex>
-        </Card>
-      </View>
+              <SpaceBetween size="l">
+                <Box textAlign="center">
+                  <SpaceBetween size="m">
+                    <Box>Please sign in to access the job status dashboard</Box>
+                    <Button
+                      variant="primary"
+                      onClick={() => auth.signinRedirect()}
+                      loading={auth.isLoading}
+                    >
+                      Sign In
+                    </Button>
+                  </SpaceBetween>
+                </Box>
+              </SpaceBetween>
+            </Container>
+          </ContentLayout>
+        }
+      />
     );
   }
 
   return (
-    <View padding="medium">
-      <Card variation="elevated" padding="medium">
-        <Flex direction="column" gap="medium">
-          <Heading level={3}>Enter Job Name</Heading>
-          <form onSubmit={handleSubmitJobName}>
-            <Flex direction="row" gap="medium" alignItems="end">
-              <TextField
-                label="Job Name"
-                value={jobName}
-                onChange={(e) => setJobName(e.target.value)}
-                placeholder="Enter job name"
-                required
-              />
-              <Button type="submit" variation="primary">
-                Submit
-              </Button>
-            </Flex>
-          </form>
-        </Flex>
-      </Card>
-  
-      {submittedJobName && (
-        <>
-          {jobs.size > 0 && Array.from(jobs.values()).map(job => (
-            <Card 
-              key={job.job_name}
-              variation="elevated"
-              padding="medium"
-              marginTop="medium"
+    <AppLayout
+      navigation={<AWSSideNavigation activeHref="/" />}
+      toolsHide={true}
+      breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
+      content={
+        <ContentLayout header={<Header variant="h1">Document Analysis Job Status</Header>}>
+          <SpaceBetween size="l">
+            <Container 
+              header={
+                <Header variant="h2" description="Enter a job name to retrieve status information">
+                  Job Lookup
+                </Header>
+              }
             >
-              <Flex direction="column" gap="medium">
-                <Flex justifyContent="space-between" alignItems="center">
-                  <Heading level={4}>Job: {job.job_name}</Heading>
-                  <Text>Type: {job.job_type}</Text>
-                </Flex>
-
-                <Flex direction="row" gap="large" justifyContent="space-around">
-                  <Card variation="outlined" padding="medium">
-                    <Flex direction="column" alignItems="center" gap="small">
-                      <Heading level={5}>In Queue</Heading>
-                      <Text fontSize="xx-large">
-                        {job.works.filter(w => w.status === 'IN_QUEUE').length}
-                      </Text>
-                    </Flex>
-                  </Card>
-
-                  <Card variation="outlined" padding="medium">
-                    <Flex direction="column" alignItems="center" gap="small">
-                      <Heading level={5}>In Progress</Heading>
-                      <Text fontSize="xx-large">
-                        {job.works.filter(w => w.status === 'IN_PROGRESS').length}
-                      </Text>
-                    </Flex>
-                  </Card>
-
-                  <Card variation="outlined" padding="medium">
-                    <Flex direction="column" alignItems="center" gap="small">
-                      <Heading level={5}>Completed</Heading>
-                      <Text fontSize="xx-large">
-                        {job.works.filter(w => w.status === 'READY FOR REVIEW').length}
-                      </Text>
-                    </Flex>
-                  </Card>
-
-                  <Card 
-                    variation="outlined" 
-                    padding="medium"
-                    backgroundColor={job.works.some(w => w.status === 'FAILED TO PROCESS') ? '#fff1f1' : undefined}
+              <Form
+                actions={
+                  <Button 
+                    variant="primary" 
+                    formAction="submit" 
+                    onClick={handleSubmitJobName} 
+                    disabled={!jobName.trim()}
                   >
-                    <Flex direction="column" alignItems="center" gap="small">
-                      <Heading level={5}>Failed</Heading>
-                      <Text 
-                        fontSize="xx-large"
-                        color={job.works.some(w => w.status === 'FAILED TO PROCESS') ? 'red' : undefined}
-                      >
-                        {job.works.filter(w => w.status === 'FAILED TO PROCESS').length}
-                      </Text>
-                    </Flex>
-                  </Card>
-                </Flex>
-
-                <Flex direction="column" gap="medium">
-                  <progress 
-                    value={
-                      (job.works.filter(w => w.status === 'READY FOR REVIEW').length / job.works.length) * 100
-                    } 
-                    max="100"
-                    style={{ width: '100%', height: '20px' }}
+                    Submit
+                  </Button>
+                }
+              >
+                <FormField 
+                  label="Job name" 
+                  description="Enter the job identifier to view processing status"
+                >
+                  <Input
+                    value={jobName}
+                    onChange={({ detail }) => setJobName(detail.value)}
+                    placeholder="Enter job name"
                   />
-                  <Text textAlign="center">
-                    Overall Progress: {Math.round((job.works.filter(w => w.status === 'READY FOR REVIEW').length / job.works.length) * 100)}%
-                  </Text>
-                </Flex>
+                </FormField>
+              </Form>
+            </Container>
 
-                {job.works.some(w => w.status === 'READY FOR REVIEW') && (
-                  <Flex justifyContent="center">
-                    <Button
-                      variation="primary"
-                      onClick={() => handleViewResults(job, job.works[0])}
-                      size="large"
+            {error && (
+              <Alert type="error" header="Error">
+                {error}
+              </Alert>
+            )}
+
+            {isLoading && submittedJobName && jobs.size === 0 && (
+              <Container>
+                <Box textAlign="center" padding="l">
+                  <SpaceBetween size="s" direction="vertical" alignItems="center">
+                    <Spinner size="large" />
+                    <Box variant="p">Retrieving job information...</Box>
+                  </SpaceBetween>
+                </Box>
+              </Container>
+            )}
+
+            {submittedJobName && jobs.size > 0 && Array.from(jobs.values()).map(job => {
+              const statusCounts = getStatusCounts(job);
+              const totalWorks = job.works.length;
+              const progressPercentage = Math.round((statusCounts.completed / totalWorks) * 100);
+              
+              return (
+                <Container
+                  key={job.job_name}
+                  header={
+                    <Header
+                      variant="h2"
+                      actions={
+                        statusCounts.completed > 0 && (
+                          <Button
+                            variant="primary"
+                            onClick={() => handleViewResults(job, job.works[0])}
+                          >
+                            View Results
+                          </Button>
+                        )
+                      }
+                      description={`Job Type: ${job.job_type.toUpperCase()}`}
                     >
-                      View Results
-                    </Button>
-                  </Flex>
-                )}
-              </Flex>
-            </Card>
-          ))}
-  
-          {isLoading && (
-            <Flex direction="column" alignItems="center" padding="large">
-              <Loader size="large" />
-              <Text>Loading jobs...</Text>
-            </Flex>
-          )}
-  
-          {error && (
-            <Alert variation="error">
-              {error}
-            </Alert>
-          )}
-  
-          {jobs.size === 0 && !isLoading && (
-            <Card variation="elevated" marginTop="medium">
-              <Text>No active jobs found for {submittedJobName}</Text>
-            </Card>
-          )}
-        </>
-      )}
-    </View>
+                      {job.job_name}
+                    </Header>
+                  }
+                >
+                  <SpaceBetween size="l">
+                    <ColumnLayout columns={4} variant="text-grid">
+                      <div>
+                        <Box variant="awsui-key-label">In Queue</Box>
+                        <Box variant="awsui-value-large">{statusCounts.inQueue}</Box>
+                      </div>
+                      <div>
+                        <Box variant="awsui-key-label">In Progress</Box>
+                        <Box variant="awsui-value-large">{statusCounts.inProgress}</Box>
+                      </div>
+                      <div>
+                        <Box variant="awsui-key-label">Completed</Box>
+                        <Box variant="awsui-value-large">{statusCounts.completed}</Box>
+                      </div>
+                      <div>
+                        <Box variant="awsui-key-label">Failed</Box>
+                        <Box 
+                          variant="awsui-value-large" 
+                          color={statusCounts.failed > 0 ? "text-status-error" : undefined}
+                        >
+                          {statusCounts.failed}
+                        </Box>
+                      </div>
+                    </ColumnLayout>
+
+                    <Box>
+                      <Box variant="awsui-key-label">Overall Progress</Box>
+                      <ProgressBar 
+                        value={progressPercentage}
+                        label={`${progressPercentage}% complete`}
+                        description={`${statusCounts.completed} of ${totalWorks} items processed`}
+                        status={statusCounts.failed > 0 ? "error" : "in-progress"}
+                      />
+                    </Box>
+
+                    <ExpandableSection headerText="Work Items Details">
+                      <Cards
+                        cardDefinition={{
+                          header: item => item.work_id,
+                          sections: [
+                            {
+                              id: "status",
+                              header: "Status",
+                              content: item => {
+                                let statusType = "info";
+                                if (item.status === "READY FOR REVIEW") statusType = "success";
+                                if (item.status === "FAILED TO PROCESS") statusType = "error";
+                                
+                                return <Badge color={statusType}>{item.status}</Badge>;
+                              }
+                            }
+                          ]
+                        }}
+                        cardsPerRow={[
+                          { cards: 1 },
+                          { minWidth: 500, cards: 2 }
+                        ]}
+                        items={job.works}
+                        loadingText="Loading work items"
+                        empty={
+                          <Box textAlign="center" color="text-body-secondary">
+                            <b>No work items found</b>
+                            <Box padding={{ bottom: "s" }}>
+                              This job has no associated work items
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </ExpandableSection>
+                  </SpaceBetween>
+                </Container>
+              );
+            })}
+
+            {submittedJobName && jobs.size === 0 && !isLoading && (
+              <Container>
+                <Box textAlign="center" padding="l">
+                  <Box variant="h3">No data found</Box>
+                  <Box variant="p">No job information found for "{submittedJobName}"</Box>
+                </Box>
+              </Container>
+            )}
+          </SpaceBetween>
+        </ContentLayout>
+      }
+    />
   );
 };
 
