@@ -1,7 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# IAM module
+# modules/iam/main.tf
+
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
@@ -269,34 +270,33 @@ resource "aws_iam_role" "api_gateway_role" {
   })
 }
 
-# IAM Policy for invoking Lambda
-resource "aws_iam_policy" "lambda_invocation_policy" {
-  name        = "lambda_invocation_policy"
-  path        = "/"
-  description = "IAM policy for invoking Lambda function from API Gateway"
-
+# API Gateway Policy
+resource "aws_iam_policy" "invoke_lambda_policy" {
+  name = "${var.deployment_prefix}-base-lambda-policy-2"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action   = "lambda:InvokeFunction"
         Effect   = "Allow"
-        Resource = "arn:aws:lambda:*:${data.aws_caller_identity.current.account_id}:function:*"
+        Action   = "lambda:InvokeFunction"
+        Resource = "*"
       }
     ]
   })
 }
-
 # API Gateway Role-Policy Attachments
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
   role       = aws_iam_role.api_gateway_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 }
-resource "aws_iam_role_policy_attachment" "api_gateway_lambda_invocation_attachment" {
+resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_full_access" {
   role       = aws_iam_role.api_gateway_role.name
-  policy_arn = aws_iam_policy.lambda_invocation_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
-
+resource "aws_iam_role_policy_attachment" "api_gateway_lambda_policy" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = aws_iam_policy.invoke_lambda_policy.arn
+}
 
 # VPC Endpoint policies
 resource "aws_vpc_endpoint_policy" "s3_policy" {

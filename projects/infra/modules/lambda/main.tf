@@ -4,6 +4,7 @@
 # Lambda functions module
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 # Create dist directories for other functions
 resource "null_resource" "create_dist_dirs" {
@@ -136,4 +137,27 @@ resource "aws_lambda_function" "functions" {
   handler          = "index.handler"
   runtime          = "python3.12"
   source_code_hash = filebase64sha256("${each.value.source_dir}/index.py")
+}
+
+
+# IAM Policy for invoking Lambda
+resource "aws_iam_policy" "lambda_invocation_policy" {
+  name        = "${var.deployment_prefix}_lambda_invocation_policy"
+  path        = "/"
+  description = "IAM policy for invoking Lambda function from API Gateway"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "lambda:InvokeFunction"
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+resource "aws_iam_role_policy_attachment" "api_gateway_lambda_invocation_attachment" {
+  role       = var.api_gateway_role_name
+  policy_arn = aws_iam_policy.lambda_invocation_policy.arn
 }

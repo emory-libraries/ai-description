@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# Main module
+# main.tf
 
 terraform {
   required_providers {
@@ -182,6 +182,7 @@ module "lambda" {
   ecs_security_group_id   = module.vpc.ecs_security_group_id
   vpc_security_group_id   = module.vpc.vpc_endpoints_security_group_id
   jwt_secret_name         = module.secrets_manager.jwt_secret_name
+  api_gateway_role_name   = module.iam.api_gateway_role_name
 }
 
 # API Gateway module
@@ -193,6 +194,7 @@ module "api_gateway" {
   deployment_stage        = var.deployment_stage
   lambda_function_arns    = module.lambda.function_arns
   lambda_invoke_arns      = module.lambda.invoke_arns
+  lambda_names            = module.lambda.function_names
   api_gateway_role_arn    = module.iam.api_gateway_role_arn
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }

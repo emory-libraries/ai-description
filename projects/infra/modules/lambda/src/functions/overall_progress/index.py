@@ -85,6 +85,7 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler for getting SQS and ECS status."""
     try:
+        logger.info(f"Getting status of ECS cluster {ECS_CLUSTER_NAME}")
         ecs_status = get_ecs_status(
             cluster_name=ECS_CLUSTER_NAME,
             task_family_name=ECS_TASK_FAMILY_NAME,

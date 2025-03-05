@@ -32,3 +32,11 @@ output "cloudfront_url" {
   description = "URL of Cloudfront"
   value       = module.cloudfront.distribution_domain_name
 }
+
+output "target_function_name" {
+  value = module.lambda.function_arns["authorize"]
+}
+
+output "authorizer_uri" {
+  value = module.lambda.invoke_arns["authorize"]
+}

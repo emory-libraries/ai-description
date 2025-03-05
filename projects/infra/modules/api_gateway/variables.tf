@@ -24,6 +24,11 @@ variable "lambda_invoke_arns" {
   type        = map(string)
 }
 
+variable "lambda_names" {
+  description = "Map of Lambda names"
+  type        = map(string)
+}
+
 variable "api_gateway_role_arn" {
   description = "API Gateway's role ARN"
   type        = string

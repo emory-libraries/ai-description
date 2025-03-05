@@ -117,6 +117,7 @@ def create_dummy_job(
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")
+        response.raise_for_status()
 
 
 def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
@@ -142,13 +143,14 @@ def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     # Make the GET request
     response = requests.get(endpoint, params=params, headers=headers)
 
-    # Check the status code
+    # Check if the request was successful
     if response.status_code == 200:
-        return response.json()
-    elif response.status_code == 404:
-        logging.info(f"No data found for job_name: {job_name}")
-        return response.json()
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
     else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
         response.raise_for_status()
 
 
@@ -171,10 +173,15 @@ def get_overall_progress(api_url: str, session_token: str) -> dict:
     # Make the GET request
     response = requests.get(endpoint, headers=headers)
 
-    # Check the status code
+    # Check if the request was successful
     if response.status_code == 200:
-        return response.json()
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+        return data
     else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
         response.raise_for_status()
 
 
@@ -203,15 +210,16 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
     # Make the GET request
     response = requests.get(endpoint, params=params, headers=headers)
 
-    # Check the status code
+    # Check if the request was successful
     if response.status_code == 200:
-        return response.json()["item"]
-    elif response.status_code == 404:
-        msg = f"No data found for job_name={job_name} and work_id={work_id}"
-        logging.error(f"No data found for job_name={job_name} and work_id={work_id}")
-        raise Exception(msg)
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
     else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
         response.raise_for_status()
+
 
 
 def update_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> None:
@@ -239,3 +247,4 @@ def update_job_results(api_url: str, job_name: str, work_id: str, session_token:
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")
+        response.raise_for_status()

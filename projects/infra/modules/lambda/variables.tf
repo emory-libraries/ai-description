@@ -67,3 +67,8 @@ variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
 }
+
+variable "api_gateway_role_name" {
+  description = "Name of API Gateway role"
+  type        = string
+}

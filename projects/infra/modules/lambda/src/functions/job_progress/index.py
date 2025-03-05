@@ -120,6 +120,7 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         if not job_name:
             return create_response(400, {"error": f"Missing required query parameter: {JOB_NAME}"})
 
+        logger.info(f"Getting progress of job={job_name}")
         items = query_all_items(job_name)
 
         if len(items) == 0:
