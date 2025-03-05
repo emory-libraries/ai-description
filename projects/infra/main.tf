@@ -287,8 +287,7 @@ resource "null_resource" "update_cloudfront_origin" {
             .
           end
         ] |
-        .DistributionConfig.Origins.Quantity = (.DistributionConfig.Origins.Items | length) |
-        .DistributionConfig.DefaultCacheBehavior.TargetOriginId = $origin_id
+        .DistributionConfig.Origins.Quantity = (.DistributionConfig.Origins.Items | length)
       ' $TEMP_FILE | jq '.DistributionConfig' > ${module.cloudfront.distribution_id}_updated_config.json
       aws cloudfront update-distribution --id ${module.cloudfront.distribution_id} --distribution-config file://${module.cloudfront.distribution_id}_updated_config.json --if-match $ETAG
       rm $TEMP_FILE ${module.cloudfront.distribution_id}_updated_config.json
