@@ -24,7 +24,7 @@ resource "aws_api_gateway_rest_api" "api" {
 resource "aws_api_gateway_authorizer" "jwt_authorizer" {
   name                             = "jwt-authorizer"
   rest_api_id                      = aws_api_gateway_rest_api.api.id
-  authorizer_uri                   = "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:381491992967:function:ai-description-dev-nt-isngd-2-authorize/invocations"
+  authorizer_uri                   = var.lambda_invoke_arns["authorize"]
   authorizer_credentials           = var.api_gateway_role_arn
   type                             = "TOKEN"
   identity_source                  = "method.request.header.Authorization"
@@ -214,7 +214,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
 #   depends_on    = [aws_api_gateway_authorizer.jwt_authorizer]
 #   statement_id  = "AllowAPIGatewayInvokeAuthorizer"
 #   action        = "lambda:InvokeFunction"
-#   function_name = "arn:aws:lambda:us-east-1:381491992967:function:ai-description-dev-nt-isngd-2-authorize"
+#   function_name = var.lambda_function_arns["authorize"]
 #   principal     = "*"
 # }
 
