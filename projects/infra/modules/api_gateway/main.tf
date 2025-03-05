@@ -199,7 +199,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
       ]
     ]) : entry.key => entry
   }
-  statement_id  = "AllowAPIGatewayInvoke-${each.key}-7"
+  statement_id  = "AllowAPIGatewayInvoke-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"

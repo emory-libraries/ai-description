@@ -222,7 +222,7 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = ["arn:aws:logs:*:*:*"]
+        Resource = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
       },
       {
         Effect   = "Allow"
@@ -272,14 +272,14 @@ resource "aws_iam_role" "api_gateway_role" {
 
 # API Gateway Policy
 resource "aws_iam_policy" "invoke_lambda_policy" {
-  name = "${var.deployment_prefix}-base-lambda-policy-2"
+  name = "${var.deployment_prefix}-base-lambda-policy-1"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
-        Resource = "*"
+        Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:*"
       }
     ]
   })
