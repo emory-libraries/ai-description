@@ -210,14 +210,6 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
   }
 }
 
-# resource "aws_lambda_permission" "api_authorizer_lambda_permission" {
-#   depends_on    = [aws_api_gateway_authorizer.jwt_authorizer]
-#   statement_id  = "AllowAPIGatewayInvokeAuthorizer"
-#   action        = "lambda:InvokeFunction"
-#   function_name = var.lambda_function_arns["authorize"]
-#   principal     = "*"
-# }
-
 # Lambda integrations
 resource "aws_api_gateway_integration" "api_integrations" {
   depends_on = [
