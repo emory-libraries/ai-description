@@ -28,7 +28,7 @@ resource "aws_api_gateway_authorizer" "jwt_authorizer" {
   authorizer_credentials           = var.api_gateway_role_arn
   type                             = "TOKEN"
   identity_source                  = "method.request.header.Authorization"
-  authorizer_result_ttl_in_seconds = 300
+  authorizer_result_ttl_in_seconds = 0
 }
 
 # Define resources and methods
@@ -214,17 +214,6 @@ resource "aws_lambda_permission" "api_authorizer_lambda_permission" {
   action        = "lambda:InvokeFunction"
   function_name = "arn:aws:lambda:us-east-1:381491992967:function:ai-description-dev-nt-isngd-2-authorize"
   principal     = "*"
-}
-
-resource "aws_lambda_permission" "api_gateway_lambda" {
-  statement_id  = "AllowAPIGatewayInvoke3"
-  action        = "lambda:InvokeFunction"
-  function_name = "ai-description-dev-nt-isngd-2-authorize"
-  principal     = "*"
-
-  # The /*/*/* part allows invocation from any stage, method and resource path
-  # within API Gateway REST API.
-  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
 }
 
 # Lambda integrations

@@ -54,6 +54,10 @@ def verify_token(token: str, secret: str) -> bool:
             return False
 
         username, random_part, expiration, signature = parts
+        
+        logging.info(f"Verifying token for user: {username}")
+        logging.info(f"Token expiration: {expiration}")
+        logging.info(f"Current time: {int(time.time())}")
 
         # Check if token has expired
         if int(expiration) < int(time.time()):
@@ -68,19 +72,31 @@ def verify_token(token: str, secret: str) -> bool:
             logging.error("Invalid signature")
             return False
 
+        logging.info("Token successfully verified")
         return True
     except Exception as e:
         logging.exception(f"Error verifying token: {e}")
         return False
 
 
-def generate_policy(principal_id: str, effect: str, resource: str) -> dict[str, Any]:
+def generate_policy(principal_id: str, effect: str, method_arn: str) -> dict[str, Any]:
+    """Generate policy."""
+    # Extract the API ID, stage, and account ID from the method ARN
+    tmp = method_arn.split(':')
+    api_gateway_arn_tmp = tmp[5].split('/')
+    aws_account_id = tmp[4]
     return {
-        "principalId": principal_id,
-        "policyDocument": {
-            "Version": "2012-10-17",
-            "Statement": [{"Action": "execute-api:Invoke", "Effect": effect, "Resource": resource}],
-        },
+        'principalId': principal_id,
+        'policyDocument': {
+            'Version': '2012-10-17',
+            'Statement': [
+                {
+                    'Action': 'execute-api:Invoke',
+                    'Effect': effect,
+                    'Resource': f"arn:aws:execute-api:{AWS_REGION}:{aws_account_id}:{api_gateway_arn_tmp[0]}/*/*"
+                }
+            ]
+        }
     }
 
 
@@ -89,6 +105,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     logging.info(f"Event: {json.dumps(event)}")  # Log the event for debugging
 
     token = event.get("authorizationToken")
+    if token and token.startswith("Bearer "):
+        token = token.split("Bearer ")[1]
     method_arn = event["methodArn"]
     if not token:
         logging.warning("No authorization token provided")

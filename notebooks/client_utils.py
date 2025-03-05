@@ -3,6 +3,7 @@
 
 """Utils for the api_gateway_demo notebook."""
 import json
+import time
 import logging
 import os
 
@@ -88,7 +89,8 @@ def create_dummy_job(
     # Headers
     headers = {
         "Content-Type": "application/json",
-        "Authorization": session_token,
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
     }
     works = [
         {
@@ -138,7 +140,10 @@ def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     params = {"job_name": job_name}
 
     # Headers
-    headers = {"Authorization": session_token}
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+    }
 
     # Make the GET request
     response = requests.get(endpoint, params=params, headers=headers)
@@ -148,6 +153,7 @@ def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
         # Parse the JSON response
         data = response.json()
         logging.info(f"API Response: {data}")
+        return data
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")
@@ -168,7 +174,10 @@ def get_overall_progress(api_url: str, session_token: str) -> dict:
     endpoint = f"{api_url}/overall_progress"
 
     # Headers
-    headers = {"Authorization": session_token}
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+    }
 
     # Make the GET request
     response = requests.get(endpoint, headers=headers)
@@ -205,7 +214,10 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
     params = {"job_name": job_name, "work_id": work_id}
 
     # Headers
-    headers = {"Authorization": session_token}
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
+    }
 
     # Make the GET request
     response = requests.get(endpoint, params=params, headers=headers)
@@ -215,6 +227,7 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
         # Parse the JSON response
         data = response.json()
         logging.info(f"API Response: {data}")
+        return data
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")
@@ -230,7 +243,8 @@ def update_job_results(api_url: str, job_name: str, work_id: str, session_token:
     # Headers
     headers = {
         "Content-Type": "application/json",
-        "Authorization": session_token,
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000))  # Milliseconds since epoch
     }
 
     updated_fields = {"work_status": "REVIEWED"}
