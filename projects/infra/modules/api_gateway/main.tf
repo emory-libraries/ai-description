@@ -4,7 +4,7 @@
 # modules/api_gateway/main.tf
 
 data "aws_region" "current" {}
-
+data "aws_caller_identity" "current" {}
 
 # Create a REST API
 resource "aws_api_gateway_rest_api" "api" {
@@ -199,7 +199,7 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
       ]
     ]) : entry.key => entry
   }
-  statement_id  = "AllowAPIGatewayInvoke-${each.key}-2"
+  statement_id  = "AllowAPIGatewayInvoke-${each.key}-7"
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
@@ -209,12 +209,14 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
     create_before_destroy = true
   }
 }
-resource "aws_lambda_permission" "api_authorizer_lambda_permission" {
-  statement_id  = "AllowAPIGatewayInvokeAuthorizer"
-  action        = "lambda:InvokeFunction"
-  function_name = "arn:aws:lambda:us-east-1:381491992967:function:ai-description-dev-nt-isngd-2-authorize"
-  principal     = "*"
-}
+
+# resource "aws_lambda_permission" "api_authorizer_lambda_permission" {
+#   depends_on    = [aws_api_gateway_authorizer.jwt_authorizer]
+#   statement_id  = "AllowAPIGatewayInvokeAuthorizer"
+#   action        = "lambda:InvokeFunction"
+#   function_name = "arn:aws:lambda:us-east-1:381491992967:function:ai-description-dev-nt-isngd-2-authorize"
+#   principal     = "*"
+# }
 
 # Lambda integrations
 resource "aws_api_gateway_integration" "api_integrations" {
