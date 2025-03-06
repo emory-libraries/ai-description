@@ -87,6 +87,7 @@ locals {
       source_dir  = "${path.module}/src/functions/get_presigned_url"
       description = "Get a pre-signed URL for an S3 item"
       timeout     = 30
+      environment = {}
     }
     update_results = {
       source_dir  = "${path.module}/src/functions/update_results"
