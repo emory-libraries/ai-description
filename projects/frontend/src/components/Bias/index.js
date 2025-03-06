@@ -3,7 +3,6 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AppLayout,
   Container,
@@ -21,35 +20,23 @@ import { AWSSideNavigation } from '../Navigation';
 import { WorkNavigation } from './components/WorkNavigation';
 import { BiasTable } from './components/BiasTable';
 import { BiasDetails } from './components/BiasDetails';
-import { useWorkData } from './hooks/useWorkData';
-import { useBiasData } from './hooks/useBiasData';
+import { BiasProvider, useBiasContext } from './BiasContext';
 
-function Bias() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { jobName, workId } = location.state || {};
-  
-  const { 
-    biasData, 
-    error: biasError, 
-    imageData, 
-    isLoading: biasLoading, 
-    selectedBias, 
-    loadBiasData, 
-    handleBiasSelect, 
-    handleBackToBiasList 
-  } = useBiasData(jobName);
-  
+function BiasContent() {
   const {
+    jobName,
+    biasData,
+    imageData,
+    selectedBias,
+    handleBiasSelect,
+    handleBackToBiasList,
     allWorks,
     selectedWork,
-    isLoading: worksLoading,
-    error: worksError, 
-    handleWorkSelect
-  } = useWorkData(jobName, workId, loadBiasData);
-
-  const error = biasError || worksError;
-  const isLoading = biasLoading || worksLoading;
+    handleWorkSelect,
+    error,
+    isLoading,
+    navigateToJobs
+  } = useBiasContext();
 
   const breadcrumbItems = [
     { text: 'Document Analysis Service', href: '/' },
@@ -69,7 +56,7 @@ function Bias() {
               variant="h1" 
               description={`Bias analysis results for the specified document set`}
               actions={
-                <Button variant="link" onClick={() => navigate('/')}>
+                <Button variant="link" onClick={navigateToJobs}>
                   Back to Job Status
                 </Button>
               }
@@ -90,7 +77,7 @@ function Bias() {
               <WorkNavigation 
                 allWorks={allWorks}
                 selectedWork={selectedWork}
-                isLoading={worksLoading}
+                isLoading={isLoading}
                 onWorkSelect={handleWorkSelect}
               />
 
@@ -144,6 +131,14 @@ function Bias() {
         </ContentLayout>
       }
     />
+  );
+}
+
+function Bias() {
+  return (
+    <BiasProvider>
+      <BiasContent />
+    </BiasProvider>
   );
 }
 
