@@ -19,13 +19,13 @@ with open(os.path.join(current_dir, "system_prompt_court_order.txt"), "r") as fi
     system_prompt_court_order = file.read()
 
 with open(os.path.join(current_dir, "user_prompt_metadata.txt"), "r") as file:
-    user_prompt_metadata = Template(file.read()).render(
+    user_prompt_metadata = Template(file.read(), autoescape=True).render(
         COT_TAG=COT_TAG, COT_TAG_END=COT_TAG_END, COT_TAG_NAME=COT_TAG_NAME
     )
 
 
 with open(os.path.join(current_dir, "user_prompt_bias_only.jinja"), "r") as file:
-    user_prompt_bias_only = Template(file.read()).render(
+    user_prompt_bias_only = Template(file.read(), autoescape=True).render(
         COT_TAG=COT_TAG, COT_TAG_END=COT_TAG_END, COT_TAG_NAME=COT_TAG_NAME
     )
 

@@ -17,6 +17,9 @@ resource "aws_dynamodb_table" "works" {
     name = "work_id"
     type = "S"
   }
+  point_in_time_recovery {
+    enabled = true
+  }
 }
 
 resource "aws_dynamodb_table" "accounts" {
@@ -27,5 +30,8 @@ resource "aws_dynamodb_table" "accounts" {
   attribute {
     name = "username"
     type = "S"
+  }
+  point_in_time_recovery {
+    enabled = true
   }
 }

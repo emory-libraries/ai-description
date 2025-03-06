@@ -72,9 +72,9 @@ export default function useMetadataUpdate({
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        
+
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
+        console.error('API Error Response:', JSON.stringify(errorText));
         throw new Error(`Failed to update metadata: ${response.status}`);
       }
 
@@ -100,11 +100,11 @@ export default function useMetadataUpdate({
       setIsLoading(true);
       const allMetadataResults = [];
       const currentJobName = selectedWork?.job_name || allWorks[0]?.job_name;
-      
+
       if (!currentJobName) {
         throw new Error('Job name is undefined. Please select a work first.');
       }
-      
+
       for (let i = 0; i < allWorks.length; i++) {
         const work = allWorks[i];
         try {

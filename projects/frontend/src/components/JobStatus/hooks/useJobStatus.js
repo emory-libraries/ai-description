@@ -1,3 +1,8 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 
@@ -7,7 +12,7 @@ const useJobStatus = (token, navigate) => {
     const savedJobs = localStorage.getItem('jobStatus');
     return savedJobs ? new Map(JSON.parse(savedJobs)) : new Map();
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submittedJobName, setSubmittedJobName] = useState(() => {
@@ -20,7 +25,7 @@ const useJobStatus = (token, navigate) => {
 
   useEffect(() => {
     localStorage.setItem('submittedJobName', submittedJobName);
-    
+
     // Clear existing jobs when job name changes
     if (submittedJobName) {
       setJobs(new Map());
@@ -41,16 +46,16 @@ const useJobStatus = (token, navigate) => {
         'X-Request-Timestamp': String(Date.now())
       };
       console.log('Request Headers:', { ...headers, 'Authorization': 'Bearer [REDACTED]' });
-      
+
       const response = await fetch(
         `${apiUrl}?job_name=${submittedJobName}`,
         { headers }
       );
 
-      console.log('Response Status:', response.status);
+      console.log('Response Status:', JSON.stringify(response.status));
       const responseText = await response.text();
-      console.log('Response Body:', responseText);
-      
+      console.log('Response Body:', JSON.stringify(responseText));
+
       if (!response.ok) {
         // Handle unauthorized responses (token expired)
         if (response.status === 401 || response.status === 403) {
@@ -67,18 +72,18 @@ const useJobStatus = (token, navigate) => {
       let data;
       try {
         data = JSON.parse(responseText);
-        console.log('Parsed Data:', data);
+        console.log('Parsed Data:', JSON.stringify(data));
       } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
+        console.error('JSON Parse Error:', JSON.stringify(parseError));
         return;
       }
 
       const newJobs = new Map();
       const jobKey = submittedJobName;
       const workItems = [];
-      
+
       if (data && data.job_progress) {
-        console.log('Job progress structure:', data.job_progress);
+        console.log('Job progress structure:', JSON.stringify(data.job_progress));
         Object.entries(data.job_progress).forEach(([status, ids]) => {
           // Check if ids is an array before processing
           if (Array.isArray(ids)) {
@@ -91,7 +96,7 @@ const useJobStatus = (token, navigate) => {
               });
             });
           } else {
-            console.warn(`Expected array for status "${status}" but got:`, ids);
+            console.warn(`Expected array for status "${status}" but got:`, JSON.stringify(ids));
           }
         });
       }
@@ -106,7 +111,7 @@ const useJobStatus = (token, navigate) => {
       setJobs(newJobs);
 
     } catch (err) {
-      console.error('Error checking job progress:', err);
+      console.error('Error checking job progress:', JSON.stringify(err));
       setError('Failed to fetch job progress. Please try again.');
     } finally {
       setIsLoading(false);

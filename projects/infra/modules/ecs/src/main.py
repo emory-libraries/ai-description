@@ -88,6 +88,8 @@ def update_dynamodb_item(job_name, work_id, update_data):
 
 def update_dynamodb_status(job_name, work_id, status):
     try:
+        if not isinstance(status, str) or not status:
+            raise ValueError("Invalid status: must be a non-empty string")
         table.update_item(
             Key={JOB_NAME: job_name, WORK_ID: work_id},
             UpdateExpression=f"SET {WORK_STATUS} = :status",
