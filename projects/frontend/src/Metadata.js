@@ -3,11 +3,9 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import React, { useState, useCallback, useEffect } from 'react';
-import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
-import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
+import { useAuth } from './AuthContext'; // Use your custom auth context
 import {
   AppLayout,
   Container,
@@ -28,7 +26,7 @@ import {
 import { AWSSideNavigation } from './components/Navigation';
 
 function Metadata() {
-  const auth = useAuth();
+  const { token, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { jobName } = location.state || {};
@@ -43,15 +41,13 @@ function Metadata() {
   const initializeS3Client = useCallback(() => {
     return new S3Client({
       region: "us-east-1",
-      credentials: fromCognitoIdentityPool({
-        client: new CognitoIdentityClient({ region: "us-east-1" }),
-        identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
-        logins: {
-          [`cognito-idp.us-east-1.amazonaws.com/${process.env.REACT_APP_COGNITO_USER_POOL_ID}`]: auth.user?.id_token
-        }
-      })
+      credentials: {
+        accessKeyId: process.env.REACT_APP_S3_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_S3_SECRET_ACCESS_KEY,
+        sessionToken: process.env.REACT_APP_S3_SESSION_TOKEN,
+      }
     });
-  }, [auth.user?.id_token]);
+  }, []);
 
   const fetchImage = useCallback(async (uri) => {
     if (!uri || typeof uri !== 'string') {
@@ -82,17 +78,26 @@ function Metadata() {
   }, [initializeS3Client]);
 
   const fetchWorkDetails = useCallback(async (workId, jobName) => {
+    if (!token) return;
+    
     try {
       const response = await fetch(
         `/api/results?job_name=${jobName}&work_id=${workId}`,
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         }
       );
 
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate('/login');
+          throw new Error('Authentication failed. Please log in again.');
+        }
         throw new Error(`Failed to fetch work details: ${response.status}`);
       }
 
@@ -102,7 +107,7 @@ function Metadata() {
       console.error('Error fetching work details:', err);
       throw err;
     }
-  }, []);
+  }, [token, logout, navigate]);
 
   const handleWorkSelect = useCallback(async (work) => {
     setIsLoading(true);
@@ -130,6 +135,7 @@ function Metadata() {
       }
     } catch (err) {
       console.error('Error in handleWorkSelect:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +160,7 @@ function Metadata() {
   };
 
   const updateMetadata = async () => {
-    if (!auth.user?.access_token || !selectedWork) {
+    if (!token || !selectedWork) {
       setError('Unable to update: Missing required data');
       return;
     }
@@ -200,15 +206,23 @@ function Metadata() {
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${auth.user.access_token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate('/login');
+          throw new Error('Authentication failed. Please log in again.');
+        }
+        
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
+        throw new Error(`Failed to update metadata: ${response.status}`);
       }
 
       const data = await response.json();
@@ -217,6 +231,7 @@ function Metadata() {
       setError(null);
     } catch (err) {
       console.error('Error updating metadata:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -224,6 +239,8 @@ function Metadata() {
 
   useEffect(() => {
     const fetchAllWorks = async () => {
+      if (!token || !jobName) return;
+
       try {
         setIsLoading(true);
 
@@ -231,12 +248,19 @@ function Metadata() {
           `/api/job_progress?job_name=${jobName}`,
           {
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` // Use your custom auth token
             }
           }
         );
 
         if (!response.ok) {
+          // Handle authentication errors
+          if (response.status === 401 || response.status === 403) {
+            logout();
+            navigate('/login');
+            throw new Error('Authentication failed. Please log in again.');
+          }
           throw new Error(`Failed to fetch job data: ${response.status}`);
         }
 
@@ -270,19 +294,20 @@ function Metadata() {
         }
       } catch (err) {
         console.error('Error fetching all works:', err);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (auth.user?.access_token && jobName) {
+    if (token && jobName) {
       fetchAllWorks();
     }
-  }, [auth.user?.access_token, jobName, handleWorkSelect, location.state]);
+  }, [token, jobName, handleWorkSelect, location.state, logout, navigate]);
 
   const downloadAllMetadata = async () => {
-    if (!allWorks || allWorks.length === 0) {
-      console.error('No works available to download metadata.');
+    if (!allWorks || allWorks.length === 0 || !token) {
+      console.error('No works available or not authenticated to download metadata.');
       return;
     }
 
@@ -349,6 +374,7 @@ function Metadata() {
       setError(null);
     } catch (error) {
       console.error('Error downloading all metadata:', error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -600,7 +626,7 @@ function Metadata() {
         >
           <SpaceBetween size="l">
             {error && (
-              <Alert type="info" dismissible>
+              <Alert type="error" header="Error">
                 {error}
               </Alert>
             )}

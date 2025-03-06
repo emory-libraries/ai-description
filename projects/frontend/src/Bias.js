@@ -3,11 +3,9 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import React, { useState, useCallback, useEffect } from 'react';
-import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
-import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
+import { useAuth } from './AuthContext';
 import { 
   AppLayout,
   Container,
@@ -28,7 +26,7 @@ import {
 import { AWSSideNavigation } from './components/Navigation';
 
 function Bias() {
-  const auth = useAuth();
+  const { token, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { jobName, workId } = location.state || {};
@@ -39,19 +37,22 @@ function Bias() {
   const [imageData, setImageData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-
+  
+  // This function should be replaced with your appropriate S3 credential management
+  // You'll need to implement an approach that works with your custom auth system
   const initializeS3Client = useCallback(() => {
     return new S3Client({
       region: "us-east-1",
-      credentials: fromCognitoIdentityPool({
-        client: new CognitoIdentityClient({ region: "us-east-1" }),
-        identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
-        logins: {
-          [`cognito-idp.us-east-1.amazonaws.com/${process.env.REACT_APP_COGNITO_USER_POOL_ID}`]: auth.user?.id_token
-        }
-      })
+      // You'll need to replace this with your custom credentials approach
+      // This could be a token exchange, assuming a role through API, etc.
+      credentials: {
+        // This is a placeholder - replace with your actual implementation
+        accessKeyId: process.env.REACT_APP_S3_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_S3_SECRET_ACCESS_KEY,
+        sessionToken: process.env.REACT_APP_S3_SESSION_TOKEN,
+      }
     });
-  }, [auth.user?.id_token]);
+  }, []);
   
   const fetchImage = useCallback(async (uri) => {
     if (!uri || typeof uri !== 'string') {
@@ -82,17 +83,26 @@ function Bias() {
   }, [initializeS3Client]);
 
   const fetchBiasDetails = useCallback(async (workId) => {
+    if (!token) return;
+    
     try {
       const response = await fetch(
         `/api/results?job_name=${jobName}&work_id=${workId}`,
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         }
       );
   
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate('/login');
+          throw new Error('Authentication failed. Please log in again.');
+        }
         throw new Error(`Failed to fetch bias details: ${response.status}`);
       }
   
@@ -110,7 +120,7 @@ function Bias() {
       console.error('Error fetching bias details:', err);
       throw err;
     }
-  }, [jobName]);
+  }, [jobName, token, logout, navigate]);
   
   const handleWorkSelect = useCallback(async (work) => {
     if (!work || (selectedWork && work.work_id === selectedWork.work_id)) {
@@ -125,16 +135,27 @@ function Bias() {
     setImageData({}); 
     
     try {
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(
         `/api/results?job_name=${work.job_name}&work_id=${work.work_id}`,
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         }
       );
   
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate('/login');
+          throw new Error('Authentication failed. Please log in again.');
+        }
         throw new Error(`Failed to fetch bias details: ${response.status}`);
       }
 
@@ -163,10 +184,11 @@ function Bias() {
       }
     } catch (err) {
       console.error('Error in handleWorkSelect:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  }, [fetchImage, `/api/`]); 
+  }, [fetchImage, token, logout, navigate]); 
 
   const handleBiasSelect = (biasEntry) => {
     setSelectedBias(biasEntry);
@@ -174,18 +196,27 @@ function Bias() {
 
   useEffect(() => {
     const fetchAllWorks = async () => {
+      if (!token || !jobName) return;
+      
       try {
         setIsLoading(true);
         const response = await fetch(
           `/api/job_progress?job_name=${jobName}`,
           {
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
             }
           }
         );
 
         if (!response.ok) {
+          // Handle authentication errors
+          if (response.status === 401 || response.status === 403) {
+            logout();
+            navigate('/login');
+            throw new Error('Authentication failed. Please log in again.');
+          }
           throw new Error(`Failed to fetch job data: ${response.status}`);
         }
 
@@ -216,15 +247,16 @@ function Bias() {
         }
       } catch (err) {
         console.error('Error fetching all works:', err);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       } 
     };
 
-    if (auth.user?.access_token && jobName) {
+    if (token && jobName) {
       fetchAllWorks();
     }
-  }, [auth.user?.access_token, jobName, workId, handleWorkSelect, `/api/`]);
+  }, [token, jobName, workId, handleWorkSelect, logout, navigate]);
 
   const getBiasLevelColor = (level) => {
     if (!level) return "grey";
@@ -257,7 +289,7 @@ function Bias() {
 
   return (
     <AppLayout
-      toolsHide = {true}
+      toolsHide={true}
       navigation={<AWSSideNavigation activeHref="/bias" />}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
       content={

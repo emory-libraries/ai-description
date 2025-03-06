@@ -198,6 +198,6 @@ resource "aws_s3_object" "frontend_assets" {
   bucket       = aws_s3_bucket.website.id
   key          = each.value
   source       = "${local.frontend_path}/build/${each.value}"
-  etag         = filemd5("${local.frontend_path}/build/${each.value}")
-  content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), null)
+  etag         = fileexists("${local.frontend_path}/build/${each.value}") ? filemd5("${local.frontend_path}/build/${each.value}") : "initial"
+  content_type = lookup(local.mime_types, length(regexall("\\.[^.]+$", each.value)) > 0 ? regex("\\.[^.]+$", each.value) : "", null)
 }

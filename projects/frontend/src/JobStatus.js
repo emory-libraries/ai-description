@@ -4,7 +4,7 @@
 */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from "react-oidc-context";
+import { useAuth } from './AuthContext'; // Use your custom auth context
 import {
   AppLayout,
   Container,
@@ -28,7 +28,7 @@ import {
 import { AWSSideNavigation } from './components/Navigation';
 
 const JobStatus = () => {
-  const auth = useAuth();
+  const { token, logout } = useAuth(); // Use your custom auth hook
   const navigate = useNavigate();
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem('jobStatus');
@@ -62,7 +62,7 @@ const JobStatus = () => {
   };
 
   const checkJobProgress = async () => {
-    if (!auth.user?.access_token || !submittedJobName) return;
+    if (!token || !submittedJobName) return;
 
     try {
       setIsLoading(true);
@@ -73,6 +73,7 @@ const JobStatus = () => {
         {
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         }
       );
@@ -80,6 +81,14 @@ const JobStatus = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
+        
+        // Handle unauthorized responses (token expired)
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate('/login');
+          return;
+        }
+        
         setJobs(new Map());
         return;
       }
@@ -126,12 +135,12 @@ const JobStatus = () => {
   };
 
   useEffect(() => {
-    if (auth.isAuthenticated && auth.user?.access_token && submittedJobName) {
+    if (token && submittedJobName) {
       checkJobProgress();
       const intervalId = setInterval(checkJobProgress, 5000);
       return () => clearInterval(intervalId);
     }
-  }, [auth.isAuthenticated, auth.user?.access_token, submittedJobName]);
+  }, [token, submittedJobName]);
 
   const handleViewResults = (job, work) => {
     console.log('Navigating with data:', {
@@ -172,35 +181,8 @@ const JobStatus = () => {
     { text: 'Job Status', href: '/' }
   ];
 
-  if (!auth.isAuthenticated) {
-    return (
-      <AppLayout
-        navigationHide={true}
-        content={
-          <ContentLayout>
-            <Container
-              header={<Header variant="h2">Authentication Required</Header>}
-            >
-              <SpaceBetween size="l">
-                <Box textAlign="center">
-                  <SpaceBetween size="m">
-                    <Box>Please sign in to access the job status dashboard</Box>
-                    <Button
-                      variant="primary"
-                      onClick={() => auth.signinRedirect()}
-                      loading={auth.isLoading}
-                    >
-                      Sign In
-                    </Button>
-                  </SpaceBetween>
-                </Box>
-              </SpaceBetween>
-            </Container>
-          </ContentLayout>
-        }
-      />
-    );
-  }
+  // Since this is already in a PrivateRoute, we don't need the isAuthenticated check
+  // The PrivateRoute component will handle redirecting to login if not authenticated
 
   return (
     <AppLayout

@@ -12,6 +12,7 @@ import "@cloudscape-design/global-styles/index.css";
 import { applyMode, Mode } from '@cloudscape-design/global-styles';
 import { AuthProvider } from './AuthContext';
 import Login from './Login';
+import PrivateRoute from './PrivateRoute'
 
 applyMode(Mode.Dark);
 
@@ -23,18 +24,18 @@ root.render(
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<JobStatus />} />
-          <Route
-            path="/results/metadata/:jobName"
-            element={<Metadata />}
+          <Route path="/" element={<PrivateRoute><JobStatus /></PrivateRoute>} />
+          <Route 
+            path="/results/metadata/:jobName" 
+            element={<PrivateRoute><Metadata /></PrivateRoute>} 
           />
-          <Route
-            path="/results/bias/:jobName"
-            element={<Bias />}
+          <Route 
+            path="/results/bias/:jobName" 
+            element={<PrivateRoute><Bias /></PrivateRoute>} 
           />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
     </AuthProvider>
   </React.StrictMode>
 );
