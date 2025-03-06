@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 
 const useJobStatus = (token, navigate) => {
@@ -28,7 +28,7 @@ const useJobStatus = (token, navigate) => {
     }
   }, [submittedJobName]);
 
-  const checkJobProgress = async () => {
+  const checkJobProgress = useCallback(async () => {
     if (!token || !submittedJobName) return;
 
     try {
@@ -111,13 +111,13 @@ const useJobStatus = (token, navigate) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, submittedJobName, logout, navigate]);
 
   useEffect(() => {
     if (token && submittedJobName) {
       checkJobProgress();
     }
-  }, [token, submittedJobName]);
+  }, [token, submittedJobName, checkJobProgress]);
 
   return {
     jobs,
