@@ -4,6 +4,7 @@
 */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from "react-oidc-context";
 import {
   AppLayout,
   Container,
@@ -29,6 +30,7 @@ import { AWSSideNavigation } from './components/Navigation';
 const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
 const JobStatus = () => {
+  const auth = useAuth();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState(() => {
     const savedJobs = localStorage.getItem('jobStatus');
