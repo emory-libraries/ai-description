@@ -5,9 +5,9 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import JobStatus from './JobStatus';
-import Metadata from './Metadata';
-import Bias from './Bias';
+import JobStatus from './components/JobStatus';
+import Metadata from './components/Metadata';
+import Bias from './components/Bias';
 import "@cloudscape-design/global-styles/index.css";
 import { applyMode, Mode } from '@cloudscape-design/global-styles';
 import { AuthProvider } from './AuthContext';
@@ -25,13 +25,13 @@ root.render(
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute><JobStatus /></PrivateRoute>} />
-          <Route 
-            path="/results/metadata/:jobName" 
-            element={<PrivateRoute><Metadata /></PrivateRoute>} 
+          <Route
+            path="/results/metadata/:jobName"
+            element={<PrivateRoute><Metadata /></PrivateRoute>}
           />
-          <Route 
-            path="/results/bias/:jobName" 
-            element={<PrivateRoute><Bias /></PrivateRoute>} 
+          <Route
+            path="/results/bias/:jobName"
+            element={<PrivateRoute><Bias /></PrivateRoute>}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

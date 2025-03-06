@@ -83,6 +83,11 @@ locals {
         WORKS_TABLE_NAME = var.works_table_name
       }
     }
+    get_presigned_url = {
+      source_dir  = "${path.module}/src/functions/get_presigned_url"
+      description = "Get a pre-signed URL for an S3 item"
+      timeout     = 30
+    }
     update_results = {
       source_dir  = "${path.module}/src/functions/update_results"
       description = "Updates results for a work in a job"

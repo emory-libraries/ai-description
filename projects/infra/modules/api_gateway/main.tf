@@ -53,6 +53,12 @@ locals {
         "GET" = var.lambda_function_arns["job_progress"]
       }
     }
+    "presigned_url" = {
+      path_part = "presigned_url"
+      methods = {
+        "GET" = var.lambda_function_arns["get_presigned_url"]
+      }
+    }
     "overall_progress" = {
       path_part = "overall_progress"
       methods = {
