@@ -66,18 +66,22 @@ const JobStatus = () => {
 
     try {
       setIsLoading(true);
-      console.log(`Fetching from: /api/job_progress?job_name=${submittedJobName}`);
-
+      const apiUrl = '/api/job_progress';
+      console.log(`Fetching from: ${apiUrl}?job_name=${submittedJobName}`);
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'X-Request-Timestamp': String(Date.now())
+      };
+      console.log('Request Headers:', { ...headers, 'Authorization': 'Bearer [REDACTED]' });
       const response = await fetch(
-        `/api/job_progress?job_name=${submittedJobName}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        `${apiUrl}?job_name=${submittedJobName}`,
+        { headers }
       );
 
+      console.log('Response Status:', response.status);
+      const responseText = await response.text();
+      console.log('Response Body:', responseText);  
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
@@ -93,10 +97,11 @@ const JobStatus = () => {
         return;
       }
 
-      const responseText = await response.text();
+      // Parse JSON only after logging the raw text
       let data;
       try {
         data = JSON.parse(responseText);
+        console.log('Parsed Data:', data);
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
         return;
@@ -105,16 +110,22 @@ const JobStatus = () => {
       const newJobs = new Map();
       const jobKey = submittedJobName;
       const workItems = [];
-      if (data.job_progress) {
+      if (data && data.job_progress) {
+        console.log('Job progress structure:', data.job_progress);
         Object.entries(data.job_progress).forEach(([status, ids]) => {
-          ids.forEach(id => {
-            workItems.push({
-              work_id: id,
-              status: status,
-              job_name: jobKey,
-              job_type: data.job_type
+          // Check if ids is actually an array before treating it as one
+          if (Array.isArray(ids)) {
+            ids.forEach(id => {
+              workItems.push({
+                work_id: id,
+                status: status,
+                job_name: jobKey,
+                job_type: data.job_type || 'unknown'
+              });
             });
-          });
+          } else {
+            console.warn(`Expected array for status "${status}" but got:`, ids);
+          }
         });
       }
 
