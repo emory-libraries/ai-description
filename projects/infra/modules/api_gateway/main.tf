@@ -1,14 +1,19 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# API Gateway module
+# modules/api_gateway/main.tf
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 # Create a REST API
 resource "aws_api_gateway_rest_api" "api" {
   name        = "${var.deployment_prefix}-rest-api"
   description = "REST API for Image Captioning Assistant"
+
+  endpoint_configuration {
+    types = ["EDGE"]
+  }
 
   binary_media_types = [
     "multipart/form-data",
@@ -16,27 +21,55 @@ resource "aws_api_gateway_rest_api" "api" {
   ]
 }
 
+resource "aws_api_gateway_authorizer" "jwt_authorizer" {
+  name                             = "jwt-authorizer"
+  rest_api_id                      = aws_api_gateway_rest_api.api.id
+  authorizer_uri                   = var.lambda_invoke_arns["authorize"]
+  authorizer_credentials           = var.api_gateway_role_arn
+  type                             = "TOKEN"
+  identity_source                  = "method.request.header.Authorization"
+  authorizer_result_ttl_in_seconds = 0
+}
+
 # Define resources and methods
 locals {
   # Base resources (no parent dependencies)
   base_resources = {
+    "log_in" = {
+      path_part = "log_in"
+      methods = {
+        "POST" = var.lambda_function_arns["log_in"]
+      }
+    }
     "create_job" = {
       path_part = "create_job"
       methods = {
-        "POST" = var.lambda["create_job"]
+        "POST" = var.lambda_function_arns["create_job"]
       }
     }
     "job_progress" = {
       path_part = "job_progress"
       methods = {
-        "GET" = var.lambda["job_progress"]
+        "GET" = var.lambda_function_arns["job_progress"]
+      }
+    }
+    "presigned_url" = {
+      path_part = "presigned_url"
+      methods = {
+        "GET" = var.lambda_function_arns["get_presigned_url"]
+      }
+    }
+    "overall_progress" = {
+      path_part = "overall_progress"
+      methods = {
+        "GET" = var.lambda_function_arns["overall_progress"]
       }
     }
     "results" = {
       path_part = "results"
       methods = {
-        "GET" = var.lambda["get_results"]
-        "PUT" = var.lambda["update_results"]
+        "GET" = var.lambda_function_arns["get_results"]
+        "PUT" = var.lambda_function_arns["update_results"]
       }
     }
   }
@@ -67,7 +100,8 @@ resource "aws_api_gateway_method" "api_methods" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.base_resources[each.value.resource_key].id
   http_method   = each.value.method
-  authorization = "NONE"
+  authorization = each.value.resource_key == "log_in" ? "NONE" : "CUSTOM"
+  authorizer_id = each.value.resource_key == "log_in" ? null : aws_api_gateway_authorizer.jwt_authorizer.id
 }
 
 # Create OPTIONS method for CORS
@@ -175,7 +209,11 @@ resource "aws_lambda_permission" "api_lambda_permissions" {
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/${each.value.method}/${each.value.path}"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Lambda integrations
@@ -260,6 +298,22 @@ resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = var.deployment_stage
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      sourceIp                = "$context.identity.sourceIp"
+      requestTime             = "$context.requestTime"
+      protocol                = "$context.protocol"
+      httpMethod              = "$context.httpMethod"
+      resourcePath            = "$context.resourcePath"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
+  }
 }
 
 resource "aws_api_gateway_method_settings" "all" {
@@ -268,11 +322,19 @@ resource "aws_api_gateway_method_settings" "all" {
   method_path = "*/*"
 
   settings {
-    metrics_enabled = true
-    logging_level   = "INFO"
+    metrics_enabled        = true
+    logging_level          = "INFO"
+    data_trace_enabled     = true
+    throttling_rate_limit  = 100
+    throttling_burst_limit = 50
   }
 }
 
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = "/aws/apigateway/${aws_api_gateway_rest_api.api.name}"
+  retention_in_days = 30
+}
+
 resource "aws_api_gateway_account" "main" {
-  cloudwatch_role_arn = var.cloudwatch_role_arn
+  cloudwatch_role_arn = var.api_gateway_role_arn
 }

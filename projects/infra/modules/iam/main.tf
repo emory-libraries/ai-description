@@ -1,7 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# IAM module
+# modules/iam/main.tf
+
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
@@ -14,7 +15,10 @@ resource "aws_iam_role" "base_lambda_role" {
       Action = "sts:AssumeRole"
       Effect = "Allow"
       Principal = {
-        Service = "lambda.amazonaws.com"
+        Service = [
+          "lambda.amazonaws.com",
+          "apigateway.amazonaws.com"
+        ]
       }
     }]
   })
@@ -81,7 +85,8 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "dynamodb:Scan",
         ]
         Resource = [
-          "arn:aws:dynamodb:*:*:table/*",
+          var.works_table_arn,
+          var.accounts_table_arn
         ]
       },
       {
@@ -96,6 +101,11 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "arn:aws:ecs:*:*:task-definition/*",
           "arn:aws:ecs:*:*:task/*",
         ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "secretsmanager:GetSecretValue"
+        Resource = [var.jwt_secret_arn]
       },
       {
         Effect = "Allow"
@@ -212,7 +222,7 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = ["arn:aws:logs:*:*:*"]
+        Resource = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
       },
       {
         Effect   = "Allow"
@@ -243,8 +253,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
 }
 
 # API Gateway Role
-resource "aws_iam_role" "api_gateway_cloudwatch_role" {
-  name = "${var.deployment_prefix}-api-gateway-cloudwatch-role"
+resource "aws_iam_role" "api_gateway_role" {
+  name = "${var.deployment_prefix}-api-gateway-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -260,10 +270,32 @@ resource "aws_iam_role" "api_gateway_cloudwatch_role" {
   })
 }
 
-# API Gateway Role-Policy Attachment
+# API Gateway Policy
+resource "aws_iam_policy" "invoke_lambda_policy" {
+  name = "${var.deployment_prefix}-base-lambda-policy-1"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:*"
+      }
+    ]
+  })
+}
+# API Gateway Role-Policy Attachments
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
+  role       = aws_iam_role.api_gateway_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
-  role       = aws_iam_role.api_gateway_cloudwatch_role.name
+}
+resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_full_access" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+resource "aws_iam_role_policy_attachment" "api_gateway_lambda_policy" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = aws_iam_policy.invoke_lambda_policy.arn
 }
 
 # VPC Endpoint policies

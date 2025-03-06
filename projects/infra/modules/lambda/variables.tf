@@ -13,6 +13,11 @@ variable "works_table_name" {
   type        = string
 }
 
+variable "accounts_table_name" {
+  description = "Name of the DynamoDB accounts table"
+  type        = string
+}
+
 variable "sqs_queue_url" {
   description = "URL of SQS queue"
   type        = string
@@ -53,7 +58,17 @@ variable "task_execution_role_arn" {
   type        = string
 }
 
+variable "jwt_secret_name" {
+  description = "Name of Secret used for JWT"
+  type        = string
+}
+
 variable "deployment_prefix" {
   description = "Unique name of the deployment"
+  type        = string
+}
+
+variable "api_gateway_role_name" {
+  description = "Name of API Gateway role"
   type        = string
 }

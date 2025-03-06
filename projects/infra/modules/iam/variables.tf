@@ -4,7 +4,12 @@
 # IAM variables
 
 variable "works_table_arn" {
-  description = "ARN of the DynamoDB table"
+  description = "ARN of the DynamoDB works table"
+  type        = string
+}
+
+variable "accounts_table_arn" {
+  description = "ARN of the DynamoDB accounts table"
   type        = string
 }
 
@@ -46,4 +51,9 @@ variable "ecr_processor_repository_name" {
 variable "enable_vpc_endpoints" {
   description = "Whether or not the application uses VPC endpoints"
   type        = bool
+}
+
+variable "jwt_secret_arn" {
+  description = "ARN of Secret used for JWT"
+  type        = string
 }

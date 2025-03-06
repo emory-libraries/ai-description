@@ -3,11 +3,6 @@
 
 # API Gateway variables
 
-variable "lambda" {
-  description = "Map of Lambda function ARNs"
-  type        = map(string)
-}
-
 variable "deployment_stage" {
   description = "Deployment stage name for the environment"
   type        = string
@@ -19,7 +14,27 @@ variable "deployment_prefix" {
   type        = string
 }
 
-variable "cloudwatch_role_arn" {
-  description = "ARN of Cloudwatch role"
+variable "lambda_function_arns" {
+  description = "Map of Lambda function ARNs"
+  type        = map(string)
+}
+
+variable "lambda_invoke_arns" {
+  description = "Map of Lambda invocation function ARNs"
+  type        = map(string)
+}
+
+variable "lambda_names" {
+  description = "Map of Lambda names"
+  type        = map(string)
+}
+
+variable "api_gateway_role_arn" {
+  description = "API Gateway's role ARN"
+  type        = string
+}
+
+variable "authorizer_iam_role_arn" {
+  description = "ARN for authorizer lambda role"
   type        = string
 }

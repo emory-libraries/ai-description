@@ -23,7 +23,12 @@ output "ecs_task_execution_role_id" {
   value       = aws_iam_role.ecs_task_execution_role.id
 }
 
-output "api_gateway_cloudwatch_role_arn" {
-  description = "ARN of the API Gateway CloudWatch role"
-  value       = aws_iam_role.api_gateway_cloudwatch_role.arn
+output "api_gateway_role_arn" {
+  description = "ARN of the API Gateway role"
+  value       = aws_iam_role.api_gateway_role.arn
+}
+
+output "api_gateway_role_name" {
+  description = "Name of the API Gateway role"
+  value       = aws_iam_role.api_gateway_role.name
 }

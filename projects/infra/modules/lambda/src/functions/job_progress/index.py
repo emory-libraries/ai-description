@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-"""Jobs handler."""
+"""Get job progress."""
 
 import json
 import logging
@@ -47,7 +47,7 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
-def _query_all_items(job_name: str) -> list[dict]:
+def query_all_items(job_name: str) -> list[dict]:
     """Query all items for a given job name, handling pagination."""
     items = []
     query_kwargs = {
@@ -67,7 +67,7 @@ def _query_all_items(job_name: str) -> list[dict]:
     return items
 
 
-def _organize_items(items: list[dict]) -> tuple[dict[str, list[str]], str]:
+def organize_items(items: list[dict]) -> tuple[dict[str, list[str]], str]:
     """Organize items by status and extract job type."""
     work_ids_by_status = defaultdict(list)
     job_types = set()
@@ -98,27 +98,6 @@ def _organize_items(items: list[dict]) -> tuple[dict[str, list[str]], str]:
     return dict(work_ids_by_status), job_type
 
 
-def fetch_work_data_by_job(job_name: str) -> tuple[dict[str, list[str]], str]:
-    """
-    Fetch work IDs grouped by status and job type for a given job name.
-
-    Args:
-        job_name (str): The name of the job to query.
-
-    Returns:
-        dict[str, list[str]]: A dictionary with work statuses as keys and lists of work_ids as values.
-        str: The job_type as a string
-    """
-    try:
-        items = _query_all_items(job_name)
-        work_ids_by_status, job_type = _organize_items(items)
-        return work_ids_by_status, job_type
-
-    except Exception as e:
-        logger.exception(f"Failed to fetch work data for job {job_name}: {str(e)}")
-        raise
-
-
 def create_response(status_code: int, body: Any) -> dict[str, Any]:
     """Create a standardized API response."""
     return {
@@ -131,16 +110,23 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 def handler(event: Any, context: Any) -> dict[str, Any]:
     """Lambda handler for getting job progress."""
     try:
-        query_params = event.get("queryStringParameters", {})
-        job_name: str = query_params.get(JOB_NAME)
+        query_params = event.get("queryStringParameters", None)
+
+        if not query_params:
+            return create_response(400, {"error": f"Missing required query parameter: {JOB_NAME}"})
+
+        job_name: str | None = query_params.get(JOB_NAME, None)
 
         if not job_name:
             return create_response(400, {"error": f"Missing required query parameter: {JOB_NAME}"})
 
-        work_ids_by_status, job_type = fetch_work_data_by_job(job_name)
+        logger.info(f"Getting progress of job={job_name}")
+        items = query_all_items(job_name)
 
-        if not work_ids_by_status:
+        if len(items) == 0:
             return create_response(404, {"message": f"No data found for {JOB_NAME}={job_name}"})
+
+        work_ids_by_status, job_type = organize_items(items)
 
         # Return success response
         response = {

@@ -5,6 +5,7 @@
 import json
 import logging
 import os
+import time
 
 import boto3
 import requests
@@ -24,7 +25,7 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     # Create metadata
     original_metadata = {
         "title": "foo",
-        "desription": "offensive image",
+        "description": "offensive image",
     }
     # Convert metadata to JSON
     original_metadata_json = json.dumps(original_metadata)
@@ -45,6 +46,32 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
+def get_session_token(api_url: str, username: str, password: str) -> str:
+    """Get JWT."""
+    # Construct the full URL
+    api_url = api_url.rstrip("/")
+    endpoint = f"{api_url}/log_in"
+
+    # Headers
+    headers = {"Content-Type": "application/json"}
+
+    request_body = {"username": username, "password": password}
+
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+        return data["sessionToken"]
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        response.raise_for_status()
+
+
 def create_dummy_job(
     api_url: str,
     job_name: str,
@@ -52,6 +79,7 @@ def create_dummy_job(
     original_metadata_s3_uri: str,
     context_s3_uri: str,
     image_s3_uri: str,
+    session_token: str,
 ):
     """Create dummy job."""
     # Construct the full URL
@@ -59,8 +87,11 @@ def create_dummy_job(
     endpoint = f"{api_url}/create_job"
 
     # Headers
-    headers = {"Content-Type": "application/json"}
-
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
     works = [
         {
             "work_id": f"{job_name}_short_work",
@@ -77,24 +108,21 @@ def create_dummy_job(
     ]
     request_body = {"job_name": job_name, "job_type": job_type, "works": works}
 
-    try:
-        # Make the POST request
-        response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the JSON response
-            data = response.json()
-            print("API Response:", data)
-        else:
-            print(f"Error: API request failed with status code {response.status_code}")
-            print("Response:", response.text)
-
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        response.raise_for_status()
 
 
-def get_job_progress(api_url: str, job_name: str):
+def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     """Query the job_progress endpoint with the given job_name.
 
     Args:
@@ -111,24 +139,62 @@ def get_job_progress(api_url: str, job_name: str):
     # Set up the query parameters
     params = {"job_name": job_name}
 
-    try:
-        # Make the GET request
-        response = requests.get(endpoint, params=params)
+    # Headers
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
 
-        # Check the status code
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            logging.info(f"No data found for job_name: {job_name}")
-            return response.json()
-        else:
-            response.raise_for_status()
+    # Make the GET request
+    response = requests.get(endpoint, params=params, headers=headers)
 
-    except requests.RequestException as e:
-        logging.exception(f"An error occurred: {e}")
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+        return data
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        response.raise_for_status()
 
 
-def get_job_results(api_url: str, job_name: str, work_id: str):
+def get_overall_progress(api_url: str, session_token: str) -> dict:
+    """Query the overall_progress endpoint
+
+    Args:
+    api_url (str): The base URL of your API Gateway
+
+    Returns:
+    dict: The JSON response from the API, or None if an error occurred
+    """
+    api_url = api_url.rstrip("/")
+    # Construct the full URL
+    endpoint = f"{api_url}/overall_progress"
+
+    # Headers
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
+
+    # Make the GET request
+    response = requests.get(endpoint, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+        return data
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        response.raise_for_status()
+
+
+def get_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> dict:
     """
     Query the results endpoint with the given job_name and work_id.
 
@@ -147,43 +213,51 @@ def get_job_results(api_url: str, job_name: str, work_id: str):
     # Set up the query parameters
     params = {"job_name": job_name, "work_id": work_id}
 
-    # Make the GET request
-    response = requests.get(endpoint, params=params)
+    # Headers
+    headers = {
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
 
-    # Check the status code
+    # Make the GET request
+    response = requests.get(endpoint, params=params, headers=headers)
+
+    # Check if the request was successful
     if response.status_code == 200:
-        return response.json()["item"]
-    elif response.status_code == 404:
-        msg = f"No data found for job_name={job_name} and work_id={work_id}"
-        logging.exception(f"No data found for job_name={job_name} and work_id={work_id}")
-        raise Exception(msg)
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+        return data
     else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
         response.raise_for_status()
 
 
-def update_job_results(api_url: str, job_name: str, work_id: str):
+def update_job_results(api_url: str, job_name: str, work_id: str, session_token: str) -> None:
     # Construct the full URL
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/results"
 
     # Headers
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
 
     updated_fields = {"work_status": "REVIEWED"}
     request_body = {"job_name": job_name, "work_id": work_id, "updated_fields": updated_fields}
 
-    try:
-        # Make the POST request
-        response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+    # Make the POST request
+    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the JSON response
-            data = response.json()
-            print("API Response:", data)
-        else:
-            print(f"Error: API request failed with status code {response.status_code}")
-            print("Response:", response.text)
-
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        logging.info(f"API Response: {data}")
+    else:
+        logging.error(f"Error: API request failed with status code {response.status_code}")
+        logging.error(f"Response: {response.text}")
+        response.raise_for_status()
