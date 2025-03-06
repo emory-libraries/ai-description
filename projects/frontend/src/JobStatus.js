@@ -148,8 +148,6 @@ const JobStatus = () => {
   useEffect(() => {
     if (token && submittedJobName) {
       checkJobProgress();
-      const intervalId = setInterval(checkJobProgress, 5000);
-      return () => clearInterval(intervalId);
     }
   }, [token, submittedJobName]);
 

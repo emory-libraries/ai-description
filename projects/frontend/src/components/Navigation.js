@@ -25,22 +25,6 @@ export function AWSSideNavigation({ activeHref }) {
           ]
         },
         {
-          type: "section",
-          text: "Analysis Types",
-          items: [
-            {
-              type: "link",
-              text: "Metadata Analysis",
-              href: "/metadata"
-            },
-            {
-              type: "link",
-              text: "Bias Analysis",
-              href: "/bias"
-            }
-          ]
-        },
-        {
           type: "divider"
         }
       ]}

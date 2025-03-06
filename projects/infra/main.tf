@@ -103,18 +103,6 @@ module "s3" {
   cognito_client_id  = "FOO"
 }
 
-# Cloudfront
-module "cloudfront" {
-  source = "./modules/cloudfront"
-  depends_on = [
-    module.s3,
-  ]
-
-  deployment_prefix                   = local.deployment_prefix
-  api_gateway_deployment_stage        = var.deployment_stage
-  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
-  api_gateway_invoke_url              = "https://placeholder.com"
-}
 
 # IAM module
 module "iam" {
@@ -210,6 +198,19 @@ module "api_gateway" {
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 
+# Cloudfront
+module "cloudfront" {
+  source = "./modules/cloudfront"
+  depends_on = [
+    module.s3,
+    module.api_gateway,
+  ]
+
+  deployment_prefix                   = local.deployment_prefix
+  api_gateway_deployment_stage        = var.deployment_stage
+  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
+  api_gateway_invoke_url              = module.api_gateway.api_gateway_invoke_url
+}
 
 # S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
 module "s3_policy" {
@@ -246,50 +247,4 @@ resource "aws_api_gateway_rest_api_policy" "cloudfront_access" {
       }
     ]
   })
-}
-
-# Update Cloudfront distribution to point to API Gateway (avoiding circular dependency)
-resource "null_resource" "update_cloudfront_origin" {
-  depends_on = [module.api_gateway, module.cloudfront]
-
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    command     = <<-EOF
-      set -e
-      TEMP_FILE=$(mktemp)
-      aws cloudfront get-distribution-config --id ${module.cloudfront.distribution_id} > $TEMP_FILE
-      ETAG=$(jq -r '.ETag' $TEMP_FILE)
-      ORIGIN_ID="api-gateway"
-      API_DOMAIN=$(echo "${module.api_gateway.api_gateway_invoke_url}" | sed -e 's|^https://||' -e 's|/.*$||')
-      jq --arg origin_id "$ORIGIN_ID" --arg domain "$API_DOMAIN" '
-        .DistributionConfig.Origins.Items = [
-          .DistributionConfig.Origins.Items[] |
-          if .Id == $origin_id then
-            . + {
-              DomainName: $domain,
-              OriginPath: "/dev",
-              CustomHeaders: {Quantity: 0, Items: []},
-              CustomOriginConfig: {
-                HTTPPort: 80,
-                HTTPSPort: 443,
-                OriginProtocolPolicy: "https-only",
-                OriginSslProtocols: {Quantity: 1, Items: ["TLSv1.2"]},
-                OriginReadTimeout: 30,
-                OriginKeepaliveTimeout: 5
-              }
-            }
-          else
-            .
-          end
-        ] |
-        .DistributionConfig.Origins.Quantity = (.DistributionConfig.Origins.Items | length)
-      ' $TEMP_FILE | jq '.DistributionConfig' > ${module.cloudfront.distribution_id}_updated_config.json
-      aws cloudfront update-distribution --id ${module.cloudfront.distribution_id} --distribution-config file://${module.cloudfront.distribution_id}_updated_config.json --if-match $ETAG
-      rm $TEMP_FILE ${module.cloudfront.distribution_id}_updated_config.json
-    EOF
-  }
 }
