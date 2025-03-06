@@ -163,7 +163,7 @@ resource "aws_cloudfront_distribution" "main" {
     target_origin_id       = "s3-website"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
-    cache_policy_id        = aws_cloudfront_cache_policy.default.id
+    cache_policy_id        = aws_cloudfront_cache_policy.caching_disabled.id
 
     function_association {
       event_type   = "viewer-request"

@@ -57,8 +57,3 @@ variable "jwt_secret_arn" {
   description = "ARN of Secret used for JWT"
   type        = string
 }
-
-variable "cloudfront_distribution_arn" {
-  description = "ARN of Cloudfront distribution"
-  type        = string
-}

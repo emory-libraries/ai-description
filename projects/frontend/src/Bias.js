@@ -20,10 +20,7 @@ import {
   Spinner,
   SideNavigation,
   ColumnLayout,
-  Badge,
-  Tabs,
   Table,
-  Link,
   StatusIndicator,
   Grid,
   BreadcrumbGroup
@@ -42,7 +39,6 @@ function Bias() {
   const [imageData, setImageData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
     return new S3Client({
@@ -88,7 +84,7 @@ function Bias() {
   const fetchBiasDetails = useCallback(async (workId) => {
     try {
       const response = await fetch(
-        `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${workId}`,
+        `/api/results?job_name=${jobName}&work_id=${workId}`,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -130,7 +126,7 @@ function Bias() {
     
     try {
       const response = await fetch(
-        `${API_ENDPOINT}/results?job_name=${work.job_name}&work_id=${work.work_id}`,
+        `/api/results?job_name=${work.job_name}&work_id=${work.work_id}`,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -170,7 +166,7 @@ function Bias() {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchImage, API_ENDPOINT]); 
+  }, [fetchImage, `/api/`]); 
 
   const handleBiasSelect = (biasEntry) => {
     setSelectedBias(biasEntry);
@@ -181,7 +177,7 @@ function Bias() {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${API_ENDPOINT}/job_progress?job_name=${jobName}`,
+          `/api/job_progress?job_name=${jobName}`,
           {
             headers: {
               'Content-Type': 'application/json'
@@ -228,7 +224,7 @@ function Bias() {
     if (auth.user?.access_token && jobName) {
       fetchAllWorks();
     }
-  }, [auth.user?.access_token, jobName, workId, handleWorkSelect, API_ENDPOINT]);
+  }, [auth.user?.access_token, jobName, workId, handleWorkSelect, `/api/`]);
 
   const getBiasLevelColor = (level) => {
     if (!level) return "grey";

@@ -81,6 +81,14 @@ module "sqs" {
   visibility_timeout_seconds = 60
 }
 
+# ECR module
+module "ecr" {
+  source = "./modules/ecr"
+
+  deployment_prefix = local.deployment_prefix
+  deployment_stage  = var.deployment_stage
+}
+
 # S3 module
 module "s3" {
   source = "./modules/s3"
@@ -95,6 +103,19 @@ module "s3" {
   cognito_client_id  = "FOO"
 }
 
+# Cloudfront
+module "cloudfront" {
+  source = "./modules/cloudfront"
+  depends_on = [
+    module.s3,
+  ]
+
+  deployment_prefix                   = local.deployment_prefix
+  api_gateway_deployment_stage        = var.deployment_stage
+  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
+  api_gateway_invoke_url              = "https://placeholder.com"
+}
+
 # IAM module
 module "iam" {
   source = "./modules/iam"
@@ -105,7 +126,6 @@ module "iam" {
     module.vpc,
     module.ecr,
     module.secrets_manager,
-    module.cloudfront
   ]
 
   deployment_prefix             = local.deployment_prefix
@@ -119,15 +139,6 @@ module "iam" {
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
   enable_vpc_endpoints          = var.enable_vpc_endpoints
   jwt_secret_arn                = module.secrets_manager.jwt_secret_arn
-  cloudfront_distribution_arn   = module.cloudfront.distribution_arn
-}
-
-# ECR module
-module "ecr" {
-  source = "./modules/ecr"
-
-  deployment_prefix = local.deployment_prefix
-  deployment_stage  = var.deployment_stage
 }
 
 # ECS module
@@ -199,18 +210,6 @@ module "api_gateway" {
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 
-# Cloudfront
-module "cloudfront" {
-  source = "./modules/cloudfront"
-  depends_on = [
-    module.s3,
-  ]
-
-  deployment_prefix                   = local.deployment_prefix
-  api_gateway_deployment_stage        = var.deployment_stage
-  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
-  api_gateway_invoke_url              = "https://placeholder.com"
-}
 
 # S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
 module "s3_policy" {

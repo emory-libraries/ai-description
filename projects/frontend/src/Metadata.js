@@ -17,19 +17,12 @@ import {
   Box,
   Button,
   Alert,
-  HelpPanel,
   Spinner,
   SideNavigation,
-  ExpandableSection,
   Grid,
-  Tabs,
-  TextContent,
   Textarea,
   FormField,
   StatusIndicator,
-  ColumnLayout,
-  Link,
-  Cards,
   BreadcrumbGroup
 } from "@cloudscape-design/components";
 import { AWSSideNavigation } from './components/Navigation';
@@ -46,7 +39,6 @@ function Metadata() {
   const [modifiedFields, setModifiedFields] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
     return new S3Client({
@@ -92,7 +84,7 @@ function Metadata() {
   const fetchWorkDetails = useCallback(async (workId, jobName) => {
     try {
       const response = await fetch(
-        `${API_ENDPOINT}/results?job_name=${jobName}&work_id=${workId}`,
+        `/api/results?job_name=${jobName}&work_id=${workId}`,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -198,7 +190,7 @@ function Metadata() {
 
       console.log("Sending update with fields:", processedModifiedFields);
 
-      const url = `${API_ENDPOINT}/results`;
+      const url = `/api/results`;
       const requestBody = {
         job_name: selectedWork.job_name,
         work_id: selectedWork.work_id,
@@ -236,7 +228,7 @@ function Metadata() {
         setIsLoading(true);
 
         const response = await fetch(
-          `${API_ENDPOINT}/job_progress?job_name=${jobName}`,
+          `/api/job_progress?job_name=${jobName}`,
           {
             headers: {
               'Content-Type': 'application/json'

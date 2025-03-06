@@ -27,8 +27,6 @@ import {
 } from "@cloudscape-design/components";
 import { AWSSideNavigation } from './components/Navigation';
 
-const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
-
 const JobStatus = () => {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -68,10 +66,10 @@ const JobStatus = () => {
 
     try {
       setIsLoading(true);
-      console.log(`Fetching from: ${API_ENDPOINT}/job_progress?job_name=${submittedJobName}`);
+      console.log(`Fetching from: /api/job_progress?job_name=${submittedJobName}`);
 
       const response = await fetch(
-        `${API_ENDPOINT}/job_progress?job_name=${submittedJobName}`,
+        `/api/job_progress?job_name=${submittedJobName}`,
         {
           headers: {
             'Content-Type': 'application/json',
