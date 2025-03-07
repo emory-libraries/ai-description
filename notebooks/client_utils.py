@@ -24,8 +24,8 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
 
     # Create metadata
     original_metadata = {
-        "title": "foo",
-        "description": "offensive image",
+        "title": "title unavailable",
+        "description": "description unavailable",
     }
     # Convert metadata to JSON
     original_metadata_json = json.dumps(original_metadata)
@@ -78,7 +78,8 @@ def create_dummy_job(
     job_type: str,
     original_metadata_s3_uri: str,
     context_s3_uri: str,
-    image_s3_uri: str,
+    offensive_image_s3_uri: str,
+    normal_image_s3_uri: str,
     session_token: str,
 ):
     """Create dummy job."""
@@ -94,14 +95,20 @@ def create_dummy_job(
     }
     works = [
         {
-            "work_id": f"{job_name}_short_work",
-            "image_s3_uris": [image_s3_uri],
+            "work_id": f"{job_name}_normal_short_work",
+            "image_s3_uris": [normal_image_s3_uri],
+            "context_s3_uri": context_s3_uri,
+            "original_metadata_s3_uri": original_metadata_s3_uri,
+        },
+        {
+            "work_id": f"{job_name}_offensive_short_work",
+            "image_s3_uris": [offensive_image_s3_uri],
             "context_s3_uri": context_s3_uri,
             "original_metadata_s3_uri": original_metadata_s3_uri,
         },
         {
             "work_id": f"{job_name}_long_work",
-            "image_s3_uris": [image_s3_uri, image_s3_uri, image_s3_uri, image_s3_uri],
+            "image_s3_uris": [normal_image_s3_uri, normal_image_s3_uri, offensive_image_s3_uri, normal_image_s3_uri],
             "context_s3_uri": context_s3_uri,
             "original_metadata_s3_uri": original_metadata_s3_uri,
         },
