@@ -192,16 +192,16 @@ module "api_gateway" {
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 
-module "s3_site" {
-  source     = "./modules/s3_site"
-  depends_on = [module.api_gateway, module.s3]
+# module "s3_site" {
+#   source     = "./modules/s3_site"
+#   depends_on = [module.api_gateway, module.s3]
 
-  deployment_stage  = var.deployment_stage
-  api_url           = module.api_gateway.api_gateway_invoke_url
-  frontend_url      = module.s3.s3_website_endpoint
-  uploads_bucket_id = module.s3.uploads_bucket_id
-  website_bucket_id = module.s3.website_bucket_id
-}
+#   deployment_stage  = var.deployment_stage
+#   api_url           = module.api_gateway.api_gateway_invoke_url
+#   frontend_url      = module.s3.s3_website_endpoint
+#   uploads_bucket_id = module.s3.uploads_bucket_id
+#   website_bucket_id = module.s3.website_bucket_id
+# }
 
 # Cloudfront
 # module "cloudfront" {
