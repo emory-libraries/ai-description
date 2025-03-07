@@ -1,12 +1,12 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# Main outputs
+# outputs.tf
 
-output "cloudfront_url" {
-  description = "URL of Cloudfront"
-  value       = module.cloudfront.distribution_domain_name
-}
+# output "cloudfront_url" {
+#   description = "URL of Cloudfront"
+#   value       = module.cloudfront.distribution_domain_name
+# }
 
 output "api_gateway_invoke_url" {
   description = "The URL of the API Gateway endpoint"

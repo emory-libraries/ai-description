@@ -96,11 +96,6 @@ module "s3" {
   deployment_prefix        = local.deployment_prefix
   deployment_prefix_global = local.deployment_prefix_global
   deployment_stage         = var.deployment_stage
-
-  # For user interface deployment
-  application_uri    = "https://FOO"
-  cognito_domain_url = "https://FOO.auth.${var.aws_region}.amazoncognito.com"
-  cognito_client_id  = "FOO"
 }
 
 
@@ -179,7 +174,6 @@ module "lambda" {
   ecs_cluster_name        = module.ecs.cluster_name
   ecs_task_definition_arn = module.ecs.task_definition_arn
   ecs_security_group_id   = module.vpc.ecs_security_group_id
-  vpc_security_group_id   = module.vpc.vpc_endpoints_security_group_id
   jwt_secret_name         = module.secrets_manager.jwt_secret_name
   api_gateway_role_name   = module.iam.api_gateway_role_name
 }
@@ -198,53 +192,64 @@ module "api_gateway" {
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
 }
 
-# Cloudfront
-module "cloudfront" {
-  source = "./modules/cloudfront"
-  depends_on = [
-    module.s3,
-    module.api_gateway,
-  ]
+module "s3_site" {
+  source     = "./modules/s3_site"
+  depends_on = [module.api_gateway, module.s3]
 
-  deployment_prefix                   = local.deployment_prefix
-  api_gateway_deployment_stage        = var.deployment_stage
-  website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
-  api_gateway_invoke_url              = module.api_gateway.api_gateway_invoke_url
+  deployment_stage  = var.deployment_stage
+  api_url           = module.api_gateway.api_gateway_invoke_url
+  frontend_url      = module.s3.s3_website_endpoint
+  uploads_bucket_id = module.s3.uploads_bucket_id
+  website_bucket_id = module.s3.website_bucket_id
 }
+
+# Cloudfront
+# module "cloudfront" {
+#   source = "./modules/cloudfront"
+#   depends_on = [
+#     module.s3,
+#     module.api_gateway,
+#   ]
+
+#   deployment_prefix                   = local.deployment_prefix
+#   api_gateway_deployment_stage        = var.deployment_stage
+#   website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
+#   api_gateway_invoke_url              = module.api_gateway.api_gateway_invoke_url
+# }
 
 # S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
-module "s3_policy" {
-  source = "./modules/s3_policy"
-  depends_on = [
-    module.s3,
-    module.cloudfront
-  ]
-  bucket_id                   = module.s3.website_bucket_id
-  bucket_arn                  = module.s3.website_bucket_arn
-  cloudfront_distribution_arn = module.cloudfront.distribution_arn
-}
+# module "s3_policy" {
+#   source = "./modules/s3_policy"
+#   depends_on = [
+#     module.s3,
+#     module.cloudfront
+#   ]
+#   bucket_id                   = module.s3.website_bucket_id
+#   bucket_arn                  = module.s3.website_bucket_arn
+#   cloudfront_distribution_arn = module.cloudfront.distribution_arn
+# }
 
 # API Gateway policy
-resource "aws_api_gateway_rest_api_policy" "cloudfront_access" {
-  depends_on  = [module.cloudfront, module.api_gateway]
-  rest_api_id = module.api_gateway.api_gateway_id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "execute-api:Invoke"
-        Resource = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*"
+# resource "aws_api_gateway_rest_api_policy" "cloudfront_access" {
+#   depends_on  = [module.cloudfront, module.api_gateway]
+#   rest_api_id = module.api_gateway.api_gateway_id
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "cloudfront.amazonaws.com"
+#         }
+#         Action   = "execute-api:Invoke"
+#         Resource = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*"
 
-        Condition = {
-          StringEquals = {
-            "aws:SourceArn" = module.cloudfront.distribution_arn
-          }
-        }
-      }
-    ]
-  })
-}
+#         Condition = {
+#           StringEquals = {
+#             "aws:SourceArn" = module.cloudfront.distribution_arn
+#           }
+#         }
+#       }
+#     ]
+#   })
+# }
