@@ -7,8 +7,113 @@ import logging
 import os
 import time
 
+import pandas as pd
 import boto3
 import requests
+
+import boto3
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
+from botocore.exceptions import ClientError
+
+
+def copy_s3_file(
+    source_sha,
+    source_bucket="fedora-cor-binaries", 
+    dest_bucket="ai-description-dev-nt01-008971633436-uploads", 
+    dest_folder="images",
+):
+    """
+    Copy a file from source bucket to destination bucket using get_object and put_object
+    instead of copy_object to avoid permission issues.
+    
+    Args:
+        source_sha (str): SHA1 hash of the source file
+        source_bucket (str): Source S3 bucket name
+        dest_bucket (str): Destination S3 bucket name
+        dest_folder (str): Destination folder within the bucket
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    s3_client = boto3.client('s3')
+    
+    source_path = source_sha
+    dest_path = f"{dest_folder}/{source_sha}"
+    
+    try:
+        logging.info(f"Copying {source_bucket}/{source_path} to {dest_bucket}/{dest_path}")
+        
+        # Method 1: Using memory buffer
+        response = s3_client.get_object(Bucket=source_bucket, Key=source_path)
+        file_content = response['Body'].read()
+        
+        s3_client.put_object(
+            Body=file_content,
+            Bucket=dest_bucket,
+            Key=dest_path
+        )
+        return True
+    except Exception as e:
+        logging.error(f"Error copying {source_sha}: {str(e)}")
+        
+        # If the first method fails, try using the AWS CLI command directly
+        try:
+            logging.info(f"Trying alternative method with AWS CLI for {source_sha}")
+            import subprocess
+            cmd = f"aws s3 cp s3://{source_bucket}/{source_path} s3://{dest_bucket}/{dest_path}"
+            process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            
+            if process.returncode == 0:
+                logging.info(f"Successfully copied {source_sha} using AWS CLI")
+                return True
+            else:
+                logging.error(f"AWS CLI copy failed: {process.stderr}")
+                return False
+        except Exception as cli_error:
+            logging.error(f"Error with AWS CLI method for {source_sha}: {str(cli_error)}")
+            return False
+
+
+def batch_copy_files_from_dataframe(df, max_workers=5):
+    """
+    Process the dataframe and copy all page files to the destination bucket.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame with work_id, page_sha1, page_title columns
+        max_workers (int): Maximum number of concurrent copy operations
+    
+    Returns:
+        dict: Summary of copy operations with success and failure counts
+    """
+    # Extract all unique SHA1s from the dataframe
+    all_sha1s = df['page_sha1'].unique().tolist()
+    
+    results = {"total": len(all_sha1s), "success": 0, "failure": 0, "failed_shas": []}
+    
+    logging.info(f"Starting copy of {len(all_sha1s)} files to the destination bucket")
+    
+    # Use ThreadPoolExecutor for parallel processing
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_sha = {executor.submit(copy_s3_file, sha): sha for sha in all_sha1s}
+        
+        for future in future_to_sha:
+            sha = future_to_sha[future]
+            try:
+                success = future.result()
+                if success:
+                    results["success"] += 1
+                else:
+                    results["failure"] += 1
+                    results["failed_shas"].append(sha)
+            except Exception as e:
+                logging.error(f"Exception for SHA {sha}: {str(e)}")
+                results["failure"] += 1
+                results["failed_shas"].append(sha)
+    
+    logging.info(f"Copy operation complete. Success: {results['success']}, Failures: {results['failure']}")
+    
+    return results
 
 
 def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
@@ -72,8 +177,59 @@ def get_session_token(api_url: str, username: str, password: str) -> str:
         response.raise_for_status()
 
 
-def create_dummy_job(
-    api_url: str,
+def create_metadata_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
+    """Create metadata job objects."""
+    # Group by work_id
+    grouped = df.groupby("work_id")
+
+    result = []
+    for work_id, group in grouped:
+        # Create a dictionary to easily look up pages by title
+        pages_dict = dict(zip(group["page_title"], group["page_sha1"]))
+
+        # Order pages as Front -> Back
+        page_shas = []
+        if "Front" in pages_dict:
+            page_shas.append(pages_dict["Front"])
+        if "Back" in pages_dict:
+            page_shas.append(pages_dict["Back"])
+
+        # Create the object
+        obj = {
+            "work_id": work_id,
+            "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
+        }
+        result.append(obj)
+
+    return result
+
+def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
+    """Create bias job objects."""
+    # Group by work_id
+    grouped = df.groupby("work_id")
+
+    result = []
+    for work_id, group in grouped:
+        # Create a dictionary to easily look up pages by title
+        pages_dict = dict(zip(group["page_title"], group["page_sha1"]))
+
+        # Order pages as Front -> Back
+        page_shas = []
+        if "Front" in pages_dict:
+            page_shas.append(pages_dict["Front"])
+        if "Back" in pages_dict:
+            page_shas.append(pages_dict["Back"])
+
+        # Create the object
+        obj = {
+            "work_id": work_id,
+            "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
+        }
+        result.append(obj)
+
+    return result
+
+def create_dummy_job_objects(
     job_name: str,
     job_type: str,
     original_metadata_s3_uri: str,
@@ -82,17 +238,7 @@ def create_dummy_job(
     session_token: str,
 ):
     """Create dummy job."""
-    # Construct the full URL
-    api_url = api_url.rstrip("/")
-    endpoint = f"{api_url}/create_job"
-
-    # Headers
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {session_token}",
-        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
-    }
-    works = [
+    return [
         {
             "work_id": f"{job_name}_short_work",
             "image_s3_uris": [image_s3_uri],
@@ -106,6 +252,26 @@ def create_dummy_job(
             "original_metadata_s3_uri": original_metadata_s3_uri,
         },
     ]
+
+
+def submit_job(
+    api_url: str,
+    job_name: str,
+    job_type: str,
+    works: list,
+    session_token: str,
+):
+    """Submit job."""
+    # Construct the full URL
+    api_url = api_url.rstrip("/")
+    endpoint = f"{api_url}/create_job"
+
+    # Headers
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {session_token}",
+        "X-Request-Timestamp": str(int(time.time() * 1000)),  # Milliseconds since epoch
+    }
     request_body = {"job_name": job_name, "job_type": job_type, "works": works}
 
     # Make the POST request
