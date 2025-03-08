@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
-import { buildApiUrl } from '../utils/apiUrls';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 const useJobStatus = (token, navigate) => {
   const { logout } = useAuth();

@@ -98,6 +98,7 @@ resource "null_resource" "frontend_build" {
         -w /app \
         -e NODE_ENV=production \
         -e PUBLIC_URL="/${var.deployment_stage}" \
+        -e DISABLE_ESLINT_PLUGIN=true \
         -e npm_config_cache=/.npm \
         node:18 \
         bash -c "mkdir -p /.npm && \
