@@ -30,7 +30,7 @@ export const WorkNavigation = ({
 
   const workNavigationItems = allWorks.map(work => ({
     type: 'link',
-    text: `Work ID: ${work.work_id}`,
+    text: `${work.work_id}`,
     href: `#${work.work_id}`,
     info: <StatusIndicator type={getStatusType(work.work_status)} />,
   }));

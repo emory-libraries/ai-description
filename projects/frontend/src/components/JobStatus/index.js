@@ -44,8 +44,7 @@ const JobStatus = () => {
   };
 
   const breadcrumbItems = [
-    { text: 'Document Analysis Service', href: buildFrontendPath('/') },
-    { text: 'Job Status', href: buildFrontendPath('/') }
+    { text: 'Job results search', href: buildFrontendPath('/') }
   ];
 
   return (
@@ -53,7 +52,7 @@ const JobStatus = () => {
       navigation={<AWSSideNavigation activeHref="/" />}
       toolsHide={true}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
-      defaultHideNavigation={true}
+      navigationHide={true}
       content={
         <ContentLayout header={<Header variant="h1">Document Analysis Service</Header>}>
           <SpaceBetween size="l">

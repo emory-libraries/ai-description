@@ -20,7 +20,7 @@ export function AWSSideNavigation({ activeHref }) {
           items: [
             {
               type: "link",
-              text: "Job Status",
+              text: "Job results search",
               href: buildFrontendPath("/")
             }
           ]

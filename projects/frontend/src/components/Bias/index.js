@@ -40,8 +40,7 @@ function BiasContent() {
   } = useBiasContext();
 
   const breadcrumbItems = [
-    { text: 'Document Analysis Service', href: buildFrontendPath('/') },
-    { text: 'Job Status', href: buildFrontendPath('/') },
+    { text: 'Job results search', href: buildFrontendPath('/') },
     { text: `Bias Analysis: ${jobName || ''}` }
   ];
 
@@ -50,7 +49,7 @@ function BiasContent() {
       toolsHide={true}
       navigation={<AWSSideNavigation activeHref="/bias" />}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
-      defaultHideNavigation={true}
+      navigationHide={true}
       content={
         <ContentLayout
           header={

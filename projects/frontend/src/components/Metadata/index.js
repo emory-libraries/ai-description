@@ -23,7 +23,6 @@ import MetadataEditor from './components/MetadataEditor';
 import { buildFrontendPath } from '../../utils/frontendPaths';
 
 function MetadataContent() {
-  const location = useLocation();
   const navigate = useNavigate();
   const {
     jobName,
@@ -36,8 +35,7 @@ function MetadataContent() {
   } = useMetadataContext();
 
   const breadcrumbItems = [
-    { text: 'Document Analysis Service', href: buildFrontendPath('/') },
-    { text: 'Job Status', href: buildFrontendPath('/') },
+    { text: 'Job results search', href: buildFrontendPath('/') },
     { text: `Metadata Analysis: ${jobName || ''}` }
   ];
 
@@ -82,7 +80,7 @@ function MetadataContent() {
       navigation={<AWSSideNavigation activeHref="/metadata" />}
       toolsHide={true}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
-      defaultHideNavigation={true}
+      navigationHide={true}
       content={
         <ContentLayout
           header={
