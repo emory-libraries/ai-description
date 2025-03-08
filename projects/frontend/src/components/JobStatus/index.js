@@ -39,6 +39,7 @@ const JobStatus = () => {
     const trimmedJobName = jobName.trim();
     if (trimmedJobName) {
       setSubmittedJobName(trimmedJobName);
+      checkJobProgress(trimmedJobName);
     }
   };
 
