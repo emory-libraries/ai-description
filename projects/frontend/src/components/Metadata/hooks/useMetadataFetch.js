@@ -14,7 +14,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
     if (!token) return;
 
     try {
-      const url = buildApiUrl(`/api/results?job_name=\${jobName}&work_id=\${workId}`);
+      const url = buildApiUrl(`/api/results?job_name=${jobName}&work_id=${workId}`);
       const response = await fetch(
         url,
         {
@@ -31,7 +31,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        throw new Error(`Failed to fetch work details: \${response.status}`);
+        throw new Error(`Failed to fetch work details: ${response.status}`);
       }
 
       const data = await response.json();
@@ -46,7 +46,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
     if (!token || !jobName) return [];
 
     try {
-      const url = buildApiUrl(`/api/job_progress?job_name=\${jobName}`);
+      const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
       const response = await fetch(
         url,
         {
@@ -63,7 +63,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        throw new Error(`Failed to fetch job data: \${response.status}`);
+        throw new Error(`Failed to fetch job data: ${response.status}`);
       }
 
       const jobData = await response.json();

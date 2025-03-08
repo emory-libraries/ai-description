@@ -41,7 +41,7 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
           url,
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'x-api-key': token,
               'Content-Type': 'application/json'
             }
           }
