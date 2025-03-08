@@ -14,6 +14,11 @@ import {
 } from "@cloudscape-design/components";
 
 const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
+  const handleFormSubmit = (e) => {
+    e.preventDefault(); // Prevent default form submission
+    handleSubmitJobName(e);
+  };
+
   return (
     <Container
       header={
@@ -22,29 +27,37 @@ const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
         </Header>
       }
     >
-      <Form
-        actions={
-          <Button
-            variant="primary"
-            formAction="submit"
-            onClick={handleSubmitJobName}
-            disabled={!jobName.trim()}
-          >
-            Submit
-          </Button>
-        }
-      >
-        <FormField
-          label="Job name"
-          description="Enter the job identifier to view processing status"
+      <form onSubmit={handleFormSubmit}>
+        <Form
+          actions={
+            <Button
+              variant="primary"
+              formAction="submit" 
+              type="submit"
+              disabled={!jobName.trim()}
+            >
+              Submit
+            </Button>
+          }
         >
-          <Input
-            value={jobName}
-            onChange={({ detail }) => setJobName(detail.value)}
-            placeholder="Enter job name"
-          />
-        </FormField>
-      </Form>
+          <FormField
+            label="Job name"
+            description="Enter the job identifier to view processing status"
+          >
+            <Input
+              value={jobName}
+              onChange={({ detail }) => setJobName(detail.value)}
+              placeholder="Enter job name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && jobName.trim()) {
+                  e.preventDefault();
+                  handleSubmitJobName(e);
+                }
+              }}
+            />
+          </FormField>
+        </Form>
+      </form>
     </Container>
   );
 };
