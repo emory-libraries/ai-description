@@ -54,9 +54,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
   }
 
   // Special handling of page_biases feld
-  if (fieldKey === 'page_biases') {
-    console.log('Processing page_biases:', fieldValue);
-    
+  if (fieldKey === 'page_biases') {    
     return (
       <Container
         header={<Header variant="h3">{formattedKey}</Header>}
@@ -68,17 +66,53 @@ function MetadataSection({ fieldKey, fieldValue }) {
               const parsedValue = JSON.parse(detail.value);
               handleMetadataEdit(fieldKey, parsedValue);
             } catch (e) {
-              console.error("Invalid JSON for page_biases:", e);
+              console.error("Invalid JSON:", e);
               // Fallback to string if JSON parsing fails
               handleMetadataEdit(fieldKey, detail.value);
             }
           }}
           rows={8}
-          placeholder="Enter page biases as JSON..."
         />
       </Container>
     );
   }
+
+    // Special handling of transcription feld
+    if (fieldKey === 'transcription') {
+      const explanation = fieldValue.model_notes || '';
+      const fieldValueCopy = {...fieldValue}; // Create a copy
+      delete fieldValueCopy.model_notes; // Remove the property
+      return (
+        <Container
+          header={<Header variant="h3">{formattedKey}</Header>}
+        >
+          <SpaceBetween size="m">
+            {explanation && (
+              <Box padding="s">
+                <SpaceBetween size="xs">
+                  <Header variant="h4">Rationale</Header>
+                  <div>{explanation}</div>
+                </SpaceBetween>
+              </Box>
+            )}
+            <Textarea
+              value={JSON.stringify(fieldValueCopy.transcriptions, null, 2)}
+              onChange={({ detail }) => {
+                try {
+                  const parsedValue = JSON.parse(detail.value);
+                  handleMetadataEdit(fieldKey, parsedValue);
+                } catch (e) {
+                  console.error("Invalid JSON:", e);
+                  // Fallback to string if JSON parsing fails
+                  handleMetadataEdit(fieldKey, detail.value);
+                }
+              }}
+              rows={8}
+            />
+          </SpaceBetween>
+        </Container>
+      );
+    }
   
   // Handle nested structure with explanation and value
   const isNestedStructure = fieldValue &&
