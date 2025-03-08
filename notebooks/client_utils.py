@@ -14,10 +14,10 @@ import requests
 
 
 def copy_s3_file(
-    source_sha,
-    source_bucket="fedora-cor-binaries",
-    dest_bucket="ai-description-dev-nt01-008971633436-uploads",
-    dest_folder="images",
+    source_sha: str,
+    dest_bucket: str,
+    source_bucket: str = "fedora-cor-binaries",
+    dest_folder: str = "images",
 ):
     """
     Copy a file from source bucket to destination bucket using get_object and put_object
@@ -68,7 +68,7 @@ def copy_s3_file(
             return False
 
 
-def batch_copy_files_from_dataframe(df, max_workers=5):
+def batch_copy_files_from_dataframe(df: pd.DataFrame, max_workers: int = 5) -> dict:
     """
     Process the dataframe and copy all page files to the destination bucket.
 
@@ -204,20 +204,48 @@ def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
 
     result = []
     for work_id, group in grouped:
-        # Create a dictionary to easily look up pages by title
-        pages_dict = dict(zip(group["page_title"], group["page_sha1"]))
+        # Extract page numbers and sort them
+        page_info = []
+        for _, row in group.iterrows():
+            page_title = row["page_title"]
+            # Extract numeric part from page title (e.g., "Page 1" -> 1)
+            try:
+                page_num = int(page_title.split(" ")[1])
+                page_info.append((page_num, row["page_sha1"]))
+            except (IndexError, ValueError):
+                # Handle cases where page_title doesn't follow "Page X" format
+                page_info.append((999999, row["page_sha1"]))  # Put non-standard pages at the end
 
-        # Order pages as Front -> Back
-        page_shas = []
-        if "Front" in pages_dict:
-            page_shas.append(pages_dict["Front"])
-        if "Back" in pages_dict:
-            page_shas.append(pages_dict["Back"])
+        # Sort by page number
+        page_info.sort()
+
+        # Get ordered page_shas
+        page_shas = [sha for _, sha in page_info]
+
+        # Get title and abstract (should be the same for all rows in group)
+        title = group["title"].iloc[0]
+        abstract = group["abstract"].iloc[0]
+
+        # Create metadata dictionary
+        metadata = {"title": title, "abstract": abstract}
+
+        # Define the metadata S3 URI
+        metadata_s3_uri = f"metadata/{work_id}.json"
+
+        # Write metadata to S3
+        s3 = boto3.client("s3")
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=f"metadata/{work_id}.json",
+            Body=json.dumps(metadata),
+            ContentType="application/json",
+        )
 
         # Create the object
         obj = {
             "work_id": work_id,
             "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
+            "original_metadata_s3_uri": metadata_s3_uri,
         }
         result.append(obj)
 
@@ -226,11 +254,9 @@ def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
 
 def create_dummy_job_objects(
     job_name: str,
-    job_type: str,
     original_metadata_s3_uri: str,
     context_s3_uri: str,
     image_s3_uri: str,
-    session_token: str,
 ):
     """Create dummy job."""
     return [
@@ -313,7 +339,6 @@ def get_job_progress(api_url: str, job_name: str, session_token: str) -> dict:
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info(f"API Response: {data}")
         return data
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
@@ -347,7 +372,6 @@ def get_overall_progress(api_url: str, session_token: str) -> dict:
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info(f"API Response: {data}")
         return data
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
@@ -387,7 +411,6 @@ def get_job_results(api_url: str, job_name: str, work_id: str, session_token: st
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        logging.info(f"API Response: {data}")
         return data
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")

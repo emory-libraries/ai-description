@@ -210,8 +210,11 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
         ]
         Resource = [
+          "${var.uploads_bucket_arn}",
           "${var.uploads_bucket_arn}/*",
         ]
       },
@@ -229,7 +232,7 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
         ]
         Resource = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
       },
@@ -344,7 +347,8 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
         Principal = "*"
         Action = [
           "s3:GetObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:HeadObject",
         ]
         Resource = "*"
       }
