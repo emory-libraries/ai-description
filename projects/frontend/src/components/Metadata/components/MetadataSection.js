@@ -6,183 +6,111 @@ import React from 'react';
 import {
   Container,
   Header,
-  FormField,
   Textarea,
   SpaceBetween,
   Box
 } from "@cloudscape-design/components";
 import { useMetadataContext } from '../MetadataContext';
-import { formatValue } from '../utils/formatter';
 
 function MetadataSection({ fieldKey, fieldValue }) {
   const { handleMetadataEdit } = useMetadataContext();
 
   // Skip certain fields from being displayed
-  if (
-    fieldKey === 'job_type' ||
-    fieldKey === 'job_name' ||
-    fieldKey === 'work_id' ||
-    fieldKey === 'work_status' ||
-    fieldKey === 'image_s3_uris' ||
-    fieldKey === 'context_s3_uri' ||
-    fieldKey === 'original_metadata_s3_uri' ||
-    fieldKey === 'image_presigned_urls' ||
-    fieldKey === 'metadata_biases'
-    ) {
+  if ([
+    'job_type', 'job_name', 'work_id', 'work_status', 
+    'image_s3_uris', 'context_s3_uri', 'original_metadata_s3_uri', 
+    'image_presigned_urls', 'metadata_biases'
+  ].includes(fieldKey)) {
     return null;
   }
 
   // Format the field key for display
   const formattedKey = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-  // Handle empty array field
-  if (Array.isArray(fieldValue) && fieldValue.length === 0) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <Textarea
-          value=""
-          onChange={({ detail }) => handleMetadataEdit(fieldKey,
-            detail.value.split('|').filter(item => item.trim().length > 0)
-          )}
-          rows={2}
-          placeholder="Enter pipe-separated values..."
-        />
-      </Container>
-    );
-  }
-
-  // Special handling of page_biases feld
-  if (fieldKey === 'page_biases') {    
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <Textarea
-          value={JSON.stringify(fieldValue, null, 2)}
-          onChange={({ detail }) => {
-            try {
-              const parsedValue = JSON.parse(detail.value);
-              handleMetadataEdit(fieldKey, parsedValue);
-            } catch (e) {
-              console.error("Invalid JSON:", e);
-              // Fallback to string if JSON parsing fails
-              handleMetadataEdit(fieldKey, detail.value);
-            }
-          }}
-          rows={8}
-        />
-      </Container>
-    );
-  }
-
-    // Special handling of transcription feld
-    if (fieldKey === 'transcription') {
-      const explanation = fieldValue.model_notes || '';
-      const fieldValueCopy = {...fieldValue}; // Create a copy
-      delete fieldValueCopy.model_notes; // Remove the property
-      return (
-        <Container
-          header={<Header variant="h3">{formattedKey}</Header>}
-        >
-          <SpaceBetween size="m">
-            {explanation && (
-              <Box padding="s">
-                <SpaceBetween size="xs">
-                  <Header variant="h4">Rationale</Header>
-                  <div>{explanation}</div>
-                </SpaceBetween>
-              </Box>
-            )}
-            <Textarea
-              value={JSON.stringify(fieldValueCopy.transcriptions, null, 2)}
-              onChange={({ detail }) => {
-                try {
-                  const parsedValue = JSON.parse(detail.value);
-                  handleMetadataEdit(fieldKey, parsedValue);
-                } catch (e) {
-                  console.error("Invalid JSON:", e);
-                  // Fallback to string if JSON parsing fails
-                  handleMetadataEdit(fieldKey, detail.value);
-                }
-              }}
-              rows={8}
-            />
-          </SpaceBetween>
-        </Container>
-      );
+  // Determine if we have a special field structure with a rationale
+  let rationale = null;
+  let editableValue = fieldValue;
+  let updatePath = null;
+  let isList = false;
+  
+  // Case 1: Object with explanation and value
+  if (fieldValue && typeof fieldValue === 'object') {
+    if ('explanation' in fieldValue && 'value' in fieldValue) {
+      rationale = fieldValue.explanation;
+      editableValue = fieldValue.value;
+      updatePath = 'value';
+      isList = Array.isArray(fieldValue.value);
     }
-  
-  // Handle nested structure with explanation and value
-  const isNestedStructure = fieldValue &&
-    typeof fieldValue === 'object' &&
-    ('explanation' in fieldValue || 'value' in fieldValue);
-
-  if (isNestedStructure) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <SpaceBetween size="m">
-          {fieldValue.explanation && (
-            <Box padding="s">
-              <SpaceBetween size="xs">
-                <Header variant="h4">Explanation</Header>
-                <div>{fieldValue.explanation}</div>
-              </SpaceBetween>
-            </Box>
-          )}
-
-          <Textarea
-            value={Array.isArray(fieldValue.value) ?
-              fieldValue.value.join(' | ') :
-              (fieldValue.value ? formatValue(fieldValue.value) : '')}
-            onChange={({ detail }) => handleMetadataEdit(fieldKey, {
-              ...fieldValue,
-              value: Array.isArray(fieldValue.value) ?
-                detail.value.split('|').map(item => item.trim()).filter(item => item) :
-                detail.value
-            })}
-            rows={3}
-            placeholder={Array.isArray(fieldValue.value) ?
-              "e.g. value1 | value2 | value3" :
-              "Enter value here..."}
-          />
-        </SpaceBetween>
-      </Container>
-    );
+    // Case 2: Transcription with model_notes
+    else if (fieldKey === 'transcription' && 'transcriptions' in fieldValue && 'model_notes' in fieldValue) {
+      rationale = fieldValue.model_notes;
+      editableValue = fieldValue.transcriptions;
+      updatePath = 'transcriptions';
+    }
+  } else if (Array.isArray(fieldValue)) {
+    isList = true;
   }
 
-  // Handle array fields
-  if (Array.isArray(fieldValue)) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <Textarea
-          value={fieldValue.join(' | ')}
-          onChange={({ detail }) => handleMetadataEdit(fieldKey,
-            detail.value.split('|').map(item => item.trim()).filter(item => item)
-          )}
-          rows={4}
-          placeholder="e.g. value1 | value2 | value3"
-        />
-      </Container>
-    );
-  }
-  
-  // Default case: simple value field
+  // Convert the editable value to a string for display
+  const stringValue = isList ? 
+    editableValue.join(' | ') : 
+    (typeof editableValue === 'object' ? 
+      JSON.stringify(editableValue, null, 2) : 
+      String(editableValue || ''));
+
+  const handleChange = ({ detail }) => {
+    try {
+      let newValue;
+      
+      // Handle different value types
+      if (isList) {
+        newValue = detail.value.split('|').map(item => item.trim()).filter(Boolean);
+      } else if (detail.value.trim().startsWith('{') || detail.value.trim().startsWith('[')) {
+        newValue = JSON.parse(detail.value);
+      } else {
+        newValue = detail.value;
+      }
+      
+      // Update accordingly based on field structure
+      if (updatePath) {
+        handleMetadataEdit(fieldKey, {
+          ...fieldValue,
+          [updatePath]: newValue
+        });
+      } else {
+        handleMetadataEdit(fieldKey, newValue);
+      }
+    } catch (e) {
+      // Fallback to string if JSON parsing fails
+      if (updatePath) {
+        handleMetadataEdit(fieldKey, {
+          ...fieldValue,
+          [updatePath]: detail.value
+        });
+      } else {
+        handleMetadataEdit(fieldKey, detail.value);
+      }
+    }
+  };
+
   return (
-    <Container
-      header={<Header variant="h3">{formattedKey}</Header>}
-    >
-      <Textarea
-        value={formatValue(fieldValue)}
-        onChange={({ detail }) => handleMetadataEdit(fieldKey, detail.value)}
-        rows={4}
-        placeholder={`Enter ${formattedKey.toLowerCase()} here...`}
-      />
+    <Container header={<Header variant="h3">{formattedKey}</Header>}>
+      <SpaceBetween size="m">
+        {rationale && (
+          <Box padding="s">
+            <SpaceBetween size="xs">
+              <Header variant="h4">Rationale</Header>
+              <div>{rationale}</div>
+            </SpaceBetween>
+          </Box>
+        )}
+        <Textarea
+          value={stringValue}
+          onChange={handleChange}
+          rows={5}
+          placeholder={isList ? "e.g. value1 | value2 | value3" : `Enter ${formattedKey.toLowerCase()} here...`}
+        />
+      </SpaceBetween>
     </Container>
   );
 }
