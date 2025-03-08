@@ -6,27 +6,23 @@ import json
 import logging
 import os
 import time
-
-import pandas as pd
-import boto3
-import requests
-
-import boto3
-import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
-from botocore.exceptions import ClientError
+
+import boto3
+import pandas as pd
+import requests
 
 
 def copy_s3_file(
     source_sha,
-    source_bucket="fedora-cor-binaries", 
-    dest_bucket="ai-description-dev-nt01-008971633436-uploads", 
+    source_bucket="fedora-cor-binaries",
+    dest_bucket="ai-description-dev-nt01-008971633436-uploads",
     dest_folder="images",
 ):
     """
     Copy a file from source bucket to destination bucket using get_object and put_object
     instead of copy_object to avoid permission issues.
-    
+
     Args:
         source_sha (str): SHA1 hash of the source file
         source_bucket (str): Source S3 bucket name
@@ -36,34 +32,31 @@ def copy_s3_file(
     Returns:
         bool: True if successful, False otherwise
     """
-    s3_client = boto3.client('s3')
-    
+    s3_client = boto3.client("s3")
+
     source_path = source_sha
     dest_path = f"{dest_folder}/{source_sha}"
-    
+
     try:
         logging.info(f"Copying {source_bucket}/{source_path} to {dest_bucket}/{dest_path}")
-        
+
         # Method 1: Using memory buffer
         response = s3_client.get_object(Bucket=source_bucket, Key=source_path)
-        file_content = response['Body'].read()
-        
-        s3_client.put_object(
-            Body=file_content,
-            Bucket=dest_bucket,
-            Key=dest_path
-        )
+        file_content = response["Body"].read()
+
+        s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_path)
         return True
     except Exception as e:
         logging.error(f"Error copying {source_sha}: {str(e)}")
-        
+
         # If the first method fails, try using the AWS CLI command directly
         try:
             logging.info(f"Trying alternative method with AWS CLI for {source_sha}")
             import subprocess
+
             cmd = f"aws s3 cp s3://{source_bucket}/{source_path} s3://{dest_bucket}/{dest_path}"
             process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            
+
             if process.returncode == 0:
                 logging.info(f"Successfully copied {source_sha} using AWS CLI")
                 return True
@@ -78,25 +71,25 @@ def copy_s3_file(
 def batch_copy_files_from_dataframe(df, max_workers=5):
     """
     Process the dataframe and copy all page files to the destination bucket.
-    
+
     Args:
         df (pandas.DataFrame): DataFrame with work_id, page_sha1, page_title columns
         max_workers (int): Maximum number of concurrent copy operations
-    
+
     Returns:
         dict: Summary of copy operations with success and failure counts
     """
     # Extract all unique SHA1s from the dataframe
-    all_sha1s = df['page_sha1'].unique().tolist()
-    
+    all_sha1s = df["page_sha1"].unique().tolist()
+
     results = {"total": len(all_sha1s), "success": 0, "failure": 0, "failed_shas": []}
-    
+
     logging.info(f"Starting copy of {len(all_sha1s)} files to the destination bucket")
-    
+
     # Use ThreadPoolExecutor for parallel processing
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_sha = {executor.submit(copy_s3_file, sha): sha for sha in all_sha1s}
-        
+
         for future in future_to_sha:
             sha = future_to_sha[future]
             try:
@@ -110,9 +103,9 @@ def batch_copy_files_from_dataframe(df, max_workers=5):
                 logging.error(f"Exception for SHA {sha}: {str(e)}")
                 results["failure"] += 1
                 results["failed_shas"].append(sha)
-    
+
     logging.info(f"Copy operation complete. Success: {results['success']}, Failures: {results['failure']}")
-    
+
     return results
 
 
@@ -203,6 +196,7 @@ def create_metadata_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict
 
     return result
 
+
 def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
     """Create bias job objects."""
     # Group by work_id
@@ -228,6 +222,7 @@ def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
         result.append(obj)
 
     return result
+
 
 def create_dummy_job_objects(
     job_name: str,
