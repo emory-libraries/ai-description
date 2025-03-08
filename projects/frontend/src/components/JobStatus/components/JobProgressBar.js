@@ -10,7 +10,7 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
   // Calculate percentages for each status
   const inQueuePercent = (statusCounts.inQueue / totalWorks) * 100;
   const inProgressPercent = (statusCounts.inProgress / totalWorks) * 100;
-  const completedPercent = (statusCounts.completed / totalWorks) * 100;
+  const readyPercent = (statusCounts.readyForReview / totalWorks) * 100;
   const reviewedPercent = (statusCounts.reviewed / totalWorks) * 100;
   const failedPercent = (statusCounts.failed / totalWorks) * 100;
     
@@ -18,8 +18,8 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
   const statusColors = {
     inQueue: "#CCCCCC", // grey
     inProgress: "#F2C166", // yellow
-    completed: "#60BD68", // green
-    reviewed: "#5095E0", // blue
+    readyForReview: "#5095E0", // blue
+    reviewed: "#60BD68", // green
     failed: "#E05050"  // red
   };
 
@@ -59,15 +59,15 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
           />
         )}
         
-        {/* Completed */}
-        {completedPercent > 0 && (
+        {/* Ready For Review */}
+        {readyPercent > 0 && (
           <div 
             style={{ 
-              width: `${completedPercent}%`, 
-              backgroundColor: statusColors.completed,
+              width: `${readyPercent}%`, 
+              backgroundColor: statusColors.readyForReview,
               height: '100%',
             }} 
-            title={`Ready for Review: ${statusCounts.completed} items (${Math.round(completedPercent)}%)`}
+            title={`Ready for Review: ${statusCounts.readyForReview} items (${Math.round(readyPercent)}%)`}
           />
         )}
         
@@ -111,10 +111,10 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
               <span>In Progress ({statusCounts.inProgress})</span>
             </div>
           )}
-          {statusCounts.completed > 0 && (
+          {statusCounts.readyForReview > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.completed, borderRadius: '2px' }}></div>
-              <span>Ready for Review ({statusCounts.completed})</span>
+              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.readyForReview, borderRadius: '2px' }}></div>
+              <span>Ready for Review ({statusCounts.readyForReview})</span>
             </div>
           )}
           {statusCounts.reviewed > 0 && (

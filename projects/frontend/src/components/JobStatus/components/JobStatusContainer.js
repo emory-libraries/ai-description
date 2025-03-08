@@ -19,10 +19,10 @@ const JobStatusContainer = ({ job, navigate }) => {
   const getStatusCounts = (job) => {
     const inQueue = job.works.filter(w => w.work_status === 'IN QUEUE').length;
     const inProgress = job.works.filter(w => w.work_status === 'IN PROGRESS').length;
-    const completed = job.works.filter(w => w.work_status === 'READY FOR REVIEW').length;
+    const readyForReview = job.works.filter(w => w.work_status === 'READY FOR REVIEW').length;
     const failed = job.works.filter(w => w.work_status === 'FAILED TO PROCESS').length;
     const reviewed = job.works.filter(w => w.work_status === 'REVIEWED').length;
-    return { inQueue, inProgress, completed, failed, reviewed };
+    return { inQueue, inProgress, readyForReview, failed, reviewed };
   };
 
   const handleViewResults = (job, work) => {
@@ -60,7 +60,7 @@ const JobStatusContainer = ({ job, navigate }) => {
         <Header
           variant="h2"
           actions={
-            statusCounts.completed > 0 && (
+            statusCounts.readyForReview > 0 && (
               <Button
                 variant="primary"
                 onClick={() => handleViewResults(job, job.works[0])}
