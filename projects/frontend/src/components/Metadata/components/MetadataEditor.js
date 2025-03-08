@@ -59,6 +59,21 @@ function MetadataEditor() {
   }
 
   // If we have both selectedWork and metadata, render the metadata editor
+  const priority_fields = [
+    'page_biases',
+    'description',
+    'transcription',
+    'contextual_info',
+    'publication_info',
+    'location',
+    'format',
+    'genre',
+    'topics',
+    'date',
+    'people',
+    'actions',
+    'objects',
+  ];
   return (
     <Container
       header={
@@ -68,9 +83,20 @@ function MetadataEditor() {
       }
     >
       <SpaceBetween size="l">
-        {Object.entries(metadata).map(([key, value]) => (
-          <MetadataSection key={key} fieldKey={key} fieldValue={value} />
-        ))}
+        {/* Render prioritized fields first in the specified order */}
+        {priority_fields.map(key =>
+          metadata[key] !== undefined && (
+            <MetadataSection key={key} fieldKey={key} fieldValue={metadata[key]} />
+          )
+        )}
+
+        {/* Then render all remaining fields */}
+        {Object.entries(metadata)
+          .filter(([key]) => !priority_fields.includes(key))
+          .map(([key, value]) => (
+            <MetadataSection key={key} fieldKey={key} fieldValue={value} />
+          ))
+        }
       </SpaceBetween>
     </Container>
   );

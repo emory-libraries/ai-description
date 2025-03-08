@@ -46,12 +46,12 @@ export const useBiasData = (jobName) => {
       }
 
       const data = await response.json();
-      
+
       // Handle case where work processing failed or data is missing
       if (!data.item || !data.item.page_biases || data.item.status === 'FAILED TO PROCESS') {
         return { biases: [], image_s3_uris: [], status: data.item?.status || 'FAILED TO PROCESS' };
       }
-      
+
       const biasEntriesWithImages = data.item.page_biases.flatMap((page, pageIndex) =>
         page.biases.map(bias => ({
           ...bias,
@@ -93,13 +93,13 @@ export const useBiasData = (jobName) => {
       }
 
       const { biases, image_s3_uris, status } = await fetchBiasDetails(work.work_id);
-      
+
       // Handle failed work or missing data after fetch
       if (status === 'FAILED' || !biases || biases.length === 0) {
         setBiasData([]);
         return;
       }
-      
+
       setBiasData(biases);
 
       if (image_s3_uris && image_s3_uris.length > 0) {

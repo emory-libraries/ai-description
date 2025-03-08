@@ -107,12 +107,12 @@ export function MetadataProvider({ children }) {
   useEffect(() => {
     async function loadInitialData() {
       if (!token || !jobName) return;
-  
+
       try {
         setIsLoading(true);
         const works = await fetchAllWorks(jobName);
         setAllWorks(works);
-  
+
         if (workId) {
           const workToSelect = works.find(w => w.work_id === workId);
           if (workToSelect) {
@@ -126,7 +126,7 @@ export function MetadataProvider({ children }) {
         setIsLoading(false);
       }
     }
-  
+
     loadInitialData();
   }, [token, jobName, workId]);
 

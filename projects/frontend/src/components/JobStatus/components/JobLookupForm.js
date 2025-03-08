@@ -32,7 +32,7 @@ const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
           actions={
             <Button
               variant="primary"
-              formAction="submit" 
+              formAction="submit"
               type="submit"
               disabled={!jobName.trim()}
             >

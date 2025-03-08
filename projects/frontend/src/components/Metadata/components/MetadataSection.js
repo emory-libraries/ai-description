@@ -19,13 +19,15 @@ function MetadataSection({ fieldKey, fieldValue }) {
 
   // Skip certain fields from being displayed
   if (
-    fieldKey === 'image_s3_uris' ||
-    fieldKey === 'work_id' ||
+    fieldKey === 'job_type' ||
     fieldKey === 'job_name' ||
+    fieldKey === 'work_id' ||
     fieldKey === 'work_status' ||
-    fieldKey === 'original_metadata_s3_uri' ||
+    fieldKey === 'image_s3_uris' ||
     fieldKey === 'context_s3_uri' ||
-    fieldKey === 'image_presigned_urls'
+    fieldKey === 'original_metadata_s3_uri' ||
+    fieldKey === 'image_presigned_urls' ||
+    fieldKey === 'metadata_biases'
     ) {
     return null;
   }
@@ -39,23 +41,45 @@ function MetadataSection({ fieldKey, fieldValue }) {
       <Container
         header={<Header variant="h3">{formattedKey}</Header>}
       >
-        <FormField
-          label="Value"
-          description="Enter pipe-separated values for this field. Currently empty."
-        >
-          <Textarea
-            value=""
-            onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split('|').filter(item => item.trim().length > 0)
-            )}
-            rows={2}
-            placeholder="Enter pipe-separated values..."
-          />
-        </FormField>
+        <Textarea
+          value=""
+          onChange={({ detail }) => handleMetadataEdit(fieldKey,
+            detail.value.split('|').filter(item => item.trim().length > 0)
+          )}
+          rows={2}
+          placeholder="Enter pipe-separated values..."
+        />
       </Container>
     );
   }
 
+  // Special handling of page_biases feld
+  if (fieldKey === 'page_biases') {
+    console.log('Processing page_biases:', fieldValue);
+    
+    return (
+      <Container
+        header={<Header variant="h3">{formattedKey}</Header>}
+      >
+        <Textarea
+          value={JSON.stringify(fieldValue, null, 2)}
+          onChange={({ detail }) => {
+            try {
+              const parsedValue = JSON.parse(detail.value);
+              handleMetadataEdit(fieldKey, parsedValue);
+            } catch (e) {
+              console.error("Invalid JSON for page_biases:", e);
+              // Fallback to string if JSON parsing fails
+              handleMetadataEdit(fieldKey, detail.value);
+            }
+          }}
+          rows={8}
+          placeholder="Enter page biases as JSON..."
+        />
+      </Container>
+    );
+  }
+  
   // Handle nested structure with explanation and value
   const isNestedStructure = fieldValue &&
     typeof fieldValue === 'object' &&
@@ -76,28 +100,21 @@ function MetadataSection({ fieldKey, fieldValue }) {
             </Box>
           )}
 
-          <FormField
-            label="Value"
-            description={Array.isArray(fieldValue.value) ?
-              "Enter values separated by pipes (|)" :
-              "Enter value for this field"}
-          >
-            <Textarea
-              value={Array.isArray(fieldValue.value) ? 
-                fieldValue.value.join(' | ') : 
-                (fieldValue.value ? formatValue(fieldValue.value) : '')}
-              onChange={({ detail }) => handleMetadataEdit(fieldKey, {
-                ...fieldValue,
-                value: Array.isArray(fieldValue.value) ? 
-                  detail.value.split('|').map(item => item.trim()).filter(item => item) :
-                  detail.value
-              })}
-              rows={3}
-              placeholder={Array.isArray(fieldValue.value) ?
-                "e.g. value1 | value2 | value3" :
-                "Enter value here..."}
-            />
-          </FormField>
+          <Textarea
+            value={Array.isArray(fieldValue.value) ?
+              fieldValue.value.join(' | ') :
+              (fieldValue.value ? formatValue(fieldValue.value) : '')}
+            onChange={({ detail }) => handleMetadataEdit(fieldKey, {
+              ...fieldValue,
+              value: Array.isArray(fieldValue.value) ?
+                detail.value.split('|').map(item => item.trim()).filter(item => item) :
+                detail.value
+            })}
+            rows={3}
+            placeholder={Array.isArray(fieldValue.value) ?
+              "e.g. value1 | value2 | value3" :
+              "Enter value here..."}
+          />
         </SpaceBetween>
       </Container>
     );
@@ -109,43 +126,29 @@ function MetadataSection({ fieldKey, fieldValue }) {
       <Container
         header={<Header variant="h3">{formattedKey}</Header>}
       >
-        <FormField
-          label="Value"
-          description="Enter values separated by pipes (|)"
-        >
-          <Textarea
-            value={fieldValue.join(' | ')}
-            onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split('|').map(item => item.trim()).filter(item => item)
-            )}
-            rows={4}
-            placeholder="e.g. value1 | value2 | value3"
-          />
-        </FormField>
+        <Textarea
+          value={fieldValue.join(' | ')}
+          onChange={({ detail }) => handleMetadataEdit(fieldKey,
+            detail.value.split('|').map(item => item.trim()).filter(item => item)
+          )}
+          rows={4}
+          placeholder="e.g. value1 | value2 | value3"
+        />
       </Container>
     );
   }
-
+  
   // Default case: simple value field
   return (
     <Container
       header={<Header variant="h3">{formattedKey}</Header>}
     >
-      <FormField
-        label="Value"
-        description={
-          typeof fieldValue === 'object' ?
-            "JSON object - Edit carefully" :
-            `Enter ${typeof fieldValue} value`
-        }
-      >
-        <Textarea
-          value={formatValue(fieldValue)}
-          onChange={({ detail }) => handleMetadataEdit(fieldKey, detail.value)}
-          rows={4}
-          placeholder={`Enter ${formattedKey.toLowerCase()} here...`}
-        />
-      </FormField>
+      <Textarea
+        value={formatValue(fieldValue)}
+        onChange={({ detail }) => handleMetadataEdit(fieldKey, detail.value)}
+        rows={4}
+        placeholder={`Enter ${formattedKey.toLowerCase()} here...`}
+      />
     </Container>
   );
 }

@@ -3,12 +3,34 @@
 * Terms and the SOW between the parties dated 2025.
 */
 export function formatValue(val) {
+    // Debug logging to see what's happening (remove in production)
+    console.log('Formatting value:', val, 'Type:', typeof val, 'Is Array:', Array.isArray(val));
+
     if (val === null || val === undefined) {
       return '';
     }
 
     if (Array.isArray(val) && val.length === 0) {
       return '';
+    }
+
+    // Handle page_biases specifically
+    if (val && typeof val === 'object' && 'page_biases' in val) {
+      try {
+        return JSON.stringify(val.page_biases, null, 2);
+      } catch (e) {
+        return 'Error formatting page biases data';
+      }
+    }
+
+    // Handle the case where fieldKey is 'page_biases' but the structure is unexpected
+    if (val && typeof val === 'object' && !Array.isArray(val) &&
+        Object.keys(val).some(key => key.includes('bias'))) {
+      try {
+        return JSON.stringify(val, null, 2);
+      } catch (e) {
+        return 'Complex bias data structure';
+      }
     }
 
     if (Array.isArray(val) && val.length > 0 &&
@@ -74,4 +96,4 @@ export function formatValue(val) {
     }
 
     return String(val || '');
-  }
+}
