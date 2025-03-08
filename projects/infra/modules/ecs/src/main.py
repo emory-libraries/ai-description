@@ -7,6 +7,8 @@ import json
 import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
 
 import boto3
 from botocore.config import Config
@@ -61,6 +63,124 @@ s3 = boto3.client("s3", config=S3_CONFIG, region_name=AWS_REGION)
 sqs = boto3.client("sqs", region_name=AWS_REGION)
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
+
+
+def s3_path_to_file_list(s3_path_uri, recursive=True):
+    """
+    Processes an S3 URI path and returns a list of S3 URIs.
+    - If the path is a folder, returns all files within that folder
+    - If the path is a file, returns a list containing just that file URI
+
+    Args:
+        s3_path_uri (str): The S3 URI (e.g., 's3://bucket-name/folder/' or 's3://bucket-name/file.txt')
+        recursive (bool): Whether to list objects recursively in subfolders (default: True)
+
+    Returns:
+        list: List of complete S3 URIs
+    """
+    # Parse the S3 URI
+    parsed_uri = urlparse(s3_path_uri)
+    if parsed_uri.scheme != "s3":
+        raise ValueError(f"Not a valid S3 URI: {s3_path_uri}")
+
+    bucket = parsed_uri.netloc
+
+    # Remove leading slash if present
+    key = parsed_uri.path.lstrip("/")
+
+    # Initialize S3 client
+    s3_client = boto3.client("s3")
+
+    # Check if the path exists directly as an object (file)
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key)
+        # If we get here, it's a file that exists
+        return [s3_path_uri]
+    except s3_client.exceptions.ClientError as e:
+        # If error code is 404, it's not a file, so we'll treat it as a folder
+        if e.response["Error"]["Code"] != "404":
+            # If there's a different error, re-raise it
+            raise
+
+    # If we get here, the path doesn't exist as a direct object, so treat it as a folder
+    # Ensure the path ends with a slash to denote a folder
+    folder_prefix = key if key.endswith("/") else key + "/"
+
+    result_uris = []
+
+    # Use paginator to handle potentially large numbers of objects
+    paginator = s3_client.get_paginator("list_objects_v2")
+
+    # Configure the paginator
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=folder_prefix)
+
+    # Process each page of results
+    for page in page_iterator:
+        if "Contents" not in page:
+            # No objects found with this prefix
+            continue
+
+        for obj in page["Contents"]:
+            obj_key = obj["Key"]
+
+            # Skip the folder object itself
+            if obj_key == folder_prefix:
+                continue
+
+            # If not recursive, skip objects in subfolders
+            if not recursive and "/" in obj_key.replace(folder_prefix, "", 1):
+                continue
+
+            result_uris.append(f"s3://{bucket}/{obj_key}")
+
+    # If no files were found and the original path doesn't end with a slash,
+    # it might be a file pattern (like a prefix for filtering)
+    if not result_uris and not key.endswith("/"):
+        # Try to list objects with the given prefix
+        paginator = s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=key)
+
+        for page in page_iterator:
+            if "Contents" not in page:
+                continue
+
+            for obj in page["Contents"]:
+                obj_key = obj["Key"]
+                result_uris.append(f"s3://{bucket}/{obj_key}")
+
+    return result_uris
+
+
+def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
+    """
+    Expands a list of mixed S3 URIs (files and/or folders) into a flat list of all file URIs.
+
+    Args:
+        uri_list (list): List of S3 URIs (can be files or folders)
+        recursive (bool): Whether to include files in subfolders
+        max_workers (int): Maximum number of parallel workers for processing
+
+    Returns:
+        list: Flat list of all file URIs
+    """
+    all_files = []
+
+    # Process URIs in parallel for better performance
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Map each URI to its expanded file list
+        future_to_uri = {executor.submit(s3_path_to_file_list, uri, recursive): uri for uri in uri_list}
+
+        # Collect results as they complete
+        for future in future_to_uri:
+            try:
+                files = future.result()
+                all_files.extend(files)
+            except Exception as e:
+                uri = future_to_uri[future]
+                print(f"Error processing {uri}: {e}")
+
+    # Remove any duplicates (in case folders overlapped)
+    return list(dict.fromkeys(all_files))
 
 
 def update_dynamodb_item(job_name, work_id, update_data):
@@ -126,7 +246,7 @@ def process_sqs_messages():
                 job_type = message_body[JOB_TYPE]
                 work_id = message_body[WORK_ID]
                 context_s3_uri = message_body[CONTEXT_S3_URI]
-                image_s3_uris = message_body[IMAGE_S3_URIS]
+                image_s3_uris = expand_s3_uris_to_files(message_body[IMAGE_S3_URIS])
                 original_metadata_s3_uri = message_body[ORIGINAL_METADATA_S3_URI]
 
                 logger.info(f"Message Body: {message_body}")
