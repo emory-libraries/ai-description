@@ -15,7 +15,7 @@ import {
 import { useMetadataContext } from '../MetadataContext';
 
 function DocumentPreview() {
-  const { 
+  const {
     metadata,
     imageData,
     modifiedFields,

@@ -3,6 +3,7 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import { useCallback } from 'react';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 export default function useImageLoader({ token, logout, navigate }) {
   const getPresignedUrl = useCallback(async (s3Uri) => {
@@ -10,14 +11,14 @@ export default function useImageLoader({ token, logout, navigate }) {
       console.error('Invalid URI provided:', s3Uri);
       return null;
     }
-    
+
     try {
       if (!token) {
         throw new Error('No authentication token available');
       }
-      
+      const url = buildApiUrl(`/api/presigned_url?s3_uri=${encodeURIComponent(s3Uri)}`);
       const response = await fetch(
-        `/api/presigned_url?s3_uri=${encodeURIComponent(s3Uri)}`,
+        url,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -25,7 +26,7 @@ export default function useImageLoader({ token, logout, navigate }) {
           }
         }
       );
-      
+
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           logout();
@@ -34,7 +35,7 @@ export default function useImageLoader({ token, logout, navigate }) {
         }
         throw new Error(`Failed to get pre-signed URL: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data.presigned_url;
     } catch (err) {

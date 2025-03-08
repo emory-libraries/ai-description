@@ -18,7 +18,7 @@ export function MetadataProvider({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { jobName, workId } = location.state || {};
-  
+
   const [selectedWork, setSelectedWork] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
@@ -27,15 +27,15 @@ export function MetadataProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
 
-  const { fetchWorkDetails, fetchAllWorks } = useMetadataFetch({ 
-    token, 
-    logout, 
-    navigate, 
+  const { fetchWorkDetails, fetchAllWorks } = useMetadataFetch({
+    token,
+    logout,
+    navigate,
     setError
   });
-  
+
   const { getPresignedUrl } = useImageLoader({ token, logout, navigate });
-  
+
   const { updateMetadata, downloadAllMetadata } = useMetadataUpdate({
     token,
     logout,
@@ -53,17 +53,17 @@ export function MetadataProvider({ children }) {
 
   const handleMetadataEdit = (key, value) => {
     if (key === 'job_name' || key === 'work_id') return;
-    
+
     let processedValue = value;
     if (typeof value === 'object' && value !== null && 'value' in value) {
       processedValue = { ...value };
     }
-    
+
     setMetadata(prev => ({
       ...prev,
       [key]: processedValue
     }));
-    
+
     setModifiedFields(prev => ({
       ...prev,
       [key]: processedValue
@@ -87,13 +87,13 @@ export function MetadataProvider({ children }) {
           const imageUrl = await getPresignedUrl(uri);
           return { uri, imageUrl };
         });
-        
+
         const images = await Promise.all(imagePromises);
         const newImageData = {};
         images.forEach(({ uri, imageUrl }) => {
           if (imageUrl) newImageData[uri] = imageUrl;
         });
-        
+
         setImageData(newImageData);
       }
     } catch (err) {
@@ -107,7 +107,7 @@ export function MetadataProvider({ children }) {
   useEffect(() => {
     async function loadInitialData() {
       if (!token || !jobName) return;
-      
+
       try {
         setIsLoading(true);
         const works = await fetchAllWorks(jobName);

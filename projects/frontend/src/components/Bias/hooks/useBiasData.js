@@ -6,15 +6,16 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../AuthContext';
 import { usePresignedUrl } from './usePresignedUrl';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 /**
  * Hook to handle bias data fetching and management
- */
+*/
 export const useBiasData = (jobName) => {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const { getPresignedUrl } = usePresignedUrl();
-  
+
   const [biasData, setBiasData] = useState(null);
   const [error, setError] = useState(null);
   const [imageData, setImageData] = useState({});
@@ -23,10 +24,11 @@ export const useBiasData = (jobName) => {
 
   const fetchBiasDetails = useCallback(async (workId) => {
     if (!token) return;
-    
+
     try {
+      const url = buildApiUrl(`/api/results?job_name=${jobName}&work_id=${workId}`);
       const response = await fetch(
-        `/api/results?job_name=${jobName}&work_id=${workId}`,
+        url,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -34,7 +36,7 @@ export const useBiasData = (jobName) => {
           }
         }
       );
-  
+
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           logout();
@@ -43,17 +45,17 @@ export const useBiasData = (jobName) => {
         }
         throw new Error(`Failed to fetch bias details: ${response.status}`);
       }
-  
+
       const data = await response.json();
-      const biasEntriesWithImages = data.item.page_biases.flatMap((page, pageIndex) => 
+      const biasEntriesWithImages = data.item.page_biases.flatMap((page, pageIndex) =>
         page.biases.map(bias => ({
           ...bias,
-          bias_type: bias.type,  
-          bias_level: bias.level,    
+          bias_type: bias.type,
+          bias_level: bias.level,
           imageUri: data.item.image_s3_uris[pageIndex]
         }))
       );
-      return { 
+      return {
         biases: biasEntriesWithImages,
         image_s3_uris: data.item.image_s3_uris
       };
@@ -65,21 +67,21 @@ export const useBiasData = (jobName) => {
 
   const loadBiasData = useCallback(async (work) => {
     if (!work) return;
-    
+
     setIsLoading(true);
     setSelectedBias(null);
     setBiasData(null);
     setError(null);
     setImageData({});
-    
+
     try {
       if (!token) {
         throw new Error('No authentication token available');
       }
-      
+
       const { biases, image_s3_uris } = await fetchBiasDetails(work.work_id);
       setBiasData(biases);
-      
+
       if (image_s3_uris && image_s3_uris.length > 0) {
         const imagePromises = image_s3_uris.map(async uri => {
           const presignedUrl = await getPresignedUrl(uri);

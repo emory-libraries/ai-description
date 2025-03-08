@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# Lambda functions variables
+# modules/lambda/variables.tf
 
 variable "uploads_bucket_name" {
   description = "Name of the S3 bucket for uploads"
@@ -41,11 +41,6 @@ variable "ecs_task_definition_arn" {
 variable "private_subnet_ids" {
   description = "List of subnet IDs for ECS tasks"
   type        = list(string)
-}
-
-variable "vpc_security_group_id" {
-  description = "Aecurity group ID for VPC"
-  type        = string
 }
 
 variable "ecs_security_group_id" {

@@ -1,5 +1,11 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 const useJobStatus = (token, navigate) => {
   const { logout } = useAuth();
@@ -7,7 +13,7 @@ const useJobStatus = (token, navigate) => {
     const savedJobs = localStorage.getItem('jobStatus');
     return savedJobs ? new Map(JSON.parse(savedJobs)) : new Map();
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submittedJobName, setSubmittedJobName] = useState(() => {
@@ -20,7 +26,7 @@ const useJobStatus = (token, navigate) => {
 
   useEffect(() => {
     localStorage.setItem('submittedJobName', submittedJobName);
-    
+
     // Clear existing jobs when job name changes
     if (submittedJobName) {
       setJobs(new Map());
@@ -33,24 +39,24 @@ const useJobStatus = (token, navigate) => {
 
     try {
       setIsLoading(true);
-      const apiUrl = '/api/job_progress';
-      console.log(`Fetching from: ${apiUrl}?job_name=${submittedJobName}`);
+      const url = buildApiUrl('/api/job_progress');
+      console.log(`Fetching from: ${url}?job_name=${submittedJobName}`);
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
         'X-Request-Timestamp': String(Date.now())
       };
       console.log('Request Headers:', { ...headers, 'Authorization': 'Bearer [REDACTED]' });
-      
+
       const response = await fetch(
-        `${apiUrl}?job_name=${submittedJobName}`,
+        `${url}?job_name=${submittedJobName}`,
         { headers }
       );
 
       console.log('Response Status:', response.status);
       const responseText = await response.text();
       console.log('Response Body:', responseText);
-      
+
       if (!response.ok) {
         // Handle unauthorized responses (token expired)
         if (response.status === 401 || response.status === 403) {
@@ -76,7 +82,7 @@ const useJobStatus = (token, navigate) => {
       const newJobs = new Map();
       const jobKey = submittedJobName;
       const workItems = [];
-      
+
       if (data && data.job_progress) {
         console.log('Job progress structure:', data.job_progress);
         Object.entries(data.job_progress).forEach(([status, ids]) => {

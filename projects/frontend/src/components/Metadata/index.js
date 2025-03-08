@@ -23,14 +23,14 @@ import MetadataEditor from './components/MetadataEditor';
 function MetadataContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { 
-    jobName, 
-    error, 
-    isLoading, 
-    allWorks, 
-    selectedWork, 
-    metadata, 
-    downloadAllMetadata 
+  const {
+    jobName,
+    error,
+    isLoading,
+    allWorks,
+    selectedWork,
+    metadata,
+    downloadAllMetadata
   } = useMetadataContext();
 
   const breadcrumbItems = [

@@ -3,14 +3,16 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import { useCallback } from 'react';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 export default function useMetadataFetch({ token, logout, navigate, setError }) {
   const fetchWorkDetails = useCallback(async (workId, jobName) => {
     if (!token) return;
-    
+
     try {
+      const url = buildApiUrl(`/api/results?job_name=${jobName}&work_id=${workId}`);
       const response = await fetch(
-        `/api/results?job_name=${jobName}&work_id=${workId}`,
+        url,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -38,10 +40,11 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
 
   const fetchAllWorks = useCallback(async (jobName) => {
     if (!token || !jobName) return [];
-    
+
     try {
+      const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
       const response = await fetch(
-        `/api/job_progress?job_name=${jobName}`,
+        url,
         {
           headers: {
             'Content-Type': 'application/json',

@@ -53,7 +53,7 @@ function BiasContent() {
         <ContentLayout
           header={
             <Header
-              variant="h1" 
+              variant="h1"
               description={`Bias analysis results for the specified document set`}
               actions={
                 <Button variant="link" onClick={navigateToJobs}>
@@ -74,7 +74,7 @@ function BiasContent() {
 
             <Grid gridDefinition={[{ colspan: 3 }, { colspan: 9 }]}>
               {/* Left panel - Navigation */}
-              <WorkNavigation 
+              <WorkNavigation
                 allWorks={allWorks}
                 selectedWork={selectedWork}
                 isLoading={isLoading}
@@ -82,9 +82,9 @@ function BiasContent() {
               />
 
               {/* Right panel - Bias details */}
-              <Container 
+              <Container
                 header={
-                  <Header 
+                  <Header
                     variant="h2"
                     actions={
                       selectedBias ? (
@@ -108,14 +108,14 @@ function BiasContent() {
                 ) : selectedWork ? (
                   <SpaceBetween size="l">
                     {selectedBias ? (
-                      <BiasDetails 
-                        bias={selectedBias} 
-                        imageUrl={imageData[selectedBias.imageUri]} 
+                      <BiasDetails
+                        bias={selectedBias}
+                        imageUrl={imageData[selectedBias.imageUri]}
                       />
                     ) : (
-                      <BiasTable 
-                        biasData={biasData} 
-                        onBiasSelect={handleBiasSelect} 
+                      <BiasTable
+                        biasData={biasData}
+                        onBiasSelect={handleBiasSelect}
                       />
                     )}
                   </SpaceBetween>

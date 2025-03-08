@@ -13,6 +13,11 @@ variable "accounts_table_arn" {
   type        = string
 }
 
+variable "website_bucket_arn" {
+  description = "ARN of the S3 website bucket"
+  type        = string
+}
+
 variable "uploads_bucket_arn" {
   description = "ARN of the S3 uploads bucket"
   type        = string

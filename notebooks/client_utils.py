@@ -197,10 +197,7 @@ def create_metadata_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict
     return result
 
 
-def create_bias_job_objects(
-    df: pd.DataFrame,
-    bucket_name: str = "ai-description-dev-nt01-008971633436-uploads",
-) -> list[dict]:
+def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
     """Create bias job objects."""
     # Group by work_id
     grouped = df.groupby("work_id")
@@ -247,7 +244,7 @@ def create_bias_job_objects(
         # Create the object
         obj = {
             "work_id": work_id,
-            "image_s3_uris": [f"images/{sha}" for sha in page_shas],
+            "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
             "original_metadata_s3_uri": metadata_s3_uri,
         }
         result.append(obj)

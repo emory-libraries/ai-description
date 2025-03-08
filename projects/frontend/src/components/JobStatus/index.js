@@ -1,3 +1,8 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
@@ -50,26 +55,26 @@ const JobStatus = () => {
       content={
         <ContentLayout header={<Header variant="h1">Document Analysis Job Status</Header>}>
           <SpaceBetween size="l">
-            <JobLookupForm 
+            <JobLookupForm
               jobName={jobName}
               setJobName={setJobName}
               handleSubmitJobName={handleSubmitJobName}
             />
-            
+
             {error && <ErrorAlert message={error} />}
-            
+
             {isLoading && submittedJobName && jobs.size === 0 && (
               <LoadingState />
             )}
-            
+
             {submittedJobName && jobs.size > 0 && Array.from(jobs.values()).map(job => (
-              <JobStatusContainer 
-                key={job.job_name} 
-                job={job} 
-                navigate={navigate} 
+              <JobStatusContainer
+                key={job.job_name}
+                job={job}
+                navigate={navigate}
               />
             ))}
-            
+
             {submittedJobName && jobs.size === 0 && !isLoading && (
               <NoDataFound jobName={submittedJobName} />
             )}

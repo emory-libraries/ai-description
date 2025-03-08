@@ -1,3 +1,8 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import React from 'react';
 import {
   Container,
@@ -73,10 +78,10 @@ const JobStatusContainer = ({ job, navigate }) => {
     >
       <SpaceBetween size="l">
         <JobStatusMetrics statusCounts={statusCounts} />
-        
+
         <Box>
           <Box variant="awsui-key-label">Overall Progress</Box>
-          <JobProgressBar 
+          <JobProgressBar
             progressPercentage={progressPercentage}
             statusCounts={statusCounts}
             totalWorks={totalWorks}

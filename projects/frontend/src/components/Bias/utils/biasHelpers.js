@@ -10,7 +10,7 @@
  */
 export const getBiasLevelColor = (level) => {
     if (!level) return "grey";
-  
+
     switch (level.toLowerCase()) {
       case 'high': return "error";
       case 'medium': return "warning";
@@ -18,4 +18,3 @@ export const getBiasLevelColor = (level) => {
       default: return "grey";
     }
   };
-  

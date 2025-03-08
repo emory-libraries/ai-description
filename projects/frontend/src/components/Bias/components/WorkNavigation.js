@@ -16,13 +16,13 @@ import {
 /**
  * Navigation component for work selection
  */
-export const WorkNavigation = ({ 
-  allWorks, 
-  selectedWork, 
-  isLoading, 
-  onWorkSelect 
+export const WorkNavigation = ({
+  allWorks,
+  selectedWork,
+  isLoading,
+  onWorkSelect
 }) => {
-  const workNavigationItems = allWorks.map(work => ({    
+  const workNavigationItems = allWorks.map(work => ({
     type: 'link',
     text: `Work ID: ${work.work_id}`,
     href: `#${work.work_id}`,
@@ -47,7 +47,7 @@ export const WorkNavigation = ({
             href: '#'
           }}
           onFollow={({ detail }) => {
-            if (!detail.external) {                        
+            if (!detail.external) {
               const workId = detail.href.substring(1);
               const selectedWork = allWorks.find(work => work.work_id === workId);
               if (selectedWork) {

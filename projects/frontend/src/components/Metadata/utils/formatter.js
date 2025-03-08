@@ -6,11 +6,11 @@ export function formatValue(val) {
     if (val === null || val === undefined) {
       return '';
     }
-  
+
     if (Array.isArray(val) && val.length === 0) {
       return '';
     }
-  
+
     if (Array.isArray(val) && val.length > 0 &&
         typeof val[0] === 'object' && val[0] !== null &&
         'biases' in val[0]) {
@@ -20,7 +20,7 @@ export function formatValue(val) {
         ).join('\n\n');
       }).join('\n\n');
     }
-  
+
     if (typeof val === 'object' && val !== null && 'transcriptions' in val) {
       const result = [];
       val.transcriptions.forEach((trans, index) => {
@@ -39,40 +39,39 @@ export function formatValue(val) {
         }
         result.push('');
       });
-  
+
       if (val.model_notes) {
         result.push('Notes:');
         result.push(`${val.model_notes}`);
       }
-  
+
       return result.join('\n');
     }
-  
+
     if (typeof val === 'object' && val !== null && 'biases' in val) {
       if (Array.isArray(val.biases) && val.biases.length === 0) {
         return 'No biases found';
       }
       return val.biases.map(bias => `${bias}`).join(', ') || 'No biases found';
     }
-  
+
     if (Array.isArray(val)) {
       if (typeof val[0] === 'string') {
         return val.map(item => String(item).trim()).join(', ');
       }
       return JSON.stringify(val);
     }
-  
+
     if (typeof val === 'object' && val !== null && 'value' in val) {
       if (Array.isArray(val.value)) {
         return val.value.map(item => String(item).trim()).join(', ');
       }
       return String(val.value);
     }
-  
+
     if (typeof val === 'object' && val !== null) {
       return JSON.stringify(val, null, 2);
     }
-  
+
     return String(val || '');
   }
-  
