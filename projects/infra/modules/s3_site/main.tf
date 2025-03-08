@@ -108,14 +108,24 @@ resource "null_resource" "frontend_build" {
           chmod -R 755 /app/build"
 
       echo "React build completed successfully"
+      # Create a build marker with timestamp
+      echo "$(date +%s)" > "${local.frontend_path}/build/.build-id"
+  }
     EOT
   }
 }
 
+# Create a local resource to track build changes
+resource "local_file" "build_marker" {
+  depends_on = [null_resource.frontend_build]
+  filename   = "${path.module}/.build_marker"
+  content    = "${timestamp()}-${uuid()}" # This will ensure this changes every time
+}
+
 # Upload frontend assets to S3
 resource "aws_s3_object" "frontend_assets" {
-  depends_on = [null_resource.frontend_build]
-  for_each   = fileset("${local.frontend_path}/build", "**")
+  depends_on = [null_resource.frontend_build, local_file.build_marker]
+  for_each   = fileset("${local.frontend_path}/build", "**/*")
 
   bucket       = var.website_bucket_id
   key          = each.value

@@ -13,11 +13,6 @@ variable "works_table_name" {
   type        = string
 }
 
-variable "accounts_table_name" {
-  description = "Name of the DynamoDB accounts table"
-  type        = string
-}
-
 variable "sqs_queue_url" {
   description = "URL of SQS queue"
   type        = string

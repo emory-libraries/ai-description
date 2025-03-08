@@ -154,7 +154,6 @@ module "lambda" {
   deployment_prefix       = local.deployment_prefix
   sqs_queue_url           = module.sqs.queue_url
   private_subnet_ids      = module.vpc.private_subnet_ids
-  accounts_table_name     = module.dynamodb.accounts_table_name
   works_table_name        = module.dynamodb.works_table_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
   base_lambda_role_arn    = module.iam.base_lambda_role_arn
