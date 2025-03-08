@@ -20,6 +20,12 @@ export const BiasTable = ({ biasData, onBiasSelect }) => {
       header={<Header variant="h3">Identified Biases</Header>}
       columnDefinitions={[
         {
+          id: "page",
+          header: "Page",
+          cell: item => item.pageNumber || "N/A",
+          sortingField: "pageNumber"
+        },
+        {
           id: "type",
           header: "Bias Type",
           cell: item => item.type || item.bias_type,

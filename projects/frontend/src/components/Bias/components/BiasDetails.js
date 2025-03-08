@@ -31,8 +31,12 @@ export const BiasDetails = ({ bias, imageUrl }) => {
         <SpaceBetween size="l">
           <ColumnLayout columns={2} variant="text-grid">
             <div>
+              <Box variant="awsui-key-label">Page number</Box>
+              <Box variant="h5">{bias.pageNumber}</Box>
+            </div>
+            <div>
               <Box variant="awsui-key-label">Type</Box>
-              <Box variant="awsui-value-large">{bias.type}</Box>
+              <Box variant="h5">{bias.type}</Box>
             </div>
             <div>
               <Box variant="awsui-key-label">Level</Box>

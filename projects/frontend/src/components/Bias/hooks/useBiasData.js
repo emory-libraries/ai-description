@@ -52,6 +52,7 @@ export const useBiasData = (jobName) => {
           ...bias,
           bias_type: bias.type,
           bias_level: bias.level,
+          pageNumber: pageIndex + 1,
           imageUri: data.item.image_s3_uris[pageIndex]
         }))
       );
