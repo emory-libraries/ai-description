@@ -115,7 +115,7 @@ const useJobStatus = (token, navigate) => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, submittedJobName, logout, navigate]);
+  }, [token, submittedJobName, logout, navigate, getAuthHeaders]);
 
   useEffect(() => {
     if (token && submittedJobName) {

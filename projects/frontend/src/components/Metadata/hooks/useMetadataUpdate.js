@@ -92,7 +92,7 @@ export default function useMetadataUpdate({
     } finally {
       setIsLoading(false);
     }
-  }, [token, logout, navigate, selectedWork, metadata, modifiedFields, setError, setIsLoading, setModifiedFields, setMetadata]);
+  }, [token, logout, navigate, selectedWork, metadata, modifiedFields, setError, setIsLoading, setModifiedFields, setMetadata, getAuthHeaders]);
 
   const downloadAllMetadata = useCallback(async () => {
     if (!allWorks || allWorks.length === 0 || !token) {
@@ -177,10 +177,10 @@ export default function useMetadataUpdate({
       setError('Unable to update: Missing required data');
       return;
     }
-  
+
     try {
       setIsLoading(true);
-      
+
       const url = buildApiUrl(`/api/results`);
       const response = await fetch(url, {
         method: 'PUT',
@@ -194,33 +194,33 @@ export default function useMetadataUpdate({
           updated_fields: {work_status: newStatus}
         })
       });
-  
+
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           logout();
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-  
+
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
         throw new Error(`Failed to update work status: ${response.status}`);
       }
-  
+
       const updatedWork = await response.json();
-      
+
       // Update the work in allWorks
-      setAllWorks(prevWorks => 
-        prevWorks.map(w => 
+      setAllWorks(prevWorks =>
+        prevWorks.map(w =>
           w.work_id === work.work_id ? { ...w, work_status: newStatus } : w
         )
       );
-      
+
       // Update the selectedWork if it's the one being updated
       if (selectedWork && selectedWork.work_id === work.work_id) {
         setSelectedWork({ ...selectedWork, work_status: newStatus });
       }
-      
+
       setError(null);
       return updatedWork;
     } catch (err) {
@@ -230,7 +230,7 @@ export default function useMetadataUpdate({
       setIsLoading(false);
     }
   }, [token, logout, navigate, selectedWork, setError, setIsLoading, getAuthHeaders, setAllWorks, setSelectedWork]);
-  
+
 
   return { updateMetadata, downloadAllMetadata, updateReviewStatus };
 }

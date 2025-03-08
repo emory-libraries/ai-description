@@ -17,8 +17,8 @@ function MetadataSection({ fieldKey, fieldValue }) {
 
   // Skip certain fields from being displayed
   if ([
-    'job_type', 'job_name', 'work_id', 'work_status', 
-    'image_s3_uris', 'context_s3_uri', 'original_metadata_s3_uri', 
+    'job_type', 'job_name', 'work_id', 'work_status',
+    'image_s3_uris', 'context_s3_uri', 'original_metadata_s3_uri',
     'image_presigned_urls', 'metadata_biases'
   ].includes(fieldKey)) {
     return null;
@@ -32,7 +32,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
   let editableValue = fieldValue;
   let updatePath = null;
   let isList = false;
-  
+
   // Case 1: Object with explanation and value
   if (fieldValue && typeof fieldValue === 'object') {
     if ('explanation' in fieldValue && 'value' in fieldValue) {
@@ -52,16 +52,16 @@ function MetadataSection({ fieldKey, fieldValue }) {
   }
 
   // Convert the editable value to a string for display
-  const stringValue = isList ? 
-    editableValue.join(' | ') : 
-    (typeof editableValue === 'object' ? 
-      JSON.stringify(editableValue, null, 2) : 
+  const stringValue = isList ?
+    editableValue.join(' | ') :
+    (typeof editableValue === 'object' ?
+      JSON.stringify(editableValue, null, 2) :
       String(editableValue || ''));
 
   const handleChange = ({ detail }) => {
     try {
       let newValue;
-      
+
       // Handle different value types
       if (isList) {
         newValue = detail.value.split('|').map(item => item.trim()).filter(Boolean);
@@ -70,7 +70,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
       } else {
         newValue = detail.value;
       }
-      
+
       // Update accordingly based on field structure
       if (updatePath) {
         handleMetadataEdit(fieldKey, {

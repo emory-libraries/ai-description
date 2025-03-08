@@ -119,12 +119,14 @@ def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: 
     image_s3_uri = f"s3://{bucket_name}/{image_key}"
     # Upload metadata JSON file
     original_metadata_key = f"metadata/{os.path.splitext(image_filename)[0]}_metadata.txt"
-    s3_client.put_object(Body=metadata, Bucket=bucket_name, Key=original_metadata_key)
+    metadata_bytes = metadata.encode("utf-8")
+    s3_client.put_object(Body=metadata_bytes, Bucket=bucket_name, Key=original_metadata_key)
     # Create metadata S3 URI
     original_metadata_s3_uri = f"s3://{bucket_name}/{original_metadata_key}"
     # Upload context JSON file
     context_key = f"contexts/{os.path.splitext(image_filename)[0]}_context.txt"
-    s3_client.put_object(Body=context, Bucket=bucket_name, Key=context_key)
+    context_bytes = context.encode("utf-8")
+    s3_client.put_object(Body=context_bytes, Bucket=bucket_name, Key=context_key)
     # Create context S3 URI
     context_s3_uri = f"s3://{bucket_name}/{context_key}"
 

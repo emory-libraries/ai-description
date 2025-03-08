@@ -3,7 +3,7 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   AppLayout,
   ContentLayout,
@@ -30,7 +30,6 @@ function MetadataContent() {
     isLoading,
     allWorks,
     selectedWork,
-    metadata,
     downloadAllMetadata
   } = useMetadataContext();
 

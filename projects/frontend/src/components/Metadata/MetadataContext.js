@@ -133,7 +133,7 @@ export function MetadataProvider({ children }) {
     }
 
     loadInitialData();
-  }, [token, jobName, workId]);
+  }, [token, jobName, workId, fetchAllWorks]);
 
   const contextValue = {
     token,
@@ -150,7 +150,8 @@ export function MetadataProvider({ children }) {
     handleMetadataEdit,
     updateMetadata,
     downloadAllMetadata,
-    updateReviewStatus
+    updateReviewStatus,
+    fetchAllWorks,
   };
 
   return (

@@ -44,7 +44,7 @@ export default function useImageLoader({ token, logout, navigate }) {
       console.error('Error getting pre-signed URL:', err);
       return null;
     }
-  }, [token, logout, navigate]);
+  }, [token, logout, navigate, getAuthHeaders]);
 
   return { getPresignedUrl };
 }

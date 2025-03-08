@@ -18,7 +18,7 @@ export function BiasProvider({ children }) {
 
   // Extract jobName from URL path - improved extraction
   // Look for 'bias' in the path segments and take the next segment as jobName
-  const pathMatch = location.pathname.match(/\/results\/bias\/([^\/]+)/);
+  const pathMatch = location.pathname.match(/\/results\/bias\/([^/]+)/);
   const pathJobName = pathMatch ? pathMatch[1] : '';
 
   // Extract workId from hash fragment - improved parsing

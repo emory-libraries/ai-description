@@ -4,7 +4,6 @@
 */
 import { useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { buildApiUrl } from '../../../utils/apiUrls';
 
 /**
@@ -12,7 +11,6 @@ import { buildApiUrl } from '../../../utils/apiUrls';
  */
 export const usePresignedUrl = () => {
   const { getAuthHeaders } = useAuth();
-  const navigate = useNavigate();
 
   const getPresignedUrl = useCallback(async (s3Uri) => {
     if (!s3Uri || typeof s3Uri !== 'string') {
@@ -37,7 +35,7 @@ export const usePresignedUrl = () => {
       console.error('Error getting pre-signed URL:', err);
       return null;
     }
-  }, [ navigate ]);
+  }, [ getAuthHeaders ]);
 
   return { getPresignedUrl };
 };

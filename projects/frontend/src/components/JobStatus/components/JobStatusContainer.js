@@ -9,7 +9,6 @@ import {
   Header,
   SpaceBetween,
   Button,
-  ExpandableSection,
   Box
 } from "@cloudscape-design/components";
 import JobProgressBar from './JobProgressBar';

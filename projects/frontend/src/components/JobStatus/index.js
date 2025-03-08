@@ -11,7 +11,6 @@ import {
   ContentLayout,
   SpaceBetween,
   Header,
-  BreadcrumbGroup
 } from "@cloudscape-design/components";
 import { AWSSideNavigation } from '../Navigation';
 import JobLookupForm from './components/JobLookupForm';
@@ -20,7 +19,6 @@ import ErrorAlert from './components/ErrorAlert';
 import JobStatusContainer from './components/JobStatusContainer';
 import useJobStatus from './hooks/useJobStatus';
 import NoDataFound from './components/NoDataFound';
-import { buildFrontendPath } from '../../utils/frontendPaths';
 const JobStatus = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -43,15 +41,10 @@ const JobStatus = () => {
     }
   };
 
-  const breadcrumbItems = [
-    { text: 'Job results search', href: buildFrontendPath('/') }
-  ];
-
   return (
     <AppLayout
       navigation={<AWSSideNavigation activeHref="/" />}
       toolsHide={true}
-      breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
       navigationHide={true}
       content={
         <ContentLayout header={<Header variant="h1">Document Analysis Service</Header>}>
