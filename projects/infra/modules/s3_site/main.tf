@@ -110,7 +110,6 @@ resource "null_resource" "frontend_build" {
       echo "React build completed successfully"
       # Create a build marker with timestamp
       echo "$(date +%s)" > "${local.frontend_path}/build/.build-id"
-  }
     EOT
   }
 }

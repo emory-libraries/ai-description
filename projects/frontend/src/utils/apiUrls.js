@@ -6,7 +6,7 @@
 // src/utils/apiUrls.js
 
 export const getApiBaseUrl = () => {
-    return window.env?.API_URL || 'https://91vt697st6.execute-api.us-east-1.amazonaws.com/dev';
+    return window.env?.API_URL || 'https://api-url-not-configured.example';
   };
 
   export const buildApiUrl = (endpoint) => {
