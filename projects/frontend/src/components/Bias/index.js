@@ -109,7 +109,13 @@ function BiasContent() {
                   </Box>
                 ) : selectedWork ? (
                   <SpaceBetween size="l">
-                    {selectedBias ? (
+                    {selectedWork.work_status === 'FAILED TO PROCESS' ? (
+                      <Box textAlign="center" padding="l">
+                        <Alert type="error" header="Work processing failed">
+                          This work failed to process. No bias analysis data is available.
+                        </Alert>
+                      </Box>
+                    ) : selectedBias ? (
                       <BiasDetails
                         bias={selectedBias}
                         imageUrl={imageData[selectedBias.imageUri]}

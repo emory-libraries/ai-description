@@ -18,10 +18,10 @@ import WorkItemsCards from './WorkItemCards';
 
 const JobStatusContainer = ({ job, navigate }) => {
   const getStatusCounts = (job) => {
-    const inQueue = job.works.filter(w => w.status === 'IN_QUEUE').length;
-    const inProgress = job.works.filter(w => w.status === 'IN_PROGRESS' || w.status === 'PROCESSING').length;
-    const completed = job.works.filter(w => w.status === 'READY FOR REVIEW').length;
-    const failed = job.works.filter(w => w.status === 'FAILED TO PROCESS').length;
+    const inQueue = job.works.filter(w => w.work_status === 'IN_QUEUE').length;
+    const inProgress = job.works.filter(w => w.work_status === 'IN_PROGRESS' || w.work_status === 'PROCESSING').length;
+    const completed = job.works.filter(w => w.work_status === 'READY FOR REVIEW').length;
+    const failed = job.works.filter(w => w.work_status === 'FAILED TO PROCESS').length;
     return { inQueue, inProgress, completed, failed };
   };
 

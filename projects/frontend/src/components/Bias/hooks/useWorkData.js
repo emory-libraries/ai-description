@@ -59,11 +59,11 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         const jobData = await response.json();
         const works = [];
         if (jobData.job_progress) {
-          Object.entries(jobData.job_progress).forEach(([status, ids]) => {
+          Object.entries(jobData.job_progress).forEach(([work_status, ids]) => {
             ids.forEach(id => {
               works.push({
                 work_id: id,
-                work_status: status,
+                work_status: work_status,
                 job_name: jobName,
                 job_type: jobData.job_type
               });

@@ -107,21 +107,17 @@ export function MetadataProvider({ children }) {
   useEffect(() => {
     async function loadInitialData() {
       if (!token || !jobName) return;
-
+  
       try {
         setIsLoading(true);
         const works = await fetchAllWorks(jobName);
         setAllWorks(works);
-
+  
         if (workId) {
           const workToSelect = works.find(w => w.work_id === workId);
           if (workToSelect) {
             await handleWorkSelect(workToSelect);
-          } else if (works.length > 0) {
-            await handleWorkSelect(works[0]);
           }
-        } else if (works.length > 0) {
-          await handleWorkSelect(works[0]);
         }
       } catch (err) {
         console.error('Error loading initial data:', err);
@@ -130,7 +126,7 @@ export function MetadataProvider({ children }) {
         setIsLoading(false);
       }
     }
-
+  
     loadInitialData();
   }, [token, jobName, workId]);
 

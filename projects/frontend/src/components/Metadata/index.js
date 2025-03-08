@@ -12,7 +12,8 @@ import {
   Button,
   Alert,
   Grid,
-  BreadcrumbGroup
+  BreadcrumbGroup,
+  Box
 } from "@cloudscape-design/components";
 import { AWSSideNavigation } from '../Navigation';
 import { MetadataProvider, useMetadataContext } from './MetadataContext';
@@ -39,6 +40,42 @@ function MetadataContent() {
     { text: 'Job Status', href: buildFrontendPath('/') },
     { text: `Metadata Analysis: ${jobName || ''}` }
   ];
+
+  // Check work status
+  const isWorkReadyForReview = selectedWork && selectedWork.work_status === "READY FOR REVIEW";
+  const isWorkFailed = selectedWork && selectedWork.work_status === "FAILED TO PROCESS";
+
+  // Determine what to render in the main content area
+  const renderContent = () => {
+    if (!selectedWork) {
+      return (
+        <Box padding="l" textAlign="center">
+          <h2>Select a work from the list to view details</h2>
+        </Box>
+      );
+    } else if (isWorkFailed) {
+      return (
+        <Box padding="l" textAlign="center">
+          <h2>Processing Failed</h2>
+          <p>This document could not be processed successfully.</p>
+        </Box>
+      );
+    } else if (!isWorkReadyForReview) {
+      return (
+        <Box padding="l" textAlign="center">
+          <h2>Work Status: {selectedWork.work_status}</h2>
+          <p>This work is not ready for review yet. Please wait for processing to complete.</p>
+        </Box>
+      );
+    } else {
+      return (
+        <>
+          <DocumentPreview />
+          <MetadataEditor />
+        </>
+      );
+    }
+  };
 
   return (
     <AppLayout
@@ -85,12 +122,7 @@ function MetadataContent() {
             <Grid gridDefinition={[{ colspan: 3 }, { colspan: 9 }]}>
               <WorkNavigation />
               <SpaceBetween size="l">
-                {selectedWork && metadata ? (
-                  <>
-                    <DocumentPreview />
-                    <MetadataEditor />
-                  </>
-                ) : null}
+                {renderContent()}
               </SpaceBetween>
             </Grid>
           </SpaceBetween>

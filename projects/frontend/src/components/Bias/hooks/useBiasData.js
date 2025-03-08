@@ -8,7 +8,6 @@ import { useAuth } from '../../../AuthContext';
 import { usePresignedUrl } from './usePresignedUrl';
 import { buildApiUrl } from '../../../utils/apiUrls';
 
-
 /**
  * Hook to handle bias data fetching and management
 */
@@ -47,6 +46,12 @@ export const useBiasData = (jobName) => {
       }
 
       const data = await response.json();
+      
+      // Handle case where work processing failed or data is missing
+      if (!data.item || !data.item.page_biases || data.item.status === 'FAILED TO PROCESS') {
+        return { biases: [], image_s3_uris: [], status: data.item?.status || 'FAILED TO PROCESS' };
+      }
+      
       const biasEntriesWithImages = data.item.page_biases.flatMap((page, pageIndex) =>
         page.biases.map(bias => ({
           ...bias,
@@ -58,7 +63,8 @@ export const useBiasData = (jobName) => {
       );
       return {
         biases: biasEntriesWithImages,
-        image_s3_uris: data.item.image_s3_uris
+        image_s3_uris: data.item.image_s3_uris,
+        status: data.item.status
       };
     } catch (err) {
       console.error('Error fetching bias details:', err);
@@ -80,13 +86,31 @@ export const useBiasData = (jobName) => {
         throw new Error('No authentication token available');
       }
 
-      const { biases, image_s3_uris } = await fetchBiasDetails(work.work_id);
+      // Check if the work has failed status before fetching details
+      if (work.work_status === 'FAILED TO PROCESS') {
+        setBiasData([]);
+        return;
+      }
+
+      const { biases, image_s3_uris, status } = await fetchBiasDetails(work.work_id);
+      
+      // Handle failed work or missing data after fetch
+      if (status === 'FAILED' || !biases || biases.length === 0) {
+        setBiasData([]);
+        return;
+      }
+      
       setBiasData(biases);
 
       if (image_s3_uris && image_s3_uris.length > 0) {
         const imagePromises = image_s3_uris.map(async uri => {
-          const presignedUrl = await getPresignedUrl(uri);
-          return { uri, imageUrl: presignedUrl };
+          try {
+            const presignedUrl = await getPresignedUrl(uri);
+            return { uri, imageUrl: presignedUrl };
+          } catch (err) {
+            console.error(`Failed to get presigned URL for ${uri}`, err);
+            return { uri, imageUrl: null };
+          }
         });
         const images = await Promise.all(imagePromises);
         const newImageData = {};
@@ -98,6 +122,7 @@ export const useBiasData = (jobName) => {
     } catch (err) {
       console.error('Error in loadBiasData:', err);
       setError(err.message);
+      setBiasData([]);  // Set empty array so UI can render properly
     } finally {
       setIsLoading(false);
     }

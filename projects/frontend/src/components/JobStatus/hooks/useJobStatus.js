@@ -83,19 +83,19 @@ const useJobStatus = (token, navigate) => {
 
       if (data && data.job_progress) {
         console.log('Job progress structure:', data.job_progress);
-        Object.entries(data.job_progress).forEach(([status, ids]) => {
+        Object.entries(data.job_progress).forEach(([work_status, ids]) => {
           // Check if ids is an array before processing
           if (Array.isArray(ids)) {
             ids.forEach(id => {
               workItems.push({
                 work_id: id,
-                status: status,
+                work_status: work_status,
                 job_name: jobKey,
                 job_type: data.job_type || 'unknown'
               });
             });
           } else {
-            console.warn(`Expected array for status "${status}" but got:`, ids);
+            console.warn(`Expected array for work_status "${work_status}" but got:`, ids);
           }
         });
       }

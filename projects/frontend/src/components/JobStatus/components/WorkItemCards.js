@@ -21,10 +21,10 @@ const WorkItemsCards = ({ works }) => {
             header: "Status",
             content: item => {
               let statusType = "info";
-              if (item.status === "READY FOR REVIEW") statusType = "success";
-              if (item.status === "FAILED TO PROCESS") statusType = "error";
+              if (item.work_status === "READY FOR REVIEW") statusType = "success";
+              if (item.work_status === "FAILED TO PROCESS") statusType = "error";
 
-              return <Badge color={statusType}>{item.status}</Badge>;
+              return <Badge color={statusType}>{item.work_status}</Badge>;
             }
           }
         ]

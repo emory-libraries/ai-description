@@ -22,11 +22,17 @@ export const WorkNavigation = ({
   isLoading,
   onWorkSelect
 }) => {
+  const getStatusType = (status) => {
+    if (status === 'READY FOR REVIEW') return 'success';
+    if (status === 'FAILED TO PROCESS') return 'error';
+    return 'in-progress';
+  };
+
   const workNavigationItems = allWorks.map(work => ({
     type: 'link',
     text: `Work ID: ${work.work_id}`,
     href: `#${work.work_id}`,
-    info: <StatusIndicator type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} />,
+    info: <StatusIndicator type={getStatusType(work.work_status)} />,
   }));
 
   return (

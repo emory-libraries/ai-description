@@ -16,6 +16,7 @@ import MetadataSection from './MetadataSection';
 function MetadataEditor() {
   const { metadata, selectedWork, isLoading } = useMetadataContext();
 
+  // First check if we're loading
   if (isLoading && selectedWork) {
     return (
       <Container>
@@ -29,7 +30,8 @@ function MetadataEditor() {
     );
   }
 
-  if (!selectedWork || !metadata) {
+  // Explicitly check if selectedWork is null or undefined
+  if (!selectedWork) {
     return (
       <Container>
         <Box textAlign="center" padding="xl">
@@ -42,6 +44,21 @@ function MetadataEditor() {
     );
   }
 
+  // Check if metadata is loading or not available
+  if (!metadata) {
+    return (
+      <Container>
+        <Box textAlign="center" padding="l">
+          <SpaceBetween size="s" direction="vertical" alignItems="center">
+            <Spinner />
+            <Box variant="p">Loading metadata...</Box>
+          </SpaceBetween>
+        </Box>
+      </Container>
+    );
+  }
+
+  // If we have both selectedWork and metadata, render the metadata editor
   return (
     <Container
       header={

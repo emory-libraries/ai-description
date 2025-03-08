@@ -12,7 +12,7 @@ const JobProgressBar = ({ progressPercentage, statusCounts, totalWorks }) => {
       value={progressPercentage}
       label={`${progressPercentage}% complete`}
       description={`${statusCounts.completed} of ${totalWorks} items processed`}
-      status={statusCounts.failed > 0 ? "error" : "in-progress"}
+      work_status={statusCounts.failed > 0 ? "error" : "in-progress"}
     />
   );
 };
