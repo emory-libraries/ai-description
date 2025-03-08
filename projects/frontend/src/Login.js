@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { buildApiUrl } from './utils/apiUrls';
+import { buildFrontendPath } from './utils/frontendPaths';
 
 
 const Login = () => {
@@ -41,7 +42,7 @@ const Login = () => {
       console.log("About to navigate to home");
       // Add a short delay before navigation to ensure state is updated
       setTimeout(() => {
-        navigate('/', { replace: true });
+        navigate(buildFrontendPath('/'), { replace: true });
       }, 100);
       console.log("Navigation command issued");
 

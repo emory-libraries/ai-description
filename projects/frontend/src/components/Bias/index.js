@@ -21,6 +21,7 @@ import { WorkNavigation } from './components/WorkNavigation';
 import { BiasTable } from './components/BiasTable';
 import { BiasDetails } from './components/BiasDetails';
 import { BiasProvider, useBiasContext } from './BiasContext';
+import { buildFrontendPath } from '../../utils/frontendPaths';
 
 function BiasContent() {
   const {
@@ -39,8 +40,8 @@ function BiasContent() {
   } = useBiasContext();
 
   const breadcrumbItems = [
-    { text: 'Document Analysis Service', href: '/' },
-    { text: 'Job Status', href: '/' },
+    { text: 'Document Analysis Service', href: buildFrontendPath('/') },
+    { text: 'Job Status', href: buildFrontendPath('/') },
     { text: `Bias Analysis: ${jobName || ''}` }
   ];
 
@@ -49,6 +50,7 @@ function BiasContent() {
       toolsHide={true}
       navigation={<AWSSideNavigation activeHref="/bias" />}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
+      defaultHideNavigation={true}
       content={
         <ContentLayout
           header={

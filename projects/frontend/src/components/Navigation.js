@@ -4,6 +4,7 @@
 */
 import React from 'react';
 import { SideNavigation } from "@cloudscape-design/components";
+import { buildFrontendPath } from '../utils/frontendPaths';
 
 export function AWSSideNavigation({ activeHref }) {
   return (
@@ -20,7 +21,7 @@ export function AWSSideNavigation({ activeHref }) {
             {
               type: "link",
               text: "Job Status",
-              href: "/"
+              href: buildFrontendPath("/")
             }
           ]
         },

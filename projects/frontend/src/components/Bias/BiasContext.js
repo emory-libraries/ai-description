@@ -7,6 +7,7 @@ import React, { createContext, useContext } from 'react';
 import { useWorkData } from './hooks/useWorkData';
 import { useBiasData } from './hooks/useBiasData';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { buildFrontendPath } from '../../utils/frontendPaths';
 
 const BiasContext = createContext(null);
 
@@ -28,7 +29,7 @@ export function BiasProvider({ children }) {
   const jobName = stateJobName || pathJobName;
   const workId = location.state?.workId || hashWorkId;
 
-  const navigateToJobs = () => navigate('/');
+  const navigateToJobs = () => navigate(buildFrontendPath('/'));
 
   // Bias data state management
   const {
