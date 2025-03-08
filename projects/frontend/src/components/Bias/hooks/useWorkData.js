@@ -11,8 +11,8 @@ import { buildApiUrl } from '../../../utils/apiUrls';
  * Hook to handle work data fetching and selection
  */
 export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
-  const { token, logout } = useAuth();
   const navigate = useNavigate();
+  const { token, logout } = useAuth();
 
   const [allWorks, setAllWorks] = useState([]);
   const [selectedWork, setSelectedWork] = useState(null);
@@ -34,13 +34,15 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
 
       try {
         setIsLoading(true);
+        // Instead of calling useAuth() inside this function,
+        // use the token and headers you already have from the parent scope
         const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
         const response = await fetch(
           url,
           {
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           }
         );

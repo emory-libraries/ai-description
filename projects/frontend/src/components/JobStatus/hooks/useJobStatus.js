@@ -33,7 +33,7 @@ const useJobStatus = (token, navigate) => {
       setError(null);
     }
   }, [submittedJobName]);
-
+  const { getAuthHeaders } = useAuth();
   const checkJobProgress = useCallback(async () => {
     if (!token || !submittedJobName) return;
 
@@ -41,16 +41,14 @@ const useJobStatus = (token, navigate) => {
       setIsLoading(true);
       const url = buildApiUrl('/api/job_progress');
       console.log(`Fetching from: ${url}?job_name=${submittedJobName}`);
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'X-Request-Timestamp': String(Date.now())
-      };
-      console.log('Request Headers:', { ...headers, 'Authorization': 'Bearer [REDACTED]' });
-
       const response = await fetch(
         `${url}?job_name=${submittedJobName}`,
-        { headers }
+        {
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       console.log('Response Status:', response.status);

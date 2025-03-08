@@ -23,6 +23,25 @@ resource "aws_api_gateway_rest_api" "api" {
   ]
 }
 
+resource "aws_api_gateway_api_key" "api_key" {
+  name = "${var.deployment_prefix}-api-key"
+}
+
+resource "aws_api_gateway_usage_plan" "usage_plan" {
+  name = "${var.deployment_prefix}-usage-plan"
+  
+  api_stages {
+    api_id = aws_api_gateway_rest_api.api.id
+    stage  = aws_api_gateway_deployment.deployment.stage_name
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "usage_plan_key" {
+  key_id        = aws_api_gateway_api_key.api_key.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.usage_plan.id
+}
+
 #----------------------------------------------
 # API Base Resource
 #----------------------------------------------
@@ -343,18 +362,6 @@ resource "aws_api_gateway_integration_response" "env_js_integration_response" {
     aws_api_gateway_method_response.env_js_method_response
   ]
 }
-#----------------------------------------------
-# JWT Authorizer
-#----------------------------------------------
-resource "aws_api_gateway_authorizer" "jwt_authorizer" {
-  name                             = "jwt-authorizer"
-  rest_api_id                      = aws_api_gateway_rest_api.api.id
-  authorizer_uri                   = var.lambda_invoke_arns["authorize"]
-  authorizer_credentials           = var.api_gateway_role_arn
-  type                             = "TOKEN"
-  identity_source                  = "method.request.header.Authorization"
-  authorizer_result_ttl_in_seconds = 0
-}
 
 #----------------------------------------------
 # API Resource Definitions
@@ -427,8 +434,8 @@ resource "aws_api_gateway_method" "api_methods" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.base_resources[each.value.resource_key].id
   http_method   = each.value.method
-  authorization = each.value.resource_key == "log_in" ? "NONE" : "CUSTOM"
-  authorizer_id = each.value.resource_key == "log_in" ? null : aws_api_gateway_authorizer.jwt_authorizer.id
+  authorization = "API_KEY"
+  authorizer_id = true
 }
 
 #----------------------------------------------

@@ -5,13 +5,14 @@
 import { useCallback } from 'react';
 import { formatValue} from "../utils/formatter";
 import { buildApiUrl } from '../../../utils/apiUrls';
+import { useAuth } from '../../../AuthContext';
 
 export default function useMetadataUpdate({
   token, logout, navigate, setError, setIsLoading,
   selectedWork, metadata, modifiedFields, setModifiedFields, setMetadata,
   allWorks, fetchWorkDetails
 }) {
-
+  const { getAuthHeaders } = useAuth();
   const updateMetadata = useCallback(async () => {
     if (!token || !selectedWork) {
       setError('Unable to update: Missing required data');
@@ -60,7 +61,7 @@ export default function useMetadataUpdate({
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          ...getAuthHeaders(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)

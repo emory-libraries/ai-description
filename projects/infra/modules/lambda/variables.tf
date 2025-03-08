@@ -53,11 +53,6 @@ variable "task_execution_role_arn" {
   type        = string
 }
 
-variable "jwt_secret_name" {
-  description = "Name of Secret used for JWT"
-  type        = string
-}
-
 variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string

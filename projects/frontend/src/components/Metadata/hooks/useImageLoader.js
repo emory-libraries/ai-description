@@ -4,8 +4,10 @@
 */
 import { useCallback } from 'react';
 import { buildApiUrl } from '../../../utils/apiUrls';
+import { useAuth } from '../../../AuthContext';
 
 export default function useImageLoader({ token, logout, navigate }) {
+  const { getAuthHeaders } = useAuth();
   const getPresignedUrl = useCallback(async (s3Uri) => {
     if (!s3Uri || typeof s3Uri !== 'string') {
       console.error('Invalid URI provided:', s3Uri);
@@ -21,8 +23,8 @@ export default function useImageLoader({ token, logout, navigate }) {
         url,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );

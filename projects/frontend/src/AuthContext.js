@@ -3,31 +3,31 @@
 * Terms and the SOW between the parties dated 2025.
 */
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
+// Inside AuthContext.js
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [apiKey, setApiKey] = useState(localStorage.getItem('apiKey'));
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-    } else {
-      localStorage.removeItem('token');
-    }
-  }, [token]);
-
-  const login = (newToken) => {
-    setToken(newToken);
+  const login = (newApiKey) => {
+    localStorage.setItem('apiKey', newApiKey);
+    setApiKey(newApiKey);
   };
 
   const logout = () => {
-    setToken(null);
+    localStorage.removeItem('apiKey');
+    setApiKey(null);
+  };
+
+  // Add this function to use in your API calls
+  const getAuthHeaders = () => {
+    return apiKey ? { 'x-api-key': apiKey } : {};
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={{ apiKey, login, logout, isAuthenticated: !!apiKey, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );

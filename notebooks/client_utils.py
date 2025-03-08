@@ -257,7 +257,7 @@ def create_dummy_job_objects(
     original_metadata_s3_uri: str,
     context_s3_uri: str,
     image_s3_uri: str,
-):
+) -> list[dict]:
     """Create dummy job."""
     return [
         {

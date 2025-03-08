@@ -4,19 +4,23 @@
 */
 import { useCallback } from 'react';
 import { buildApiUrl } from '../../../utils/apiUrls';
+import { useAuth } from '../../../AuthContext';
 
 export default function useMetadataFetch({ token, logout, navigate, setError }) {
+
+  const { getAuthHeaders } = useAuth();
+
   const fetchWorkDetails = useCallback(async (workId, jobName) => {
     if (!token) return;
 
     try {
-      const url = buildApiUrl(`/api/results?job_name=${jobName}&work_id=${workId}`);
+      const url = buildApiUrl(`/api/results?job_name=\${jobName}&work_id=\${workId}`);
       const response = await fetch(
         url,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -27,7 +31,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        throw new Error(`Failed to fetch work details: ${response.status}`);
+        throw new Error(`Failed to fetch work details: \${response.status}`);
       }
 
       const data = await response.json();
@@ -36,19 +40,19 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
       console.error('Error fetching work details:', err);
       throw err;
     }
-  }, [token, logout, navigate]);
+  }, [token, logout, navigate, getAuthHeaders]);
 
   const fetchAllWorks = useCallback(async (jobName) => {
     if (!token || !jobName) return [];
 
     try {
-      const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
+      const url = buildApiUrl(`/api/job_progress?job_name=\${jobName}`);
       const response = await fetch(
         url,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -59,7 +63,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        throw new Error(`Failed to fetch job data: ${response.status}`);
+        throw new Error(`Failed to fetch job data: \${response.status}`);
       }
 
       const jobData = await response.json();
@@ -84,7 +88,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
       setError(err.message);
       return [];
     }
-  }, [token, logout, navigate, setError]);
+  }, [token, logout, navigate, setError, getAuthHeaders]);
 
   return { fetchWorkDetails, fetchAllWorks };
 }

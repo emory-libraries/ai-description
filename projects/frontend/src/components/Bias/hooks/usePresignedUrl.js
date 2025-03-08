@@ -11,7 +11,7 @@ import { buildApiUrl } from '../../../utils/apiUrls';
  * Hook to get presigned URLs for S3 URIs
  */
 export const usePresignedUrl = () => {
-  const { token, logout } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
 
   const getPresignedUrl = useCallback(async (s3Uri) => {
@@ -21,39 +21,23 @@ export const usePresignedUrl = () => {
     }
 
     try {
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
       // Call the pre-signed URL API
       const url = buildApiUrl(`/api/presigned_url?s3_uri=${encodeURIComponent(s3Uri)}`);
       const response = await fetch(
-        url,
-        {
+        url, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
-
-      if (!response.ok) {
-        // Handle authentication errors
-        if (response.status === 401 || response.status === 403) {
-          logout();
-          navigate('/login');
-          throw new Error('Authentication failed. Please log in again.');
-        }
-        throw new Error(`Failed to get pre-signed URL: ${response.status}`);
-      }
-
       const data = await response.json();
       return data.presigned_url;
     } catch (err) {
       console.error('Error getting pre-signed URL:', err);
       return null;
     }
-  }, [token, logout, navigate]);
+  }, [ navigate ]);
 
   return { getPresignedUrl };
 };

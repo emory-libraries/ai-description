@@ -12,13 +12,3 @@ output "works_table_arn" {
   description = "The ARN of the DynamoDB works table"
   value       = aws_dynamodb_table.works.arn
 }
-
-output "accounts_table_name" {
-  description = "The name of the DynamoDB accounts table"
-  value       = aws_dynamodb_table.accounts.name
-}
-
-output "accounts_table_arn" {
-  description = "The ARN of the DynamoDB accounts table"
-  value       = aws_dynamodb_table.accounts.arn
-}
