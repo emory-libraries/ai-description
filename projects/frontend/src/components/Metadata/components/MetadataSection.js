@@ -8,7 +8,8 @@ import {
   Header,
   FormField,
   Textarea,
-  SpaceBetween
+  SpaceBetween,
+  Box
 } from "@cloudscape-design/components";
 import { useMetadataContext } from '../MetadataContext';
 import { formatValue } from '../utils/formatter';
@@ -17,8 +18,15 @@ function MetadataSection({ fieldKey, fieldValue }) {
   const { handleMetadataEdit } = useMetadataContext();
 
   // Skip certain fields from being displayed
-  if (fieldKey === 'image_s3_uris' || fieldKey === 'work_id' ||
-      fieldKey === 'job_name' || fieldKey === 'work_status') {
+  if (
+    fieldKey === 'image_s3_uris' ||
+    fieldKey === 'work_id' ||
+    fieldKey === 'job_name' ||
+    fieldKey === 'work_status' ||
+    fieldKey === 'original_metadata_s3_uri' ||
+    fieldKey === 'context_s3_uri' ||
+    fieldKey === 'image_presigned_urls'
+    ) {
     return null;
   }
 
@@ -33,15 +41,15 @@ function MetadataSection({ fieldKey, fieldValue }) {
       >
         <FormField
           label="Value"
-          description="Enter comma-separated values for this field. Currently empty."
+          description="Enter pipe-separated values for this field. Currently empty."
         >
           <Textarea
             value=""
             onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split(',').filter(item => item.trim().length > 0)
+              detail.value.split('|').filter(item => item.trim().length > 0)
             )}
             rows={2}
-            placeholder="Enter comma-separated values..."
+            placeholder="Enter pipe-separated values..."
           />
         </FormField>
       </Container>
@@ -59,32 +67,34 @@ function MetadataSection({ fieldKey, fieldValue }) {
         header={<Header variant="h3">{formattedKey}</Header>}
       >
         <SpaceBetween size="m">
-          <FormField label="Explanation">
-            <Textarea
-              value={fieldValue.explanation || ''}
-              onChange={({ detail }) => handleMetadataEdit(fieldKey, {
-                ...fieldValue,
-                explanation: detail.value
-              })}
-              rows={3}
-            />
-          </FormField>
+          {fieldValue.explanation && (
+            <Box padding="s">
+              <SpaceBetween size="xs">
+                <Header variant="h4">Explanation</Header>
+                <div>{fieldValue.explanation}</div>
+              </SpaceBetween>
+            </Box>
+          )}
 
           <FormField
             label="Value"
             description={Array.isArray(fieldValue.value) ?
-              "Enter values separated by commas" :
+              "Enter values separated by pipes (|)" :
               "Enter value for this field"}
           >
             <Textarea
-              value={fieldValue.value ? formatValue(fieldValue.value) : ''}
+              value={Array.isArray(fieldValue.value) ? 
+                fieldValue.value.join(' | ') : 
+                (fieldValue.value ? formatValue(fieldValue.value) : '')}
               onChange={({ detail }) => handleMetadataEdit(fieldKey, {
                 ...fieldValue,
-                value: detail.value
+                value: Array.isArray(fieldValue.value) ? 
+                  detail.value.split('|').map(item => item.trim()).filter(item => item) :
+                  detail.value
               })}
               rows={3}
               placeholder={Array.isArray(fieldValue.value) ?
-                "e.g. value1, value2, value3" :
+                "e.g. value1 | value2 | value3" :
                 "Enter value here..."}
             />
           </FormField>
@@ -101,15 +111,15 @@ function MetadataSection({ fieldKey, fieldValue }) {
       >
         <FormField
           label="Value"
-          description="Enter values separated by commas"
+          description="Enter values separated by pipes (|)"
         >
           <Textarea
-            value={formatValue(fieldValue)}
+            value={fieldValue.join(' | ')}
             onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split(',').map(item => item.trim()).filter(item => item)
+              detail.value.split('|').map(item => item.trim()).filter(item => item)
             )}
             rows={4}
-            placeholder="e.g. value1, value2, value3"
+            placeholder="e.g. value1 | value2 | value3"
           />
         </FormField>
       </Container>
