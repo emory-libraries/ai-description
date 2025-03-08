@@ -37,7 +37,16 @@ export const BiasTable = ({ biasData, onBiasSelect }) => {
         {
           id: "explanation",
           header: "Explanation",
-          cell: item => item.explanation
+          cell: item => (
+            <div style={{
+              maxWidth: "400px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}>
+              {item.explanation}
+            </div>
+          )
         }
       ]}
       items={biasData || []}
