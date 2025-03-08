@@ -8,11 +8,11 @@ import { useAuth } from '../../../AuthContext';
 import { usePresignedUrl } from './usePresignedUrl';
 import { buildApiUrl } from '../../../utils/apiUrls';
 
+
 /**
  * Hook to handle bias data fetching and management
 */
 export const useBiasData = (jobName) => {
-  const { token, logout } = useAuth();
   const navigate = useNavigate();
   const { getPresignedUrl } = usePresignedUrl();
 
@@ -21,6 +21,7 @@ export const useBiasData = (jobName) => {
   const [imageData, setImageData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [selectedBias, setSelectedBias] = useState(null);
+  const { token, logout, getAuthHeaders } = useAuth();
 
   const fetchBiasDetails = useCallback(async (workId) => {
     if (!token) return;
@@ -28,11 +29,10 @@ export const useBiasData = (jobName) => {
     try {
       const url = buildApiUrl(`/api/results?job_name=${jobName}&work_id=${workId}`);
       const response = await fetch(
-        url,
-        {
+        url, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -63,7 +63,7 @@ export const useBiasData = (jobName) => {
       console.error('Error fetching bias details:', err);
       throw err;
     }
-  }, [jobName, token, logout, navigate]);
+  }, [jobName, token, logout, navigate, getAuthHeaders]);
 
   const loadBiasData = useCallback(async (work) => {
     if (!work) return;

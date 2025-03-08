@@ -13,11 +13,6 @@ variable "works_table_name" {
   type        = string
 }
 
-variable "accounts_table_name" {
-  description = "Name of the DynamoDB accounts table"
-  type        = string
-}
-
 variable "sqs_queue_url" {
   description = "URL of SQS queue"
   type        = string
@@ -50,11 +45,6 @@ variable "ecs_security_group_id" {
 
 variable "task_execution_role_arn" {
   description = "ARN of the ECS task execution role"
-  type        = string
-}
-
-variable "jwt_secret_name" {
-  description = "Name of Secret used for JWT"
   type        = string
 }
 

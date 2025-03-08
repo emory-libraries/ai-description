@@ -25,23 +25,6 @@ resource "null_resource" "create_dist_dirs" {
 # Lambda function configurations
 locals {
   lambda = {
-    log_in = {
-      source_dir  = "${path.module}/src/functions/log_in"
-      description = "Log in"
-      timeout     = 30
-      environment = {
-        ACCOUNTS_TABLE_NAME = var.accounts_table_name
-        SECRET_NAME         = var.jwt_secret_name
-      }
-    }
-    authorize = {
-      source_dir  = "${path.module}/src/functions/authorize"
-      description = "Authorize"
-      timeout     = 30
-      environment = {
-        SECRET_NAME = var.jwt_secret_name
-      }
-    }
     create_job = {
       source_dir  = "${path.module}/src/functions/create_job"
       description = "Create new batch job"

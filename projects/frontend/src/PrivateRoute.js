@@ -9,6 +9,7 @@ import { useAuth } from './AuthContext';
 
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
+  console.log("PrivateRoute check - token exists:", !!token);
   return token ? children : <Navigate to="/login" />;
 };
 

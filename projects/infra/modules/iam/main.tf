@@ -86,7 +86,6 @@ resource "aws_iam_policy" "service_lambda_policy" {
         ]
         Resource = [
           var.works_table_arn,
-          var.accounts_table_arn
         ]
       },
       {
@@ -101,11 +100,6 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "arn:aws:ecs:*:*:task-definition/*",
           "arn:aws:ecs:*:*:task/*",
         ]
-      },
-      {
-        Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
-        Resource = [var.jwt_secret_arn]
       },
       {
         Effect = "Allow"

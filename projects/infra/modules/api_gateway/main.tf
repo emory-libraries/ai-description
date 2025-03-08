@@ -343,30 +343,12 @@ resource "aws_api_gateway_integration_response" "env_js_integration_response" {
     aws_api_gateway_method_response.env_js_method_response
   ]
 }
-#----------------------------------------------
-# JWT Authorizer
-#----------------------------------------------
-resource "aws_api_gateway_authorizer" "jwt_authorizer" {
-  name                             = "jwt-authorizer"
-  rest_api_id                      = aws_api_gateway_rest_api.api.id
-  authorizer_uri                   = var.lambda_invoke_arns["authorize"]
-  authorizer_credentials           = var.api_gateway_role_arn
-  type                             = "TOKEN"
-  identity_source                  = "method.request.header.Authorization"
-  authorizer_result_ttl_in_seconds = 0
-}
 
 #----------------------------------------------
 # API Resource Definitions
 #----------------------------------------------
 locals {
   base_resources = {
-    "log_in" = {
-      path_part = "log_in"
-      methods = {
-        "POST" = var.lambda_function_arns["log_in"]
-      }
-    }
     "create_job" = {
       path_part = "create_job"
       methods = {
@@ -424,11 +406,11 @@ resource "aws_api_gateway_method" "api_methods" {
       ]
     ]) : entry.key => entry
   }
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.base_resources[each.value.resource_key].id
-  http_method   = each.value.method
-  authorization = each.value.resource_key == "log_in" ? "NONE" : "CUSTOM"
-  authorizer_id = each.value.resource_key == "log_in" ? null : aws_api_gateway_authorizer.jwt_authorizer.id
+  rest_api_id      = aws_api_gateway_rest_api.api.id
+  resource_id      = aws_api_gateway_resource.base_resources[each.value.resource_key].id
+  http_method      = each.value.method
+  authorization    = "NONE"
+  api_key_required = true
 }
 
 #----------------------------------------------
@@ -639,6 +621,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   ]
 }
 
+
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   name              = "/aws/apigateway/${aws_api_gateway_rest_api.api.name}"
   retention_in_days = 30
@@ -684,6 +667,41 @@ resource "aws_api_gateway_method_settings" "all" {
     throttling_burst_limit = 50
   }
 }
+
+#----------------------------------------------
+# API Key
+#----------------------------------------------
+
+resource "aws_api_gateway_api_key" "api_key" {
+  name = "${var.deployment_prefix}-api-key"
+}
+
+resource "aws_api_gateway_usage_plan" "usage_plan" {
+  name = "${var.deployment_prefix}-usage-plan"
+  depends_on = [
+    aws_api_gateway_rest_api.api,
+    aws_api_gateway_stage.api_stage,
+  ]
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.api.id
+    stage  = aws_api_gateway_stage.api_stage.stage_name
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "usage_plan_key" {
+  depends_on = [
+    aws_api_gateway_api_key.api_key,
+    aws_api_gateway_usage_plan.usage_plan,
+  ]
+  key_id        = aws_api_gateway_api_key.api_key.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.usage_plan.id
+}
+
+#----------------------------------------------
+# Account-level
+#----------------------------------------------
 
 resource "aws_api_gateway_account" "main" {
   cloudwatch_role_arn = var.api_gateway_role_arn

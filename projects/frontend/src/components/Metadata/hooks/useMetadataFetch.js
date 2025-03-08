@@ -4,8 +4,12 @@
 */
 import { useCallback } from 'react';
 import { buildApiUrl } from '../../../utils/apiUrls';
+import { useAuth } from '../../../AuthContext';
 
 export default function useMetadataFetch({ token, logout, navigate, setError }) {
+
+  const { getAuthHeaders } = useAuth();
+
   const fetchWorkDetails = useCallback(async (workId, jobName) => {
     if (!token) return;
 
@@ -15,8 +19,8 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
         url,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -36,7 +40,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
       console.error('Error fetching work details:', err);
       throw err;
     }
-  }, [token, logout, navigate]);
+  }, [token, logout, navigate, getAuthHeaders]);
 
   const fetchAllWorks = useCallback(async (jobName) => {
     if (!token || !jobName) return [];
@@ -47,8 +51,8 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
         url,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -84,7 +88,7 @@ export default function useMetadataFetch({ token, logout, navigate, setError }) 
       setError(err.message);
       return [];
     }
-  }, [token, logout, navigate, setError]);
+  }, [token, logout, navigate, setError, getAuthHeaders]);
 
   return { fetchWorkDetails, fetchAllWorks };
 }
