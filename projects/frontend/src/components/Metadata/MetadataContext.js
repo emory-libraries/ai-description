@@ -2,6 +2,9 @@
 * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 * Terms and the SOW between the parties dated 2025.
 */
+
+// components/Metadata/MetadataContext.js
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
@@ -36,7 +39,7 @@ export function MetadataProvider({ children }) {
 
   const { getPresignedUrl } = useImageLoader({ token, logout, navigate });
 
-  const { updateMetadata, downloadAllMetadata } = useMetadataUpdate({
+  const { updateMetadata, downloadAllMetadata, updateReviewStatus } = useMetadataUpdate({
     token,
     logout,
     navigate,
@@ -48,7 +51,9 @@ export function MetadataProvider({ children }) {
     setModifiedFields,
     setMetadata,
     allWorks,
-    fetchWorkDetails
+    fetchWorkDetails,
+    setAllWorks,
+    setSelectedWork
   });
 
   const handleMetadataEdit = (key, value) => {
@@ -144,7 +149,8 @@ export function MetadataProvider({ children }) {
     handleWorkSelect,
     handleMetadataEdit,
     updateMetadata,
-    downloadAllMetadata
+    downloadAllMetadata,
+    updateReviewStatus
   };
 
   return (

@@ -42,7 +42,7 @@ function MetadataContent() {
   ];
 
   // Check work status
-  const isWorkReadyForReview = selectedWork && selectedWork.work_status === "READY FOR REVIEW";
+  const isWorkReadyForReview = selectedWork && (selectedWork.work_status === "READY FOR REVIEW" || selectedWork.work_status === "REVIEWED");
   const isWorkFailed = selectedWork && selectedWork.work_status === "FAILED TO PROCESS";
 
   // Determine what to render in the main content area
