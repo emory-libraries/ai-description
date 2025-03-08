@@ -72,7 +72,7 @@ function DocumentPreview() {
       >
         {metadata?.image_s3_uris?.slice(0, 2).map((uri, index) => (
           <div
-            key={`image-\${index}-\${uri}`}
+            key={`image-${index}-${uri}`}
             style={{
               padding: '1rem',
               textAlign: 'center',
@@ -82,7 +82,7 @@ function DocumentPreview() {
             {imageData[uri] ? (
               <img
                 src={imageData[uri]}
-                alt={`Page \${index + 1}`}
+                alt={`Page ${index + 1}`}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '400px',

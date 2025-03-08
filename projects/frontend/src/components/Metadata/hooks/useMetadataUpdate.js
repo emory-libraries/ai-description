@@ -204,7 +204,7 @@ export default function useMetadataUpdate({
   
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`Failed to update work status: \${response.status}`);
+        throw new Error(`Failed to update work status: ${response.status}`);
       }
   
       const updatedWork = await response.json();
@@ -224,7 +224,7 @@ export default function useMetadataUpdate({
       setError(null);
       return updatedWork;
     } catch (err) {
-      console.error(`Error updating work status to \${newStatus}:`, err);
+      console.error(`Error updating work status to ${newStatus}:`, err);
       setError(err.message);
     } finally {
       setIsLoading(false);

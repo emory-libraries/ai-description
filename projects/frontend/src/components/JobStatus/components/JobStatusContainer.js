@@ -13,7 +13,6 @@ import {
   Box
 } from "@cloudscape-design/components";
 import JobProgressBar from './JobProgressBar';
-import WorkItemsCards from './WorkItemCards';
 
 const JobStatusContainer = ({ job, navigate }) => {
   const getStatusCounts = (job) => {
@@ -60,7 +59,7 @@ const JobStatusContainer = ({ job, navigate }) => {
         <Header
           variant="h2"
           actions={
-            statusCounts.readyForReview > 0 && (
+            statusCounts.readyForReview + statusCounts.reviewed > 0 && (
               <Button
                 variant="primary"
                 onClick={() => handleViewResults(job, job.works[0])}
@@ -83,10 +82,6 @@ const JobStatusContainer = ({ job, navigate }) => {
             totalWorks={totalWorks}
           />
         </Box>
-
-        <ExpandableSection headerText="Work Items Details">
-          <WorkItemsCards works={job.works} />
-        </ExpandableSection>
       </SpaceBetween>
     </Container>
   );

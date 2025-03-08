@@ -22,13 +22,24 @@ function WorkNavigation() {
     handleWorkSelect
   } = useMetadataContext();
 
+  const getStatusIndicatorProps = (status) => {
+    switch (status) {
+      case 'READY FOR REVIEW':
+        return { type: 'pending', children: 'Ready for review' };
+      case 'REVIEWED':
+        return { type: 'success', children: 'Reviewed' };
+      case 'IN PROGRESS':
+        return { type: 'in-progress', children: 'In progress' };
+      default:
+        return { type: 'info', children: status };
+    }
+  };
+
   const workNavigationItems = allWorks.map(work => ({
     type: 'link',
-    text: `Work ID: ${work.work_id}`,
+    text: work.work_id,
     href: `#${work.work_id}`,
-    info: <StatusIndicator
-      type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'}
-    />,
+    info: <StatusIndicator {...getStatusIndicatorProps(work.work_status)} />,
   }));
 
   return (

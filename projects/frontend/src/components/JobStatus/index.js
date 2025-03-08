@@ -55,7 +55,7 @@ const JobStatus = () => {
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
       defaultHideNavigation={true}
       content={
-        <ContentLayout header={<Header variant="h1">Document Analysis Job Status</Header>}>
+        <ContentLayout header={<Header variant="h1">Document Analysis Service</Header>}>
           <SpaceBetween size="l">
             <JobLookupForm
               jobName={jobName}

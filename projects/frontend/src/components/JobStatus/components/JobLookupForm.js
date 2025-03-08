@@ -23,7 +23,7 @@ const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
     <Container
       header={
         <Header variant="h2" description="Enter a job name to retrieve status information">
-          Job Lookup
+          Job results search
         </Header>
       }
     >
@@ -40,14 +40,11 @@ const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
             </Button>
           }
         >
-          <FormField
-            label="Job name"
-            description="Enter the job identifier to view processing status"
-          >
+          <FormField>
             <Input
               value={jobName}
               onChange={({ detail }) => setJobName(detail.value)}
-              placeholder="Enter job name"
+              placeholder="e.g. job-001"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && jobName.trim()) {
                   e.preventDefault();
