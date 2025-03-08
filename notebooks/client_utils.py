@@ -34,7 +34,7 @@ def submit_job(
     # Check if the request was successful
     if response.status_code == 200:
         # Parse the JSON response
-        return response.json()        
+        return response.json()
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")
         logging.error(f"Response: {response.text}")

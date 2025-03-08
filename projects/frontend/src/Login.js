@@ -20,7 +20,7 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-  
+
     try {
       // Validate the API key by making a test request to a protected endpoint
       const url = buildApiUrl('/api/overall_progress');
@@ -30,11 +30,11 @@ const Login = () => {
           'x-api-key': apiKey
         },
       });
-  
+
       if (!response.ok) {
         throw new Error('Invalid API key');
       }
-  
+
       // If the API key is valid, store it
       console.log("Login successful, storing token");
       login(apiKey);
@@ -44,7 +44,7 @@ const Login = () => {
         navigate('/', { replace: true });
       }, 100);
       console.log("Navigation command issued");
-  
+
     } catch (error) {
       setError(error.message || 'An unexpected error occurred');
     } finally {

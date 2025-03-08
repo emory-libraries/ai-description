@@ -13,26 +13,25 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   // Use localStorage to persist the token between page refreshes
   const [token, setToken] = useState(localStorage.getItem('apiKey'));
-  
+
   const login = (apiKey) => {
     // Store token in both state and localStorage
     localStorage.setItem('apiKey', apiKey);
     setToken(apiKey);
   };
-  
+
   const logout = () => {
     localStorage.removeItem('apiKey');
     setToken(null);
   };
-  
+
   const getAuthHeaders = () => {
     return token ? { 'x-api-key': token } : {};
   };
-  
+
   return (
     <AuthContext.Provider value={{ token, login, logout, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
