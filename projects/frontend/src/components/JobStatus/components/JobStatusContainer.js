@@ -12,17 +12,17 @@ import {
   ExpandableSection,
   Box
 } from "@cloudscape-design/components";
-import JobStatusMetrics from './JobStatusMetrics';
 import JobProgressBar from './JobProgressBar';
 import WorkItemsCards from './WorkItemCards';
 
 const JobStatusContainer = ({ job, navigate }) => {
   const getStatusCounts = (job) => {
-    const inQueue = job.works.filter(w => w.work_status === 'IN_QUEUE').length;
-    const inProgress = job.works.filter(w => w.work_status === 'IN_PROGRESS' || w.work_status === 'PROCESSING').length;
+    const inQueue = job.works.filter(w => w.work_status === 'IN QUEUE').length;
+    const inProgress = job.works.filter(w => w.work_status === 'IN PROGRESS').length;
     const completed = job.works.filter(w => w.work_status === 'READY FOR REVIEW').length;
     const failed = job.works.filter(w => w.work_status === 'FAILED TO PROCESS').length;
-    return { inQueue, inProgress, completed, failed };
+    const reviewed = job.works.filter(w => w.work_status === 'REVIEWED').length;
+    return { inQueue, inProgress, completed, failed, reviewed };
   };
 
   const handleViewResults = (job, work) => {
@@ -53,7 +53,6 @@ const JobStatusContainer = ({ job, navigate }) => {
 
   const statusCounts = getStatusCounts(job);
   const totalWorks = job.works.length;
-  const progressPercentage = Math.round((statusCounts.completed / totalWorks) * 100);
 
   return (
     <Container
@@ -77,12 +76,9 @@ const JobStatusContainer = ({ job, navigate }) => {
       }
     >
       <SpaceBetween size="l">
-        <JobStatusMetrics statusCounts={statusCounts} />
-
         <Box>
-          <Box variant="awsui-key-label">Overall Progress</Box>
+          <Box variant="awsui-key-label">Progress</Box>
           <JobProgressBar
-            progressPercentage={progressPercentage}
             statusCounts={statusCounts}
             totalWorks={totalWorks}
           />

@@ -257,8 +257,8 @@ def process_sqs_messages():
                 logger.info(f"Image S3 URIs: {image_s3_uris}")
                 logger.info(f"Original metadata S3 URI: {original_metadata_s3_uri}")
 
-                # Update work_status for the item in DynamoDB to "PROCESSING"
-                update_dynamodb_status(job_name=job_name, work_id=work_id, status="PROCESSING")
+                # Update work_status for the item in DynamoDB to "IN PROGRESS"
+                update_dynamodb_status(job_name=job_name, work_id=work_id, status="IN PROGRESS")
 
                 if job_type == "metadata":
                     work_structured_metadata = generate_work_structured_metadata(
