@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { buildApiUrl } from './utils/apiUrls';
+import { buildApiUrl } from '../utils/apiUrls';
 
 /**
  * Hook to handle work data fetching and selection

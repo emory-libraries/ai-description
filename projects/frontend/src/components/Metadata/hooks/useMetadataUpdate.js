@@ -4,7 +4,7 @@
 */
 import { useCallback } from 'react';
 import { formatValue} from "../utils/formatter";
-import { buildApiUrl } from './utils/apiUrls';
+import { buildApiUrl } from '../utils/apiUrls';
 
 export default function useMetadataUpdate({
   token, logout, navigate, setError, setIsLoading,

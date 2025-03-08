@@ -3,7 +3,7 @@
 * Terms and the SOW between the parties dated 2025.
 */
 import { useCallback } from 'react';
-import { buildApiUrl } from './utils/apiUrls';
+import { buildApiUrl } from '../utils/apiUrls';
 
 export default function useImageLoader({ token, logout, navigate }) {
   const getPresignedUrl = useCallback(async (s3Uri) => {

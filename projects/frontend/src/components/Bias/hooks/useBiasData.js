@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../AuthContext';
 import { usePresignedUrl } from './usePresignedUrl';
-import { buildApiUrl } from './utils/apiUrls';
+import { buildApiUrl } from '../utils/apiUrls';
 
 /**
  * Hook to handle bias data fetching and management
