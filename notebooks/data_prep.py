@@ -107,7 +107,7 @@ def batch_copy_files_from_dataframe(df: pd.DataFrame, max_workers: int = 5) -> d
     return results
 
 
-def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
+def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: str) -> tuple[str, str, str]:
     # Initialize S3 client
     s3_client = boto3.client("s3")
 
@@ -117,25 +117,14 @@ def populate_bucket(bucket_name: str, image_fpath: str) -> tuple[str, str, str]:
     s3_client.upload_file(image_fpath, bucket_name, image_key)
     # Create image S3 URI
     image_s3_uri = f"s3://{bucket_name}/{image_key}"
-
-    # Create metadata
-    original_metadata = {
-        "title": "foo",
-        "description": "offensive image",
-    }
-    # Convert metadata to JSON
-    original_metadata_json = json.dumps(original_metadata)
     # Upload metadata JSON file
-    original_metadata_key = f"metadata/{os.path.splitext(image_filename)[0]}_metadata.json"
-    s3_client.put_object(Body=original_metadata_json, Bucket=bucket_name, Key=original_metadata_key)
+    original_metadata_key = f"metadata/{os.path.splitext(image_filename)[0]}_metadata.txt"
+    s3_client.put_object(Body=metadata, Bucket=bucket_name, Key=original_metadata_key)
     # Create metadata S3 URI
     original_metadata_s3_uri = f"s3://{bucket_name}/{original_metadata_key}"
-
-    # Convert context data to JSON
-    context_str = "This document is old"
     # Upload context JSON file
     context_key = f"contexts/{os.path.splitext(image_filename)[0]}_context.txt"
-    s3_client.put_object(Body=context_str, Bucket=bucket_name, Key=context_key)
+    s3_client.put_object(Body=context, Bucket=bucket_name, Key=context_key)
     # Create context S3 URI
     context_s3_uri = f"s3://{bucket_name}/{context_key}"
 
@@ -222,26 +211,3 @@ def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
         result.append(obj)
 
     return result
-
-
-def create_dummy_job_objects(
-    job_name: str,
-    original_metadata_s3_uri: str,
-    context_s3_uri: str,
-    image_s3_uri: str,
-) -> list[dict]:
-    """Create dummy job."""
-    return [
-        {
-            "work_id": f"{job_name}_short_work",
-            "image_s3_uris": [image_s3_uri],
-            "context_s3_uri": context_s3_uri,
-            "original_metadata_s3_uri": original_metadata_s3_uri,
-        },
-        {
-            "work_id": f"{job_name}_long_work",
-            "image_s3_uris": [image_s3_uri, image_s3_uri, image_s3_uri, image_s3_uri],
-            "context_s3_uri": context_s3_uri,
-            "original_metadata_s3_uri": original_metadata_s3_uri,
-        },
-    ]
