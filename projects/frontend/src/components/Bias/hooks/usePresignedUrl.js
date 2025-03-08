@@ -5,6 +5,7 @@
 import { useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from './utils/apiUrls';
 
 /**
  * Hook to get presigned URLs for S3 URIs
@@ -18,15 +19,16 @@ export const usePresignedUrl = () => {
       console.error('Invalid URI provided:', s3Uri);
       return null;
     }
-    
+
     try {
       if (!token) {
         throw new Error('No authentication token available');
       }
-      
+
       // Call the pre-signed URL API
+      const url = buildApiUrl(`/api/presigned_url?s3_uri=${encodeURIComponent(s3Uri)}`);
       const response = await fetch(
-        `/api/presigned_url?s3_uri=${encodeURIComponent(s3Uri)}`,
+        url,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -34,7 +36,7 @@ export const usePresignedUrl = () => {
           }
         }
       );
-      
+
       if (!response.ok) {
         // Handle authentication errors
         if (response.status === 401 || response.status === 403) {
@@ -44,7 +46,7 @@ export const usePresignedUrl = () => {
         }
         throw new Error(`Failed to get pre-signed URL: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data.presigned_url;
     } catch (err) {

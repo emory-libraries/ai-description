@@ -121,6 +121,7 @@ module "iam" {
   vpc_ecr_dkr_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_dkr
   ecr_processor_repository_name = module.ecr.ecr_processor_repository_name
   enable_vpc_endpoints          = var.enable_vpc_endpoints
+  website_bucket_arn            = module.s3.website_bucket_arn
   jwt_secret_arn                = module.secrets_manager.jwt_secret_arn
 }
 
@@ -190,66 +191,18 @@ module "api_gateway" {
   lambda_names            = module.lambda.function_names
   api_gateway_role_arn    = module.iam.api_gateway_role_arn
   authorizer_iam_role_arn = module.iam.base_lambda_role_arn
+  website_bucket_name     = module.s3.website_bucket_name
 }
 
-# module "s3_site" {
-#   source     = "./modules/s3_site"
-#   depends_on = [module.api_gateway, module.s3]
+module "s3_site" {
+  source     = "./modules/s3_site"
+  depends_on = [module.api_gateway, module.s3]
 
-#   deployment_stage  = var.deployment_stage
-#   api_url           = module.api_gateway.api_gateway_invoke_url
-#   frontend_url      = module.s3.s3_website_endpoint
-#   uploads_bucket_id = module.s3.uploads_bucket_id
-#   website_bucket_id = module.s3.website_bucket_id
-# }
-
-# Cloudfront
-# module "cloudfront" {
-#   source = "./modules/cloudfront"
-#   depends_on = [
-#     module.s3,
-#     module.api_gateway,
-#   ]
-
-#   deployment_prefix                   = local.deployment_prefix
-#   api_gateway_deployment_stage        = var.deployment_stage
-#   website_bucket_regional_domain_name = module.s3.website_bucket_regional_domain_name
-#   api_gateway_invoke_url              = module.api_gateway.api_gateway_invoke_url
-# }
-
-# S3 Policy (to prevent a circular dependency between S3 and Cloudfront)
-# module "s3_policy" {
-#   source = "./modules/s3_policy"
-#   depends_on = [
-#     module.s3,
-#     module.cloudfront
-#   ]
-#   bucket_id                   = module.s3.website_bucket_id
-#   bucket_arn                  = module.s3.website_bucket_arn
-#   cloudfront_distribution_arn = module.cloudfront.distribution_arn
-# }
-
-# API Gateway policy
-# resource "aws_api_gateway_rest_api_policy" "cloudfront_access" {
-#   depends_on  = [module.cloudfront, module.api_gateway]
-#   rest_api_id = module.api_gateway.api_gateway_id
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Principal = {
-#           Service = "cloudfront.amazonaws.com"
-#         }
-#         Action   = "execute-api:Invoke"
-#         Resource = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*"
-
-#         Condition = {
-#           StringEquals = {
-#             "aws:SourceArn" = module.cloudfront.distribution_arn
-#           }
-#         }
-#       }
-#     ]
-#   })
-# }
+  deployment_stage          = var.deployment_stage
+  api_gateway_execution_arn = module.api_gateway.api_gateway_execution_arn
+  api_url                   = module.api_gateway.api_gateway_invoke_url
+  frontend_url              = module.s3.s3_website_endpoint
+  uploads_bucket_id         = module.s3.uploads_bucket_id
+  website_bucket_id         = module.s3.website_bucket_id
+  website_bucket_arn        = module.s3.website_bucket_arn
+}

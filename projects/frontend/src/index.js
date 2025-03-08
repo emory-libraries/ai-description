@@ -2,6 +2,7 @@
 * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 * Terms and the SOW between the parties dated 2025.
 */
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -16,12 +17,18 @@ import PrivateRoute from './PrivateRoute'
 
 applyMode(Mode.Dark);
 
+const STAGE_NAME = "dev" // window.env?.STAGE_NAME || ''
+
+console.log("Environment:", window.env);
+console.log("STAGE_NAME:", STAGE_NAME);
+console.log("Current path:", window.location.pathname);
+
 const root = createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <Router>
+      <Router basename={STAGE_NAME}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute><JobStatus /></PrivateRoute>} />
@@ -34,8 +41,8 @@ root.render(
             element={<PrivateRoute><Bias /></PrivateRoute>}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
+        </Routes>
+      </Router>
     </AuthProvider>
   </React.StrictMode>
 );

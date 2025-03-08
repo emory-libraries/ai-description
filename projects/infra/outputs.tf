@@ -3,14 +3,9 @@
 
 # outputs.tf
 
-# output "cloudfront_url" {
-#   description = "URL of Cloudfront"
-#   value       = module.cloudfront.distribution_domain_name
-# }
-
 output "api_gateway_invoke_url" {
   description = "The URL of the API Gateway endpoint"
-  value       = module.api_gateway.api_gateway_invoke_url
+  value       = "${module.api_gateway.api_gateway_invoke_url}${var.deployment_stage}"
 }
 
 output "uploads_bucket_name" {

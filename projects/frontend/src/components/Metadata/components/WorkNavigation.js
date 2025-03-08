@@ -15,19 +15,19 @@ import {
 import { useMetadataContext } from '../MetadataContext';
 
 function WorkNavigation() {
-  const { 
-    allWorks, 
-    selectedWork, 
-    isLoading, 
-    handleWorkSelect 
+  const {
+    allWorks,
+    selectedWork,
+    isLoading,
+    handleWorkSelect
   } = useMetadataContext();
 
   const workNavigationItems = allWorks.map(work => ({
     type: 'link',
     text: `Work ID: ${work.work_id}`,
     href: `#${work.work_id}`,
-    info: <StatusIndicator 
-      type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'} 
+    info: <StatusIndicator
+      type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'}
     />,
   }));
 
@@ -52,10 +52,10 @@ function WorkNavigation() {
             if (!detail.external) {
               // Extract the work_id from the href
               const workId = detail.href.substring(1);
-              
+
               // Find the work with this ID
               const workToSelect = allWorks.find(work => work.work_id === workId);
-              
+
               // If found, select this work
               if (workToSelect) {
                 handleWorkSelect(workToSelect);

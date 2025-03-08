@@ -4,6 +4,7 @@
 */
 import { useCallback } from 'react';
 import { formatValue} from "../utils/formatter";
+import { buildApiUrl } from './utils/apiUrls';
 
 export default function useMetadataUpdate({
   token, logout, navigate, setError, setIsLoading,
@@ -49,14 +50,13 @@ export default function useMetadataUpdate({
       });
 
       console.log("Sending update with fields:", processedModifiedFields);
-
-      const url = `/api/results`;
       const requestBody = {
         job_name: selectedWork.job_name,
         work_id: selectedWork.work_id,
         updated_fields: processedModifiedFields
       };
 
+      const url = buildApiUrl(`/api/results`);
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
@@ -72,7 +72,7 @@ export default function useMetadataUpdate({
           navigate('/login');
           throw new Error('Authentication failed. Please log in again.');
         }
-        
+
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
         throw new Error(`Failed to update metadata: ${response.status}`);
@@ -100,11 +100,11 @@ export default function useMetadataUpdate({
       setIsLoading(true);
       const allMetadataResults = [];
       const currentJobName = selectedWork?.job_name || allWorks[0]?.job_name;
-      
+
       if (!currentJobName) {
         throw new Error('Job name is undefined. Please select a work first.');
       }
-      
+
       for (let i = 0; i < allWorks.length; i++) {
         const work = allWorks[i];
         try {

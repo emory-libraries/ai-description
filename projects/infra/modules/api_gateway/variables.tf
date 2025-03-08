@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# API Gateway variables
+# modules/api_gateway/variables.tf
 
 variable "deployment_stage" {
   description = "Deployment stage name for the environment"
@@ -36,5 +36,10 @@ variable "api_gateway_role_arn" {
 
 variable "authorizer_iam_role_arn" {
   description = "ARN for authorizer lambda role"
+  type        = string
+}
+
+variable "website_bucket_name" {
+  description = "Name of the S3 bucket containing the static website files"
   type        = string
 }

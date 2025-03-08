@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from './utils/apiUrls';
 
 /**
  * Hook to handle work data fetching and selection
@@ -20,9 +21,9 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
 
   const handleWorkSelect = useCallback(async (work) => {
     if (!work || (selectedWork && work.work_id === selectedWork.work_id)) {
-      return; 
+      return;
     }
-    
+
     setSelectedWork(work);
     onWorkSelect(work);
   }, [selectedWork, onWorkSelect]);
@@ -30,11 +31,12 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
   useEffect(() => {
     const fetchAllWorks = async () => {
       if (!token || !jobName) return;
-      
+
       try {
         setIsLoading(true);
+        const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
         const response = await fetch(
-          `/api/job_progress?job_name=${jobName}`,
+          url,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -68,7 +70,7 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         }
 
         setAllWorks(works);
-        
+
         if (initialWorkId) {
           const workToSelect = works.find(w => w.work_id === initialWorkId);
           if (workToSelect) {
@@ -82,7 +84,7 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         setError(err.message);
       } finally {
         setIsLoading(false);
-      } 
+      }
     };
 
     if (token && jobName) {

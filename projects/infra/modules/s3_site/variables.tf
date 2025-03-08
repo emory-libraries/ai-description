@@ -13,8 +13,18 @@ variable "website_bucket_id" {
   type        = string
 }
 
+variable "website_bucket_arn" {
+  description = "ARN where website lives"
+  type        = string
+}
+
 variable "uploads_bucket_id" {
   description = "ID of bucket where uploads live"
+  type        = string
+}
+
+variable "api_gateway_execution_arn" {
+  description = "ARN of API Gateway execution"
   type        = string
 }
 

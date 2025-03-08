@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { buildApiUrl } from './utils/apiUrls';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -21,7 +22,8 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/log_in`, {
+      const url = buildApiUrl(`/api/log_in`);
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

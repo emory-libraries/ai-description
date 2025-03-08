@@ -1,3 +1,8 @@
+/*
+* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+* Terms and the SOW between the parties dated 2025.
+*/
+
 import React, { createContext, useContext } from 'react';
 import { useWorkData } from './hooks/useWorkData';
 import { useBiasData } from './hooks/useBiasData';
@@ -9,40 +14,40 @@ export function BiasProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { jobName: stateJobName } = location.state || {};
-  
+
   // Extract jobName from URL path - improved extraction
   // Look for 'bias' in the path segments and take the next segment as jobName
   const pathMatch = location.pathname.match(/\/results\/bias\/([^\/]+)/);
   const pathJobName = pathMatch ? pathMatch[1] : '';
-  
+
   // Extract workId from hash fragment - improved parsing
   // The workId is expected to be after the '#' character
   const hashWorkId = location.hash.substring(1);
-  
+
   // Use the most specific information available
   const jobName = stateJobName || pathJobName;
   const workId = location.state?.workId || hashWorkId;
-  
+
   const navigateToJobs = () => navigate('/');
-  
+
   // Bias data state management
-  const { 
-    biasData, 
-    error: biasError, 
-    imageData, 
-    isLoading: biasLoading, 
-    selectedBias, 
-    loadBiasData, 
-    handleBiasSelect, 
-    handleBackToBiasList 
+  const {
+    biasData,
+    error: biasError,
+    imageData,
+    isLoading: biasLoading,
+    selectedBias,
+    loadBiasData,
+    handleBiasSelect,
+    handleBackToBiasList
   } = useBiasData(jobName);
-  
+
   // Work data state management
   const {
     allWorks,
     selectedWork,
     isLoading: worksLoading,
-    error: worksError, 
+    error: worksError,
     handleWorkSelect
   } = useWorkData(jobName, workId, loadBiasData);
 
@@ -57,12 +62,12 @@ export function BiasProvider({ children }) {
     selectedBias,
     handleBiasSelect,
     handleBackToBiasList,
-    
+
     // Work data
     allWorks,
     selectedWork,
     handleWorkSelect,
-    
+
     // Status
     jobName,
     workId,

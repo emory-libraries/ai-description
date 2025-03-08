@@ -23,11 +23,34 @@ locals {
 
   env_js_content = <<-EOT
     window.env = {
-      API_URL: "${var.api_url}",
+      API_URL: "${var.api_url}${var.deployment_stage}",
+      STAGE_NAME: "${var.deployment_stage}"
     };
   EOT
 }
 
+resource "aws_s3_bucket_policy" "website" {
+  bucket = var.website_bucket_id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowAPIGatewayAccess"
+        Effect = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${var.website_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" : "${var.api_gateway_execution_arn}/*"
+          }
+        }
+      }
+    ]
+  })
+}
 
 resource "aws_s3_bucket_cors_configuration" "uploads_cors" {
   bucket = var.uploads_bucket_id
@@ -74,6 +97,7 @@ resource "null_resource" "frontend_build" {
         -v "$(pwd)/build:/app/build" \
         -w /app \
         -e NODE_ENV=production \
+        -e PUBLIC_URL="/${var.deployment_stage}" \
         -e npm_config_cache=/.npm \
         node:18 \
         bash -c "mkdir -p /.npm && \
