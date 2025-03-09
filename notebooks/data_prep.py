@@ -10,12 +10,13 @@ import re
 
 import boto3
 import pandas as pd
+from tqdm import tqdm
 
-
-def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: str) -> tuple[str, str, str]:
+def populate_bucket(
+    bucket_name: str, image_fpath: str, context: str, metadata: str
+) -> tuple[str, str, str]:
     # Initialize S3 client
     s3_client = boto3.client("s3")
-
     # Upload image file
     image_filename = os.path.basename(image_fpath)
     image_key = f"images/{image_filename}"
@@ -45,13 +46,13 @@ def copy_s3_file_using_subprocess(
     dest_key: str,
 ) -> None:
     """Copy S3 file using subprocess"""
-    logging.info(f"Trying alternative method with AWS CLI for {source_key}")
+    logging.debug(f"Trying alternative method with AWS CLI for {source_key}")
 
     cmd = f"aws s3 cp s3://{source_bucket}/{source_key} s3://{dest_bucket}/{dest_key}"
     process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
     if process.returncode == 0:
-        logging.info(f"Successfully copied {source_key} using AWS CLI")
+        logging.debug(f"Successfully copied {source_key} using AWS CLI")
     else:
         logging.error(f"AWS CLI copy failed: {process.stderr}")
 
@@ -74,7 +75,7 @@ def copy_s3_file(
     """
     s3_client = boto3.client("s3")
     try:
-        logging.info(f"Copying {source_bucket}/{source_key} to {dest_bucket}/{dest_key}")
+        logging.debug(f"Copying {source_bucket}/{source_key} to {dest_bucket}/{dest_key}")
         response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
         file_content = response["Body"].read()
         s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_key)
@@ -92,11 +93,11 @@ def convert_page_to_index(page_string: str) -> int:
     # Handle "Front" case
     if page_string == "Front":
         return 0
-    
+
     # Handle "Back" case
     elif page_string == "Back":
         return 1  # Or another appropriate value
-    
+
     # Handle "Page X" case
     elif page_string.startswith("Page "):
         # Extract the number after "Page "
@@ -113,13 +114,13 @@ def prepare_images(
     original_bucket: str,
 ) -> list[str]:
     """Copy images from original_bucket to uploads_bucket and return their folder URI.
-    
+
     Images will be organized in uploads_bucket under job_name/work_id/images/
     """
     # Get work ID
     work_id = work_df['work_id'].iloc[0]
     # Create the destination path
-    destination_folder = f"{job_name}/{work_id}/images/"    
+    destination_folder = f"{job_name}/{work_id}/images/"
     # Loop through each row in the dataframe
     for _, row in work_df.iterrows():
         # Get the original file path/key and other necessary info
@@ -176,7 +177,7 @@ def translate_csv_to_job_objects(
     grouped_df = df.groupby("work_id")
 
     job_objects = []
-    for _, work_df in grouped_df:
+    for _, work_df in tqdm(grouped_df):
         images_s3_uris = prepare_images(
             work_df=work_df,
             job_name=job_name,
@@ -185,14 +186,15 @@ def translate_csv_to_job_objects(
         )
         metadata_s3_uri = prepare_metadata(
             work_df=work_df,
+            job_name=job_name,
             uploads_bucket=uploads_bucket,
         )
-        work_id = grouped_df["work_id"].iloc[0]
+        work_id = work_df["work_id"].iloc[0]
         job_object = {
             "work_id": work_id,
             "image_s3_uris": images_s3_uris,
             "original_metadata_s3_uri": metadata_s3_uri,
         }
         job_objects.append(job_object)
-        
+
     return job_objects
