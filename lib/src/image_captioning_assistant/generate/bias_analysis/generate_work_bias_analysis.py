@@ -29,7 +29,7 @@ def generate_work_bias_analysis(
     # If metadata was provided
     if original_metadata_s3_uri:
         # Retrieve it from S3
-        s3_path = S3Path(context_s3_uri)
+        s3_path = S3Path(original_metadata_s3_uri)
         original_metadata = load_to_str(
             s3_bucket=s3_path.bucket,
             s3_key=s3_path.key,
