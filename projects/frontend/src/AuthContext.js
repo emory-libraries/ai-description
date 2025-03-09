@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 // AuthContext.js
 
@@ -29,9 +29,5 @@ export const AuthProvider = ({ children }) => {
     return token ? { 'x-api-key': token } : {};
   };
 
-  return (
-    <AuthContext.Provider value={{ token, login, logout, getAuthHeaders }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ token, login, logout, getAuthHeaders }}>{children}</AuthContext.Provider>;
 };

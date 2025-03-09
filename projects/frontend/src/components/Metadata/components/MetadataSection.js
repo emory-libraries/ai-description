@@ -1,31 +1,33 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
-import {
-  Container,
-  Header,
-  Textarea,
-  SpaceBetween,
-  Box
-} from "@cloudscape-design/components";
+import { Container, Header, Textarea, SpaceBetween, Box } from '@cloudscape-design/components';
 import { useMetadataContext } from '../MetadataContext';
 
 function MetadataSection({ fieldKey, fieldValue }) {
   const { handleMetadataEdit } = useMetadataContext();
 
   // Skip certain fields from being displayed
-  if ([
-    'job_type', 'job_name', 'work_id', 'work_status',
-    'image_s3_uris', 'context_s3_uri', 'original_metadata_s3_uri',
-    'image_presigned_urls', 'metadata_biases'
-  ].includes(fieldKey)) {
+  if (
+    [
+      'job_type',
+      'job_name',
+      'work_id',
+      'work_status',
+      'image_s3_uris',
+      'context_s3_uri',
+      'original_metadata_s3_uri',
+      'image_presigned_urls',
+      'metadata_biases',
+    ].includes(fieldKey)
+  ) {
     return null;
   }
 
   // Format the field key for display
-  const formattedKey = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const formattedKey = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
   // Determine if we have a special field structure with a rationale
   let rationale = null;
@@ -52,11 +54,11 @@ function MetadataSection({ fieldKey, fieldValue }) {
   }
 
   // Convert the editable value to a string for display
-  const stringValue = isList ?
-    editableValue.join(' | ') :
-    (typeof editableValue === 'object' ?
-      JSON.stringify(editableValue, null, 2) :
-      String(editableValue || ''));
+  const stringValue = isList
+    ? editableValue.join(' | ')
+    : typeof editableValue === 'object'
+      ? JSON.stringify(editableValue, null, 2)
+      : String(editableValue || '');
 
   const handleChange = ({ detail }) => {
     try {
@@ -64,7 +66,10 @@ function MetadataSection({ fieldKey, fieldValue }) {
 
       // Handle different value types
       if (isList) {
-        newValue = detail.value.split('|').map(item => item.trim()).filter(Boolean);
+        newValue = detail.value
+          .split('|')
+          .map((item) => item.trim())
+          .filter(Boolean);
       } else if (detail.value.trim().startsWith('{') || detail.value.trim().startsWith('[')) {
         newValue = JSON.parse(detail.value);
       } else {
@@ -75,7 +80,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
       if (updatePath) {
         handleMetadataEdit(fieldKey, {
           ...fieldValue,
-          [updatePath]: newValue
+          [updatePath]: newValue,
         });
       } else {
         handleMetadataEdit(fieldKey, newValue);
@@ -85,7 +90,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
       if (updatePath) {
         handleMetadataEdit(fieldKey, {
           ...fieldValue,
-          [updatePath]: detail.value
+          [updatePath]: detail.value,
         });
       } else {
         handleMetadataEdit(fieldKey, detail.value);
@@ -108,7 +113,7 @@ function MetadataSection({ fieldKey, fieldValue }) {
           value={stringValue}
           onChange={handleChange}
           rows={5}
-          placeholder={isList ? "e.g. value1 | value2 | value3" : `Enter ${formattedKey.toLowerCase()} here...`}
+          placeholder={isList ? 'e.g. value1 | value2 | value3' : `Enter ${formattedKey.toLowerCase()} here...`}
         />
       </SpaceBetween>
     </Container>

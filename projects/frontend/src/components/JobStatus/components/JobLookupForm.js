@@ -1,19 +1,12 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 //components/JobStatus/components/JobLookupForm.js
 
 import React from 'react';
-import {
-  Container,
-  Header,
-  Button,
-  Form,
-  FormField,
-  Input
-} from "@cloudscape-design/components";
+import { Container, Header, Button, Form, FormField, Input } from '@cloudscape-design/components';
 
 const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
   const handleFormSubmit = (e) => {
@@ -32,12 +25,7 @@ const JobLookupForm = ({ jobName, setJobName, handleSubmitJobName }) => {
       <form onSubmit={handleFormSubmit}>
         <Form
           actions={
-            <Button
-              variant="primary"
-              formAction="submit"
-              type="submit"
-              disabled={!jobName.trim()}
-            >
+            <Button variant="primary" formAction="submit" type="submit" disabled={!jobName.trim()}>
               Submit
             </Button>
           }

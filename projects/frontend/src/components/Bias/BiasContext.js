@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 import React, { createContext, useContext } from 'react';
 import { useWorkData } from './hooks/useWorkData';
@@ -40,7 +40,7 @@ export function BiasProvider({ children }) {
     selectedBias,
     loadBiasData,
     handleBiasSelect,
-    handleBackToBiasList
+    handleBackToBiasList,
   } = useBiasData(jobName);
 
   // Work data state management
@@ -49,7 +49,7 @@ export function BiasProvider({ children }) {
     selectedWork,
     isLoading: worksLoading,
     error: worksError,
-    handleWorkSelect
+    handleWorkSelect,
   } = useWorkData(jobName, workId, loadBiasData);
 
   const error = biasError || worksError;
@@ -74,20 +74,16 @@ export function BiasProvider({ children }) {
     workId,
     error,
     isLoading,
-    navigateToJobs
+    navigateToJobs,
   };
 
-  return (
-    <BiasContext.Provider value={contextValue}>
-      {children}
-    </BiasContext.Provider>
-  );
+  return <BiasContext.Provider value={contextValue}>{children}</BiasContext.Provider>;
 }
 
 export const useBiasContext = () => {
   const context = useContext(BiasContext);
   if (!context) {
-    throw new Error("useBiasContext must be used within a BiasProvider");
+    throw new Error('useBiasContext must be used within a BiasProvider');
   }
   return context;
 };

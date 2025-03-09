@@ -1,14 +1,13 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { buildApiUrl } from './utils/apiUrls';
 import { buildFrontendPath } from './utils/frontendPaths';
-
 
 const Login = () => {
   const [apiKey, setApiKey] = useState('');
@@ -28,7 +27,7 @@ const Login = () => {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'x-api-key': apiKey
+          'x-api-key': apiKey,
         },
       });
 
@@ -37,15 +36,14 @@ const Login = () => {
       }
 
       // If the API key is valid, store it
-      console.log("Login successful, storing token");
+      console.log('Login successful, storing token');
       login(apiKey);
-      console.log("About to navigate to home");
+      console.log('About to navigate to home');
       // Add a short delay before navigation to ensure state is updated
       setTimeout(() => {
         navigate(buildFrontendPath('/'), { replace: true });
       }, 100);
-      console.log("Navigation command issued");
-
+      console.log('Navigation command issued');
     } catch (error) {
       setError(error.message || 'An unexpected error occurred');
     } finally {

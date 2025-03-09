@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
 import {
   Container,
@@ -10,25 +10,20 @@ import {
   Spinner,
   SideNavigation,
   SpaceBetween,
-  StatusIndicator
-} from "@cloudscape-design/components";
+  StatusIndicator,
+} from '@cloudscape-design/components';
 
 /**
  * Navigation component for work selection
  */
-export const WorkNavigation = ({
-  allWorks,
-  selectedWork,
-  isLoading,
-  onWorkSelect
-}) => {
+export const WorkNavigation = ({ allWorks, selectedWork, isLoading, onWorkSelect }) => {
   const getStatusType = (status) => {
     if (status === 'READY FOR REVIEW') return 'success';
     if (status === 'FAILED TO PROCESS') return 'error';
     return 'in-progress';
   };
 
-  const workNavigationItems = allWorks.map(work => ({
+  const workNavigationItems = allWorks.map((work) => ({
     type: 'link',
     text: `${work.work_id}`,
     href: `#${work.work_id}`,
@@ -50,12 +45,12 @@ export const WorkNavigation = ({
           items={workNavigationItems}
           header={{
             text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
-            href: '#'
+            href: '#',
           }}
           onFollow={({ detail }) => {
             if (!detail.external) {
               const workId = detail.href.substring(1);
-              const selectedWork = allWorks.find(work => work.work_id === workId);
+              const selectedWork = allWorks.find((work) => work.work_id === workId);
               if (selectedWork) {
                 onWorkSelect(selectedWork);
               }

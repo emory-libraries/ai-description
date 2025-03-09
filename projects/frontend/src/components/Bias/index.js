@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
 import {
   AppLayout,
@@ -14,8 +14,8 @@ import {
   Alert,
   Grid,
   Spinner,
-  BreadcrumbGroup
-} from "@cloudscape-design/components";
+  BreadcrumbGroup,
+} from '@cloudscape-design/components';
 import { AWSSideNavigation } from '../Navigation';
 import { WorkNavigation } from './components/WorkNavigation';
 import { BiasTable } from './components/BiasTable';
@@ -36,12 +36,12 @@ function BiasContent() {
     handleWorkSelect,
     error,
     isLoading,
-    navigateToJobs
+    navigateToJobs,
   } = useBiasContext();
 
   const breadcrumbItems = [
     { text: 'Job results search', href: buildFrontendPath('/') },
-    { text: `Bias Analysis: ${jobName || ''}` }
+    { text: `Bias Analysis: ${jobName || ''}` },
   ];
 
   return (
@@ -115,15 +115,9 @@ function BiasContent() {
                         </Alert>
                       </Box>
                     ) : selectedBias ? (
-                      <BiasDetails
-                        bias={selectedBias}
-                        imageUrl={imageData[selectedBias.imageUri]}
-                      />
+                      <BiasDetails bias={selectedBias} imageUrl={imageData[selectedBias.imageUri]} />
                     ) : (
-                      <BiasTable
-                        biasData={biasData}
-                        onBiasSelect={handleBiasSelect}
-                      />
+                      <BiasTable biasData={biasData} onBiasSelect={handleBiasSelect} />
                     )}
                   </SpaceBetween>
                 ) : (

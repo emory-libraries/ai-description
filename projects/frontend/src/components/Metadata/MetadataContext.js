@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 // components/Metadata/MetadataContext.js
 
@@ -34,7 +34,7 @@ export function MetadataProvider({ children }) {
     token,
     logout,
     navigate,
-    setError
+    setError,
   });
 
   const { getPresignedUrl } = useImageLoader({ token, logout, navigate });
@@ -53,7 +53,7 @@ export function MetadataProvider({ children }) {
     allWorks,
     fetchWorkDetails,
     setAllWorks,
-    setSelectedWork
+    setSelectedWork,
   });
 
   const handleMetadataEdit = (key, value) => {
@@ -64,14 +64,14 @@ export function MetadataProvider({ children }) {
       processedValue = { ...value };
     }
 
-    setMetadata(prev => ({
+    setMetadata((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
 
-    setModifiedFields(prev => ({
+    setModifiedFields((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
   };
 
@@ -88,7 +88,7 @@ export function MetadataProvider({ children }) {
       setMetadata(workDetails);
 
       if (workDetails.image_s3_uris && workDetails.image_s3_uris.length > 0) {
-        const imagePromises = workDetails.image_s3_uris.map(async uri => {
+        const imagePromises = workDetails.image_s3_uris.map(async (uri) => {
           const imageUrl = await getPresignedUrl(uri);
           return { uri, imageUrl };
         });
@@ -119,7 +119,7 @@ export function MetadataProvider({ children }) {
         setAllWorks(works);
 
         if (workId) {
-          const workToSelect = works.find(w => w.work_id === workId);
+          const workToSelect = works.find((w) => w.work_id === workId);
           if (workToSelect) {
             await handleWorkSelect(workToSelect);
           }
@@ -154,9 +154,5 @@ export function MetadataProvider({ children }) {
     fetchAllWorks,
   };
 
-  return (
-    <MetadataContext.Provider value={contextValue}>
-      {children}
-    </MetadataContext.Provider>
-  );
+  return <MetadataContext.Provider value={contextValue}>{children}</MetadataContext.Provider>;
 }

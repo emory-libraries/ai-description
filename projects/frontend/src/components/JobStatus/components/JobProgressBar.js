@@ -1,10 +1,10 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 import React from 'react';
-import { Box } from "@cloudscape-design/components";
+import { Box } from '@cloudscape-design/components';
 
 const JobProgressBar = ({ statusCounts, totalWorks }) => {
   // Calculate percentages for each status
@@ -16,11 +16,11 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
 
   // Define status colors
   const statusColors = {
-    inQueue: "#CCCCCC", // grey
-    inProgress: "#F2C166", // yellow
-    readyForReview: "#5095E0", // blue
-    reviewed: "#60BD68", // green
-    failed: "#E05050"  // red
+    inQueue: '#CCCCCC', // grey
+    inProgress: '#F2C166', // yellow
+    readyForReview: '#5095E0', // blue
+    reviewed: '#60BD68', // green
+    failed: '#E05050', // red
   };
 
   return (
@@ -101,31 +101,46 @@ const JobProgressBar = ({ statusCounts, totalWorks }) => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
           {statusCounts.inQueue > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.inQueue, borderRadius: '2px' }}></div>
+              <div
+                style={{ width: '12px', height: '12px', backgroundColor: statusColors.inQueue, borderRadius: '2px' }}
+              ></div>
               <span>In Queue ({statusCounts.inQueue})</span>
             </div>
           )}
           {statusCounts.inProgress > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.inProgress, borderRadius: '2px' }}></div>
+              <div
+                style={{ width: '12px', height: '12px', backgroundColor: statusColors.inProgress, borderRadius: '2px' }}
+              ></div>
               <span>In Progress ({statusCounts.inProgress})</span>
             </div>
           )}
           {statusCounts.readyForReview > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.readyForReview, borderRadius: '2px' }}></div>
+              <div
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  backgroundColor: statusColors.readyForReview,
+                  borderRadius: '2px',
+                }}
+              ></div>
               <span>Ready for Review ({statusCounts.readyForReview})</span>
             </div>
           )}
           {statusCounts.reviewed > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.reviewed, borderRadius: '2px' }}></div>
+              <div
+                style={{ width: '12px', height: '12px', backgroundColor: statusColors.reviewed, borderRadius: '2px' }}
+              ></div>
               <span>Reviewed ({statusCounts.reviewed})</span>
             </div>
           )}
           {statusCounts.failed > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: statusColors.failed, borderRadius: '2px' }}></div>
+              <div
+                style={{ width: '12px', height: '12px', backgroundColor: statusColors.failed, borderRadius: '2px' }}
+              ></div>
               <span>Failed ({statusCounts.failed})</span>
             </div>
           )}

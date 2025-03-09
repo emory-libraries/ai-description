@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
 import {
   Container,
@@ -10,17 +10,12 @@ import {
   Spinner,
   SideNavigation,
   SpaceBetween,
-  StatusIndicator
-} from "@cloudscape-design/components";
+  StatusIndicator,
+} from '@cloudscape-design/components';
 import { useMetadataContext } from '../MetadataContext';
 
 function WorkNavigation() {
-  const {
-    allWorks,
-    selectedWork,
-    isLoading,
-    handleWorkSelect
-  } = useMetadataContext();
+  const { allWorks, selectedWork, isLoading, handleWorkSelect } = useMetadataContext();
 
   const getStatusIndicatorProps = (status) => {
     switch (status) {
@@ -37,7 +32,7 @@ function WorkNavigation() {
     }
   };
 
-  const workNavigationItems = allWorks.map(work => ({
+  const workNavigationItems = allWorks.map((work) => ({
     type: 'link',
     text: work.work_id,
     href: `#${work.work_id}`,
@@ -59,7 +54,7 @@ function WorkNavigation() {
           items={workNavigationItems}
           header={{
             text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
-            href: '#'
+            href: '#',
           }}
           onFollow={({ detail }) => {
             if (!detail.external) {
@@ -67,7 +62,7 @@ function WorkNavigation() {
               const workId = detail.href.substring(1);
 
               // Find the work with this ID
-              const workToSelect = allWorks.find(work => work.work_id === workId);
+              const workToSelect = allWorks.find((work) => work.work_id === workId);
 
               // If found, select this work
               if (workToSelect) {

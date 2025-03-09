@@ -1,12 +1,12 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 
 // src/utils/apiUrls.js
 
 export const getApiBaseUrl = () => {
-    return window.env?.API_URL || 'https://api-url-not-configured.example';
+  return window.env?.API_URL || 'https://api-url-not-configured.example';
 };
 
 export const buildApiUrl = (endpoint) => {
