@@ -193,9 +193,10 @@ def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
             try:
                 files = future.result()
                 all_files.extend(files)
-            except Exception as e:
+            except Exception as exc:
                 uri = future_to_uri[future]
-                logger.error(f"Error processing {uri}: {e}")
+                logger.error(f"Error processing {uri}: {exc}")
+                raise exc
 
     # Remove any duplicates (in case folders overlapped)
     return list(dict.fromkeys(all_files))
