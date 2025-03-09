@@ -25,13 +25,15 @@ function WorkNavigation() {
   const getStatusIndicatorProps = (status) => {
     switch (status) {
       case 'READY FOR REVIEW':
-        return { type: 'pending', children: 'Ready for review' };
+        return { type: 'info', children: 'Ready for review' };
       case 'REVIEWED':
         return { type: 'success', children: 'Reviewed' };
       case 'IN PROGRESS':
         return { type: 'in-progress', children: 'In progress' };
+      case 'FAILED TO PROCESS':
+        return { type: 'error', children: 'Failed to process' };
       default:
-        return { type: 'info', children: status };
+        return { type: 'pending', children: status };
     }
   };
 

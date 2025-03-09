@@ -3,17 +3,19 @@
 * Terms and the SOW between the parties dated 2025.
 */
 
+// components/JobStatus/components/JobStatusContainer.js
+
 import React from 'react';
 import {
   Container,
   Header,
   SpaceBetween,
   Button,
-  Box
+  Box,
 } from "@cloudscape-design/components";
 import JobProgressBar from './JobProgressBar';
 
-const JobStatusContainer = ({ job, navigate }) => {
+const JobStatusContainer = ({ job, navigate, onRefresh }) => {
   const getStatusCounts = (job) => {
     const inQueue = job.works.filter(w => w.work_status === 'IN QUEUE').length;
     const inProgress = job.works.filter(w => w.work_status === 'IN PROGRESS').length;
@@ -49,6 +51,12 @@ const JobStatusContainer = ({ job, navigate }) => {
     }
   };
 
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh(job.job_name);
+    }
+  };
+
   const statusCounts = getStatusCounts(job);
   const totalWorks = job.works.length;
 
@@ -58,14 +66,21 @@ const JobStatusContainer = ({ job, navigate }) => {
         <Header
           variant="h2"
           actions={
-            statusCounts.readyForReview + statusCounts.reviewed > 0 && (
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button
+                iconName="refresh"
+                onClick={handleRefresh}
+                ariaLabel="Refresh job status"
+              >
+                Refresh
+              </Button>
               <Button
                 variant="primary"
                 onClick={() => handleViewResults(job, job.works[0])}
               >
                 View Results
               </Button>
-            )
+            </SpaceBetween>
           }
           description={`Job Type: ${job.job_type.toUpperCase()}`}
         >

@@ -3,6 +3,8 @@
 * Terms and the SOW between the parties dated 2025.
 */
 
+// components/JobStatus/index.js
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
@@ -31,6 +33,11 @@ const JobStatus = () => {
     error,
     checkJobProgress
   } = useJobStatus(token, navigate);
+
+  const handleRefresh = (jobName) => {
+    setSubmittedJobName(jobName);
+    checkJobProgress(jobName);
+  };
 
   const handleSubmitJobName = (e) => {
     e.preventDefault();
@@ -66,7 +73,8 @@ const JobStatus = () => {
                 key={job.job_name}
                 job={job}
                 navigate={navigate}
-              />
+                onRefresh={handleRefresh}
+                />
             ))}
 
             {submittedJobName && jobs.size === 0 && !isLoading && (

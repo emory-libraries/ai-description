@@ -3,6 +3,8 @@
 * Terms and the SOW between the parties dated 2025.
 */
 
+// components/JobStatus/hooks/useJobStatus.js
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 import { buildApiUrl } from '../../../utils/apiUrls';

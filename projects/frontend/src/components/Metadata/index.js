@@ -53,7 +53,7 @@ function MetadataContent() {
     } else if (isWorkFailed) {
       return (
         <Box padding="l" textAlign="center">
-          <h2>Processing Failed</h2>
+          <h2>Work Status: {selectedWork.work_status}</h2>
           <p>This document could not be processed successfully.</p>
         </Box>
       );
