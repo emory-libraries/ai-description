@@ -15,7 +15,7 @@ const useJobStatus = (token, navigate) => {
     const savedJobs = localStorage.getItem('jobStatus');
     return savedJobs ? new Map(JSON.parse(savedJobs)) : new Map();
   });
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submittedJobName, setSubmittedJobName] = useState(() => {
@@ -36,15 +36,22 @@ const useJobStatus = (token, navigate) => {
     }
   }, [submittedJobName]);
   const { getAuthHeaders } = useAuth();
-  const checkJobProgress = useCallback(async () => {
-    if (!token || !submittedJobName) return;
+  const checkJobProgress = useCallback(async (jobNameParam, isRefreshOperation = false) => {
+    const nameToUse = jobNameParam || submittedJobName;
+    if (!token || !nameToUse) return;
 
     try {
-      setIsLoading(true);
+      if (isRefreshOperation) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       const url = buildApiUrl('/api/job_progress');
-      console.log(`Fetching from: ${url}?job_name=${submittedJobName}`);
+      console.log(`Fetching from: ${url}?job_name=${nameToUse}`);
+
+      // Use nameToUse in the API call
       const response = await fetch(
-        `${url}?job_name=${submittedJobName}`,
+        `${url}?job_name=${nameToUse}`,
         {
           headers: {
             ...getAuthHeaders(),
@@ -115,7 +122,11 @@ const useJobStatus = (token, navigate) => {
       console.error('Error checking job progress:', err);
       setError('Failed to fetch job progress. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (isRefreshOperation) {
+        setIsRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   }, [token, submittedJobName, logout, navigate, getAuthHeaders]);
 
@@ -130,6 +141,7 @@ const useJobStatus = (token, navigate) => {
     setJobs,
     isLoading,
     error,
+    isRefreshing,
     submittedJobName,
     setSubmittedJobName,
     checkJobProgress

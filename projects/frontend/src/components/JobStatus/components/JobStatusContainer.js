@@ -12,10 +12,11 @@ import {
   SpaceBetween,
   Button,
   Box,
+  Spinner,
 } from "@cloudscape-design/components";
 import JobProgressBar from './JobProgressBar';
 
-const JobStatusContainer = ({ job, navigate, onRefresh }) => {
+const JobStatusContainer = ({ job, navigate, onRefresh, isRefreshing }) => {
   const getStatusCounts = (job) => {
     const inQueue = job.works.filter(w => w.work_status === 'IN QUEUE').length;
     const inProgress = job.works.filter(w => w.work_status === 'IN PROGRESS').length;
@@ -51,12 +52,6 @@ const JobStatusContainer = ({ job, navigate, onRefresh }) => {
     }
   };
 
-  const handleRefresh = () => {
-    if (onRefresh) {
-      onRefresh(job.job_name);
-    }
-  };
-
   const statusCounts = getStatusCounts(job);
   const totalWorks = job.works.length;
 
@@ -67,13 +62,15 @@ const JobStatusContainer = ({ job, navigate, onRefresh }) => {
           variant="h2"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button
-                iconName="refresh"
-                onClick={handleRefresh}
-                ariaLabel="Refresh job status"
-              >
-                Refresh
-              </Button>
+              <div className="refresh-container">
+                <Button
+                  onClick={() => onRefresh(job.job_name)}
+                  loading={isRefreshing}
+                >
+                  Refresh
+                </Button>
+                {isRefreshing && <Spinner size="normal" />}
+              </div>
               <Button
                 variant="primary"
                 onClick={() => handleViewResults(job, job.works[0])}

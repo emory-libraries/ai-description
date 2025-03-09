@@ -31,12 +31,13 @@ const JobStatus = () => {
     setSubmittedJobName,
     isLoading,
     error,
-    checkJobProgress
+    isRefreshing,
+    checkJobProgress,
   } = useJobStatus(token, navigate);
 
   const handleRefresh = (jobName) => {
     setSubmittedJobName(jobName);
-    checkJobProgress(jobName);
+    checkJobProgress(jobName, true);
   };
 
   const handleSubmitJobName = (e) => {
@@ -74,6 +75,7 @@ const JobStatus = () => {
                 job={job}
                 navigate={navigate}
                 onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
                 />
             ))}
 
