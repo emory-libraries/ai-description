@@ -69,6 +69,8 @@ resource "aws_iam_policy" "service_lambda_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
         ]
         Resource = [
           var.uploads_bucket_arn,
