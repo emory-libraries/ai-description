@@ -5,16 +5,15 @@
 import json
 import logging
 import os
-import subprocess
 import re
+import subprocess
 
 import boto3
 import pandas as pd
 from tqdm import tqdm
 
-def populate_bucket(
-    bucket_name: str, image_fpath: str, context: str, metadata: str
-) -> tuple[str, str, str]:
+
+def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: str) -> tuple[str, str, str]:
     # Initialize S3 client
     s3_client = boto3.client("s3")
     # Upload image file
@@ -89,6 +88,7 @@ def copy_s3_file(
             dest_key=dest_key,
         )
 
+
 def convert_page_to_index(page_string: str) -> int:
     # Handle "Front" case
     if page_string == "Front":
@@ -101,7 +101,7 @@ def convert_page_to_index(page_string: str) -> int:
     # Handle "Page X" case
     elif page_string.startswith("Page "):
         # Extract the number after "Page "
-        match = re.search(r'Page (\d+)', page_string)
+        match = re.search(r"Page (\d+)", page_string)
         if match:
             return int(match.group(1))
     raise ValueError("Page was not formatted as expected")
@@ -118,13 +118,13 @@ def prepare_images(
     Images will be organized in uploads_bucket under job_name/work_id/images/
     """
     # Get work ID
-    work_id = work_df['work_id'].iloc[0]
+    work_id = work_df["work_id"].iloc[0]
     # Create the destination path
     destination_folder = f"{job_name}/{work_id}/images/"
     # Loop through each row in the dataframe
     for _, row in work_df.iterrows():
         # Get the original file path/key and other necessary info
-        page_sha = row['page_sha1']
+        page_sha = row["page_sha1"]
         page_index = convert_page_to_index(row["page_title"])
         # Copy the file with the new naming convention
         copy_s3_file(
@@ -151,24 +151,24 @@ def prepare_metadata(
     }
     # Define the metadata S3 URI
     work_id = work_df["work_id"].iloc[0]
-    metadata_s3_uri = f"{job_name}/{work_id}/metadata.json"
+    metadata_s3_key = f"{job_name}/{work_id}/metadata.json"
     # Write metadata to S3
     s3 = boto3.client("s3")
     s3.put_object(
         Bucket=uploads_bucket,
-        Key=metadata_s3_uri,
+        Key=metadata_s3_key,
         Body=json.dumps(metadata),
         ContentType="application/json",
     )
-    # Create the object
-    return metadata_s3_uri
+    # Create the URI
+    return f"s3://{uploads_bucket}/{metadata_s3_key}"
 
 
 def translate_csv_to_job_objects(
     csv_path: str,
     job_name: str,
     uploads_bucket: str,
-    original_bucket: str = "fedora-cor-binaries"
+    original_bucket: str = "fedora-cor-binaries",
 ) -> list[dict]:
     """Translate CSV into job objects."""
     # Load data
