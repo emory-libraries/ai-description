@@ -5,106 +5,11 @@
 import json
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import re
 
 import boto3
 import pandas as pd
-
-
-def copy_s3_file(
-    source_sha: str,
-    dest_bucket: str,
-    source_bucket: str = "fedora-cor-binaries",
-    dest_folder: str = "images",
-):
-    """
-    Copy a file from source bucket to destination bucket using get_object and put_object
-    instead of copy_object to avoid permission issues.
-
-    Args:
-        source_sha (str): SHA1 hash of the source file
-        source_bucket (str): Source S3 bucket name
-        dest_bucket (str): Destination S3 bucket name
-        dest_folder (str): Destination folder within the bucket
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    s3_client = boto3.client("s3")
-
-    source_path = source_sha
-    dest_path = f"{dest_folder}/{source_sha}"
-
-    try:
-        logging.info(f"Copying {source_bucket}/{source_path} to {dest_bucket}/{dest_path}")
-
-        # Method 1: Using memory buffer
-        response = s3_client.get_object(Bucket=source_bucket, Key=source_path)
-        file_content = response["Body"].read()
-
-        s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_path)
-        return True
-    except Exception as e:
-        logging.error(f"Error copying {source_sha}: {str(e)}")
-
-        # If the first method fails, try using the AWS CLI command directly
-        try:
-            logging.info(f"Trying alternative method with AWS CLI for {source_sha}")
-            import subprocess
-
-            cmd = f"aws s3 cp s3://{source_bucket}/{source_path} s3://{dest_bucket}/{dest_path}"
-            process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-
-            if process.returncode == 0:
-                logging.info(f"Successfully copied {source_sha} using AWS CLI")
-                return True
-            else:
-                logging.error(f"AWS CLI copy failed: {process.stderr}")
-                return False
-        except Exception as cli_error:
-            logging.error(f"Error with AWS CLI method for {source_sha}: {str(cli_error)}")
-            return False
-
-
-def batch_copy_files_from_dataframe(df: pd.DataFrame, max_workers: int = 5) -> dict:
-    """
-    Process the dataframe and copy all page files to the destination bucket.
-
-    Args:
-        df (pandas.DataFrame): DataFrame with work_id, page_sha1, page_title columns
-        max_workers (int): Maximum number of concurrent copy operations
-
-    Returns:
-        dict: Summary of copy operations with success and failure counts
-    """
-    # Extract all unique SHA1s from the dataframe
-    all_sha1s = df["page_sha1"].unique().tolist()
-
-    results = {"total": len(all_sha1s), "success": 0, "failure": 0, "failed_shas": []}
-
-    logging.info(f"Starting copy of {len(all_sha1s)} files to the destination bucket")
-
-    # Use ThreadPoolExecutor for parallel processing
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_sha = {executor.submit(copy_s3_file, sha): sha for sha in all_sha1s}
-
-        for future in future_to_sha:
-            sha = future_to_sha[future]
-            try:
-                success = future.result()
-                if success:
-                    results["success"] += 1
-                else:
-                    results["failure"] += 1
-                    results["failed_shas"].append(sha)
-            except Exception as e:
-                logging.error(f"Exception for SHA {sha}: {str(e)}")
-                results["failure"] += 1
-                results["failed_shas"].append(sha)
-
-    logging.info(f"Copy operation complete. Success: {results['success']}, Failures: {results['failure']}")
-
-    return results
 
 
 def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: str) -> tuple[str, str, str]:
@@ -133,83 +38,161 @@ def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: 
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
-def create_metadata_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
-    """Create metadata job objects."""
-    # Group by work_id
-    grouped = df.groupby("work_id")
+def copy_s3_file_using_subprocess(
+    source_bucket: str,
+    source_key: str,
+    dest_bucket: str,
+    dest_key: str,
+) -> None:
+    """Copy S3 file using subprocess"""
+    logging.info(f"Trying alternative method with AWS CLI for {source_key}")
 
-    result = []
-    for work_id, group in grouped:
-        # Create a dictionary to easily look up pages by title
-        pages_dict = dict(zip(group["page_title"], group["page_sha1"]))
+    cmd = f"aws s3 cp s3://{source_bucket}/{source_key} s3://{dest_bucket}/{dest_key}"
+    process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
-        # Order pages as Front -> Back
-        page_shas = []
-        if "Front" in pages_dict:
-            page_shas.append(pages_dict["Front"])
-        if "Back" in pages_dict:
-            page_shas.append(pages_dict["Back"])
-
-        # Create the object
-        obj = {
-            "work_id": work_id,
-            "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
-        }
-        result.append(obj)
-
-    return result
+    if process.returncode == 0:
+        logging.info(f"Successfully copied {source_key} using AWS CLI")
+    else:
+        logging.error(f"AWS CLI copy failed: {process.stderr}")
 
 
-def create_bias_job_objects(df: pd.DataFrame, bucket_name: str) -> list[dict]:
-    """Create bias job objects."""
-    # Group by work_id
-    grouped = df.groupby("work_id")
+def copy_s3_file(
+    source_bucket: str,
+    source_key: str,
+    dest_bucket: str,
+    dest_key: str,
+) -> None:
+    """
+    Copy a file from source bucket to destination bucket using get_object and put_object
+    instead of copy_object to avoid permission issues.
 
-    result = []
-    for work_id, group in grouped:
-        # Extract page numbers and sort them
-        page_info = []
-        for _, row in group.iterrows():
-            page_title = row["page_title"]
-            # Extract numeric part from page title (e.g., "Page 1" -> 1)
-            try:
-                page_num = int(page_title.split(" ")[1])
-                page_info.append((page_num, row["page_sha1"]))
-            except (IndexError, ValueError):
-                # Handle cases where page_title doesn't follow "Page X" format
-                page_info.append((999999, row["page_sha1"]))  # Put non-standard pages at the end
+    Args:
+        source_bucket (str): Bucket of source file
+        source_key (str): Key the source file
+        dest_bucket (str): Bucket of destination file
+        dest_key (str): Key of destination file
+    """
+    s3_client = boto3.client("s3")
+    try:
+        logging.info(f"Copying {source_bucket}/{source_key} to {dest_bucket}/{dest_key}")
+        response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
+        file_content = response["Body"].read()
+        s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_key)
 
-        # Sort by page number
-        page_info.sort()
-
-        # Get ordered page_shas
-        page_shas = [sha for _, sha in page_info]
-
-        # Get title and abstract (should be the same for all rows in group)
-        title = group["title"].iloc[0]
-        abstract = group["abstract"].iloc[0]
-
-        # Create metadata dictionary
-        metadata = {"title": title, "abstract": abstract}
-
-        # Define the metadata S3 URI
-        metadata_s3_uri = f"metadata/{work_id}.json"
-
-        # Write metadata to S3
-        s3 = boto3.client("s3")
-        s3.put_object(
-            Bucket=bucket_name,
-            Key=f"metadata/{work_id}.json",
-            Body=json.dumps(metadata),
-            ContentType="application/json",
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        copy_s3_file_using_subprocess(
+            source_bucket=source_bucket,
+            source_key=source_key,
+            dest_bucket=dest_bucket,
+            dest_key=dest_key,
         )
 
-        # Create the object
-        obj = {
+def convert_page_to_index(page_string: str) -> int:
+    # Handle "Front" case
+    if page_string == "Front":
+        return 0
+    
+    # Handle "Back" case
+    elif page_string == "Back":
+        return 1  # Or another appropriate value
+    
+    # Handle "Page X" case
+    elif page_string.startswith("Page "):
+        # Extract the number after "Page "
+        match = re.search(r'Page (\d+)', page_string)
+        if match:
+            return int(match.group(1))
+    raise ValueError("Page was not formatted as expected")
+
+
+def prepare_images(
+    work_df: pd.DataFrame,
+    job_name: str,
+    uploads_bucket: str,
+    original_bucket: str,
+) -> list[str]:
+    """Copy images from original_bucket to uploads_bucket and return their folder URI.
+    
+    Images will be organized in uploads_bucket under job_name/work_id/images/
+    """
+    # Get work ID
+    work_id = work_df['work_id'].iloc[0]
+    # Create the destination path
+    destination_folder = f"{job_name}/{work_id}/images/"    
+    # Loop through each row in the dataframe
+    for _, row in work_df.iterrows():
+        # Get the original file path/key and other necessary info
+        page_sha = row['page_sha1']
+        page_index = convert_page_to_index(row["page_title"])
+        # Copy the file with the new naming convention
+        copy_s3_file(
+            source_bucket=original_bucket,
+            source_key=page_sha,
+            dest_bucket=uploads_bucket,
+            dest_key=f"{destination_folder}page_{page_index}_{page_sha}",
+        )
+
+    # Return the destination folder URI in S3 format
+    return [f"s3://{uploads_bucket}/{destination_folder}"]
+
+
+def prepare_metadata(
+    work_df: pd.DataFrame,
+    job_name: str,
+    uploads_bucket: str,
+) -> str:
+    """Prepare metadata."""
+    # Create metadata dictionary
+    metadata = {
+        "title": work_df["title"].iloc[0],
+        "abstract": work_df["abstract"].iloc[0],
+    }
+    # Define the metadata S3 URI
+    work_id = work_df["work_id"].iloc[0]
+    metadata_s3_uri = f"{job_name}/{work_id}/metadata.json"
+    # Write metadata to S3
+    s3 = boto3.client("s3")
+    s3.put_object(
+        Bucket=uploads_bucket,
+        Key=metadata_s3_uri,
+        Body=json.dumps(metadata),
+        ContentType="application/json",
+    )
+    # Create the object
+    return metadata_s3_uri
+
+
+def translate_csv_to_job_objects(
+    csv_path: str,
+    job_name: str,
+    uploads_bucket: str,
+    original_bucket: str = "fedora-cor-binaries"
+) -> list[dict]:
+    """Translate CSV into job objects."""
+    # Load data
+    df = pd.read_csv(csv_path)
+    # Group by work_id
+    grouped_df = df.groupby("work_id")
+
+    job_objects = []
+    for _, work_df in grouped_df:
+        images_s3_uris = prepare_images(
+            work_df=work_df,
+            job_name=job_name,
+            uploads_bucket=uploads_bucket,
+            original_bucket=original_bucket,
+        )
+        metadata_s3_uri = prepare_metadata(
+            work_df=work_df,
+            uploads_bucket=uploads_bucket,
+        )
+        work_id = grouped_df["work_id"].iloc[0]
+        job_object = {
             "work_id": work_id,
-            "image_s3_uris": [f"s3://{bucket_name}/images/{sha}" for sha in page_shas],
+            "image_s3_uris": images_s3_uris,
             "original_metadata_s3_uri": metadata_s3_uri,
         }
-        result.append(obj)
-
-    return result
+        job_objects.append(job_object)
+        
+    return job_objects

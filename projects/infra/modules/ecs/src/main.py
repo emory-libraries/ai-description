@@ -65,7 +65,7 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
 
-def s3_path_to_file_list(s3_path_uri, recursive=True):
+def s3_path_to_file_list(s3_path_uri, recursive=True) -> list[str]:
     """
     Processes an S3 URI path and returns a list of S3 URIs.
     - If the path is a folder, returns all files within that folder
@@ -148,7 +148,7 @@ def s3_path_to_file_list(s3_path_uri, recursive=True):
                 obj_key = obj["Key"]
                 result_uris.append(f"s3://{bucket}/{obj_key}")
 
-    return result_uris
+    return sorted(result_uris)
 
 
 def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
@@ -177,7 +177,7 @@ def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
                 all_files.extend(files)
             except Exception as e:
                 uri = future_to_uri[future]
-                print(f"Error processing {uri}: {e}")
+                logger.error(f"Error processing {uri}: {e}")
 
     # Remove any duplicates (in case folders overlapped)
     return list(dict.fromkeys(all_files))
