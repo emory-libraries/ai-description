@@ -3,11 +3,14 @@
  * Terms and the SOW between the parties dated 2025.
  */
 
+// components/Bias/BiasContext.js
+
 import React, { createContext, useContext } from 'react';
 import { useWorkData } from './hooks/useWorkData';
 import { useBiasData } from './hooks/useBiasData';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { buildFrontendPath } from '../../utils/frontendPaths';
+import { useReviewStatus } from './hooks/useReviewStatus'; // Add this import
 
 const BiasContext = createContext(null);
 
@@ -50,10 +53,19 @@ export function BiasProvider({ children }) {
     isLoading: worksLoading,
     error: worksError,
     handleWorkSelect,
+    setAllWorks,
+    setSelectedWork,
   } = useWorkData(jobName, workId, loadBiasData);
 
+  // Review status management
+  const { updateReviewStatus, isUpdatingReviewStatus } = useReviewStatus({
+    setAllWorks,
+    setSelectedWork,
+    selectedWork,
+  });
+
   const error = biasError || worksError;
-  const isLoading = biasLoading || worksLoading;
+  const isLoading = biasLoading || worksLoading || isUpdatingReviewStatus;
 
   // Combined context value
   const contextValue = {
@@ -68,6 +80,9 @@ export function BiasProvider({ children }) {
     allWorks,
     selectedWork,
     handleWorkSelect,
+
+    // Review status
+    updateReviewStatus,
 
     // Status
     jobName,

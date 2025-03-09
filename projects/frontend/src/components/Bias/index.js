@@ -2,6 +2,9 @@
  * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
  * Terms and the SOW between the parties dated 2025.
  */
+
+// components/Bias/index.js
+
 import React from 'react';
 import {
   AppLayout,
@@ -37,12 +40,16 @@ function BiasContent() {
     error,
     isLoading,
     navigateToJobs,
+    updateReviewStatus,
   } = useBiasContext();
 
   const breadcrumbItems = [
     { text: 'Job results search', href: buildFrontendPath('/') },
     { text: `Bias Analysis: ${jobName || ''}` },
   ];
+
+  // Check if the current work is reviewed
+  const isReviewed = selectedWork?.work_status === 'REVIEWED';
 
   return (
     <AppLayout
@@ -88,11 +95,26 @@ function BiasContent() {
                   <Header
                     variant="h2"
                     actions={
-                      selectedBias ? (
-                        <Button onClick={handleBackToBiasList} variant="normal">
-                          Back to bias list
-                        </Button>
-                      ) : null
+                      <SpaceBetween direction="horizontal" size="xs">
+                        {selectedBias ? (
+                          <Button onClick={handleBackToBiasList} variant="normal">
+                            Back to bias list
+                          </Button>
+                        ) : null}
+                        {selectedWork && (
+                          <>
+                            {isReviewed ? (
+                              <Button onClick={() => updateReviewStatus(selectedWork, 'READY FOR REVIEW')}>
+                                Rescind reviewed status
+                              </Button>
+                            ) : (
+                              <Button onClick={() => updateReviewStatus(selectedWork, 'REVIEWED')}>
+                                Mark as reviewed
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </SpaceBetween>
                     }
                   >
                     Bias Analysis Results
@@ -117,7 +139,9 @@ function BiasContent() {
                     ) : selectedBias ? (
                       <BiasDetails bias={selectedBias} imageUrl={imageData[selectedBias.imageUri]} />
                     ) : (
-                      <BiasTable biasData={biasData} onBiasSelect={handleBiasSelect} />
+                      <>
+                        <BiasTable biasData={biasData} onBiasSelect={handleBiasSelect} />
+                      </>
                     )}
                   </SpaceBetween>
                 ) : (

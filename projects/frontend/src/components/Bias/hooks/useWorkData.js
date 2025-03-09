@@ -7,6 +7,8 @@ import { useAuth } from '../../../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { buildApiUrl } from '../../../utils/apiUrls';
 
+// components/Bias/hooks/useWorkData.js
+
 /**
  * Hook to handle work data fetching and selection
  */
@@ -20,15 +22,13 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
   const [error, setError] = useState(null);
 
   const handleWorkSelect = useCallback(
-    async (work) => {
-      if (!work || (selectedWork && work.work_id === selectedWork.work_id)) {
-        return;
-      }
+    (work) => {
+      if (!work) return;
 
       setSelectedWork(work);
       onWorkSelect(work);
     },
-    [selectedWork, onWorkSelect],
+    [onWorkSelect],
   );
 
   useEffect(() => {
@@ -94,11 +94,14 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
     }
   }, [token, jobName, initialWorkId, handleWorkSelect, logout, navigate]);
 
+  // Include these setters in the return value
   return {
     allWorks,
     selectedWork,
     isLoading,
     error,
     handleWorkSelect,
+    setAllWorks,
+    setSelectedWork,
   };
 };
