@@ -4,7 +4,6 @@
 """Client utils for the api_gateway_demo notebook."""
 import json
 import logging
-import time
 
 import requests
 
@@ -67,6 +66,11 @@ def get_job_progress(api_url: str, job_name: str, api_key: str) -> dict:
     # Check if the request was successful
     if response.status_code == 200:
         # Parse the JSON response
+        return response.json()
+    # Check if the item was not found
+    if response.status_code == 404:
+        # Parse the JSON response
+        logging.error(f"Error: API request failed with status code {response.status_code}")
         return response.json()
     else:
         logging.error(f"Error: API request failed with status code {response.status_code}")

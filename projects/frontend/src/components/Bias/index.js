@@ -1,7 +1,10 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+// components/Bias/index.js
+
 import React from 'react';
 import {
   AppLayout,
@@ -14,13 +17,14 @@ import {
   Alert,
   Grid,
   Spinner,
-  BreadcrumbGroup
-} from "@cloudscape-design/components";
+  BreadcrumbGroup,
+} from '@cloudscape-design/components';
 import { AWSSideNavigation } from '../Navigation';
 import { WorkNavigation } from './components/WorkNavigation';
 import { BiasTable } from './components/BiasTable';
 import { BiasDetails } from './components/BiasDetails';
 import { BiasProvider, useBiasContext } from './BiasContext';
+import { buildFrontendPath } from '../../utils/frontendPaths';
 
 function BiasContent() {
   const {
@@ -35,20 +39,24 @@ function BiasContent() {
     handleWorkSelect,
     error,
     isLoading,
-    navigateToJobs
+    navigateToJobs,
+    updateReviewStatus,
   } = useBiasContext();
 
   const breadcrumbItems = [
-    { text: 'Document Analysis Service', href: '/' },
-    { text: 'Job Status', href: '/' },
-    { text: `Bias Analysis: ${jobName || ''}` }
+    { text: 'Job results search', href: buildFrontendPath('/') },
+    { text: `Bias Analysis: ${jobName || ''}` },
   ];
+
+  // Check if the current work is reviewed
+  const isReviewed = selectedWork?.work_status === 'REVIEWED';
 
   return (
     <AppLayout
       toolsHide={true}
       navigation={<AWSSideNavigation activeHref="/bias" />}
       breadcrumbs={<BreadcrumbGroup items={breadcrumbItems} />}
+      navigationHide={true}
       content={
         <ContentLayout
           header={
@@ -87,11 +95,26 @@ function BiasContent() {
                   <Header
                     variant="h2"
                     actions={
-                      selectedBias ? (
-                        <Button onClick={handleBackToBiasList} variant="normal">
-                          Back to bias list
-                        </Button>
-                      ) : null
+                      <SpaceBetween direction="horizontal" size="xs">
+                        {selectedBias ? (
+                          <Button onClick={handleBackToBiasList} variant="normal">
+                            Back to bias list
+                          </Button>
+                        ) : null}
+                        {selectedWork && (
+                          <>
+                            {isReviewed ? (
+                              <Button onClick={() => updateReviewStatus(selectedWork, 'READY FOR REVIEW')}>
+                                Rescind reviewed status
+                              </Button>
+                            ) : (
+                              <Button onClick={() => updateReviewStatus(selectedWork, 'REVIEWED')}>
+                                Mark as reviewed
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </SpaceBetween>
                     }
                   >
                     Bias Analysis Results
@@ -107,16 +130,18 @@ function BiasContent() {
                   </Box>
                 ) : selectedWork ? (
                   <SpaceBetween size="l">
-                    {selectedBias ? (
-                      <BiasDetails
-                        bias={selectedBias}
-                        imageUrl={imageData[selectedBias.imageUri]}
-                      />
+                    {selectedWork.work_status === 'FAILED TO PROCESS' ? (
+                      <Box textAlign="center" padding="l">
+                        <Alert type="error" header="Work processing failed">
+                          This work failed to process. No bias analysis data is available.
+                        </Alert>
+                      </Box>
+                    ) : selectedBias ? (
+                      <BiasDetails bias={selectedBias} imageUrl={imageData[selectedBias.imageUri]} />
                     ) : (
-                      <BiasTable
-                        biasData={biasData}
-                        onBiasSelect={handleBiasSelect}
-                      />
+                      <>
+                        <BiasTable biasData={biasData} onBiasSelect={handleBiasSelect} />
+                      </>
                     )}
                   </SpaceBetween>
                 ) : (

@@ -3,14 +3,14 @@
  * Terms and the SOW between the parties dated 2025.
  */
 
-// src/utils/apiUrls.js
+// src/utils/frontendPaths.js
 
-export const getApiBaseUrl = () => {
-  return window.env?.API_URL || 'https://api-url-not-configured.example';
+export const getFrontendBasePath = () => {
+  return window.env?.STAGE_NAME || '/dev';
 };
 
-export const buildApiUrl = (endpoint) => {
-  const baseUrl = getApiBaseUrl();
+export const buildFrontendPath = (endpoint) => {
+  const basePath = getFrontendBasePath();
   const formattedEndpoint = endpoint ? (endpoint.startsWith('/') ? endpoint : `/${endpoint}`) : '';
-  return `${baseUrl}${formattedEndpoint}`;
+  return `${basePath}${formattedEndpoint}`;
 };

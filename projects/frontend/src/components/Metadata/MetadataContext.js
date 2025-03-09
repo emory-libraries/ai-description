@@ -1,7 +1,10 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+// components/Metadata/MetadataContext.js
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
@@ -31,12 +34,12 @@ export function MetadataProvider({ children }) {
     token,
     logout,
     navigate,
-    setError
+    setError,
   });
 
   const { getPresignedUrl } = useImageLoader({ token, logout, navigate });
 
-  const { updateMetadata, downloadAllMetadata } = useMetadataUpdate({
+  const { updateMetadata, downloadAllMetadata, updateReviewStatus } = useMetadataUpdate({
     token,
     logout,
     navigate,
@@ -48,7 +51,9 @@ export function MetadataProvider({ children }) {
     setModifiedFields,
     setMetadata,
     allWorks,
-    fetchWorkDetails
+    fetchWorkDetails,
+    setAllWorks,
+    setSelectedWork,
   });
 
   const handleMetadataEdit = (key, value) => {
@@ -59,14 +64,14 @@ export function MetadataProvider({ children }) {
       processedValue = { ...value };
     }
 
-    setMetadata(prev => ({
+    setMetadata((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
 
-    setModifiedFields(prev => ({
+    setModifiedFields((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
   };
 
@@ -83,7 +88,7 @@ export function MetadataProvider({ children }) {
       setMetadata(workDetails);
 
       if (workDetails.image_s3_uris && workDetails.image_s3_uris.length > 0) {
-        const imagePromises = workDetails.image_s3_uris.map(async uri => {
+        const imagePromises = workDetails.image_s3_uris.map(async (uri) => {
           const imageUrl = await getPresignedUrl(uri);
           return { uri, imageUrl };
         });
@@ -114,14 +119,10 @@ export function MetadataProvider({ children }) {
         setAllWorks(works);
 
         if (workId) {
-          const workToSelect = works.find(w => w.work_id === workId);
+          const workToSelect = works.find((w) => w.work_id === workId);
           if (workToSelect) {
             await handleWorkSelect(workToSelect);
-          } else if (works.length > 0) {
-            await handleWorkSelect(works[0]);
           }
-        } else if (works.length > 0) {
-          await handleWorkSelect(works[0]);
         }
       } catch (err) {
         console.error('Error loading initial data:', err);
@@ -132,7 +133,7 @@ export function MetadataProvider({ children }) {
     }
 
     loadInitialData();
-  }, [token, jobName, workId]);
+  }, [token, jobName, workId, fetchAllWorks]);
 
   const contextValue = {
     token,
@@ -148,12 +149,10 @@ export function MetadataProvider({ children }) {
     handleWorkSelect,
     handleMetadataEdit,
     updateMetadata,
-    downloadAllMetadata
+    downloadAllMetadata,
+    updateReviewStatus,
+    fetchAllWorks,
   };
 
-  return (
-    <MetadataContext.Provider value={contextValue}>
-      {children}
-    </MetadataContext.Provider>
-  );
+  return <MetadataContext.Provider value={contextValue}>{children}</MetadataContext.Provider>;
 }

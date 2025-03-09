@@ -1,7 +1,10 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+//components/Metadata/components/WorkNavigation.js
+
 import React from 'react';
 import {
   Container,
@@ -10,25 +13,33 @@ import {
   Spinner,
   SideNavigation,
   SpaceBetween,
-  StatusIndicator
-} from "@cloudscape-design/components";
+  StatusIndicator,
+} from '@cloudscape-design/components';
 import { useMetadataContext } from '../MetadataContext';
 
 function WorkNavigation() {
-  const {
-    allWorks,
-    selectedWork,
-    isLoading,
-    handleWorkSelect
-  } = useMetadataContext();
+  const { allWorks, selectedWork, isLoading, handleWorkSelect } = useMetadataContext();
 
-  const workNavigationItems = allWorks.map(work => ({
+  const getStatusIndicatorProps = (status) => {
+    switch (status) {
+      case 'READY FOR REVIEW':
+        return { type: 'info', children: 'Ready for review' };
+      case 'REVIEWED':
+        return { type: 'success', children: 'Reviewed' };
+      case 'IN PROGRESS':
+        return { type: 'in-progress', children: 'In progress' };
+      case 'FAILED TO PROCESS':
+        return { type: 'error', children: 'Failed to process' };
+      default:
+        return { type: 'pending', children: status };
+    }
+  };
+
+  const workNavigationItems = allWorks.map((work) => ({
     type: 'link',
-    text: `Work ID: ${work.work_id}`,
+    text: work.work_id,
     href: `#${work.work_id}`,
-    info: <StatusIndicator
-      type={work.work_status === 'READY FOR REVIEW' ? 'success' : 'in-progress'}
-    />,
+    info: <StatusIndicator {...getStatusIndicatorProps(work.work_status)} />,
   }));
 
   return (
@@ -46,7 +57,7 @@ function WorkNavigation() {
           items={workNavigationItems}
           header={{
             text: `${allWorks.length} work${allWorks.length !== 1 ? 's' : ''}`,
-            href: '#'
+            href: '#',
           }}
           onFollow={({ detail }) => {
             if (!detail.external) {
@@ -54,7 +65,7 @@ function WorkNavigation() {
               const workId = detail.href.substring(1);
 
               // Find the work with this ID
-              const workToSelect = allWorks.find(work => work.work_id === workId);
+              const workToSelect = allWorks.find((work) => work.work_id === workId);
 
               // If found, select this work
               if (workToSelect) {

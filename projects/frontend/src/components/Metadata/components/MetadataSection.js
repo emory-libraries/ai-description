@@ -1,141 +1,121 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
-import {
-  Container,
-  Header,
-  FormField,
-  Textarea,
-  SpaceBetween
-} from "@cloudscape-design/components";
+import { Container, Header, Textarea, SpaceBetween, Box } from '@cloudscape-design/components';
 import { useMetadataContext } from '../MetadataContext';
-import { formatValue } from '../utils/formatter';
 
 function MetadataSection({ fieldKey, fieldValue }) {
   const { handleMetadataEdit } = useMetadataContext();
 
   // Skip certain fields from being displayed
-  if (fieldKey === 'image_s3_uris' || fieldKey === 'work_id' ||
-      fieldKey === 'job_name' || fieldKey === 'work_status') {
+  if (
+    [
+      'job_type',
+      'job_name',
+      'work_id',
+      'work_status',
+      'image_s3_uris',
+      'context_s3_uri',
+      'original_metadata_s3_uri',
+      'image_presigned_urls',
+      'metadata_biases',
+    ].includes(fieldKey)
+  ) {
     return null;
   }
 
   // Format the field key for display
-  const formattedKey = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const formattedKey = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
-  // Handle empty array field
-  if (Array.isArray(fieldValue) && fieldValue.length === 0) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <FormField
-          label="Value"
-          description="Enter comma-separated values for this field. Currently empty."
-        >
-          <Textarea
-            value=""
-            onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split(',').filter(item => item.trim().length > 0)
-            )}
-            rows={2}
-            placeholder="Enter comma-separated values..."
-          />
-        </FormField>
-      </Container>
-    );
+  // Determine if we have a special field structure with a rationale
+  let rationale = null;
+  let editableValue = fieldValue;
+  let updatePath = null;
+  let isList = false;
+
+  // Case 1: Object with explanation and value
+  if (fieldValue && typeof fieldValue === 'object') {
+    if ('explanation' in fieldValue && 'value' in fieldValue) {
+      rationale = fieldValue.explanation;
+      editableValue = fieldValue.value;
+      updatePath = 'value';
+      isList = Array.isArray(fieldValue.value);
+    }
+    // Case 2: Transcription with model_notes
+    else if (fieldKey === 'transcription' && 'transcriptions' in fieldValue && 'model_notes' in fieldValue) {
+      rationale = fieldValue.model_notes;
+      editableValue = fieldValue.transcriptions;
+      updatePath = 'transcriptions';
+    }
+  } else if (Array.isArray(fieldValue)) {
+    isList = true;
   }
 
-  // Handle nested structure with explanation and value
-  const isNestedStructure = fieldValue &&
-    typeof fieldValue === 'object' &&
-    ('explanation' in fieldValue || 'value' in fieldValue);
+  // Convert the editable value to a string for display
+  const stringValue = isList
+    ? editableValue.join(' | ')
+    : typeof editableValue === 'object'
+      ? JSON.stringify(editableValue, null, 2)
+      : String(editableValue || '');
 
-  if (isNestedStructure) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <SpaceBetween size="m">
-          <FormField label="Explanation">
-            <Textarea
-              value={fieldValue.explanation || ''}
-              onChange={({ detail }) => handleMetadataEdit(fieldKey, {
-                ...fieldValue,
-                explanation: detail.value
-              })}
-              rows={3}
-            />
-          </FormField>
+  const handleChange = ({ detail }) => {
+    try {
+      let newValue;
 
-          <FormField
-            label="Value"
-            description={Array.isArray(fieldValue.value) ?
-              "Enter values separated by commas" :
-              "Enter value for this field"}
-          >
-            <Textarea
-              value={fieldValue.value ? formatValue(fieldValue.value) : ''}
-              onChange={({ detail }) => handleMetadataEdit(fieldKey, {
-                ...fieldValue,
-                value: detail.value
-              })}
-              rows={3}
-              placeholder={Array.isArray(fieldValue.value) ?
-                "e.g. value1, value2, value3" :
-                "Enter value here..."}
-            />
-          </FormField>
-        </SpaceBetween>
-      </Container>
-    );
-  }
+      // Handle different value types
+      if (isList) {
+        newValue = detail.value
+          .split('|')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      } else if (detail.value.trim().startsWith('{') || detail.value.trim().startsWith('[')) {
+        newValue = JSON.parse(detail.value);
+      } else {
+        newValue = detail.value;
+      }
 
-  // Handle array fields
-  if (Array.isArray(fieldValue)) {
-    return (
-      <Container
-        header={<Header variant="h3">{formattedKey}</Header>}
-      >
-        <FormField
-          label="Value"
-          description="Enter values separated by commas"
-        >
-          <Textarea
-            value={formatValue(fieldValue)}
-            onChange={({ detail }) => handleMetadataEdit(fieldKey,
-              detail.value.split(',').map(item => item.trim()).filter(item => item)
-            )}
-            rows={4}
-            placeholder="e.g. value1, value2, value3"
-          />
-        </FormField>
-      </Container>
-    );
-  }
+      // Update accordingly based on field structure
+      if (updatePath) {
+        handleMetadataEdit(fieldKey, {
+          ...fieldValue,
+          [updatePath]: newValue,
+        });
+      } else {
+        handleMetadataEdit(fieldKey, newValue);
+      }
+    } catch (e) {
+      // Fallback to string if JSON parsing fails
+      if (updatePath) {
+        handleMetadataEdit(fieldKey, {
+          ...fieldValue,
+          [updatePath]: detail.value,
+        });
+      } else {
+        handleMetadataEdit(fieldKey, detail.value);
+      }
+    }
+  };
 
-  // Default case: simple value field
   return (
-    <Container
-      header={<Header variant="h3">{formattedKey}</Header>}
-    >
-      <FormField
-        label="Value"
-        description={
-          typeof fieldValue === 'object' ?
-            "JSON object - Edit carefully" :
-            `Enter ${typeof fieldValue} value`
-        }
-      >
+    <Container header={<Header variant="h3">{formattedKey}</Header>}>
+      <SpaceBetween size="m">
+        {rationale && (
+          <Box padding="s">
+            <SpaceBetween size="xs">
+              <Header variant="h4">Rationale</Header>
+              <div>{rationale}</div>
+            </SpaceBetween>
+          </Box>
+        )}
         <Textarea
-          value={formatValue(fieldValue)}
-          onChange={({ detail }) => handleMetadataEdit(fieldKey, detail.value)}
-          rows={4}
-          placeholder={`Enter ${formattedKey.toLowerCase()} here...`}
+          value={stringValue}
+          onChange={handleChange}
+          rows={5}
+          placeholder={isList ? 'e.g. value1 | value2 | value3' : `Enter ${formattedKey.toLowerCase()} here...`}
         />
-      </FormField>
+      </SpaceBetween>
     </Container>
   );
 }

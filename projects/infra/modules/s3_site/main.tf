@@ -103,10 +103,9 @@ resource "null_resource" "frontend_build" {
         node:18 \
         bash -c "mkdir -p /.npm && \
           chmod -R 777 /.npm && \
-          npm ci --include=dev && \
+          npm install && \
           npm run build && \
           chmod -R 755 /app/build"
-
       echo "React build completed successfully"
       # Create a build marker with timestamp
       echo "$(date +%s)" > "${local.frontend_path}/build/.build-id"

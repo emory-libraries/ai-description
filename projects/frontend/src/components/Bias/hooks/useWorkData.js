@@ -1,11 +1,13 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { buildApiUrl } from '../../../utils/apiUrls';
+
+// components/Bias/hooks/useWorkData.js
 
 /**
  * Hook to handle work data fetching and selection
@@ -19,14 +21,15 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleWorkSelect = useCallback(async (work) => {
-    if (!work || (selectedWork && work.work_id === selectedWork.work_id)) {
-      return;
-    }
+  const handleWorkSelect = useCallback(
+    (work) => {
+      if (!work) return;
 
-    setSelectedWork(work);
-    onWorkSelect(work);
-  }, [selectedWork, onWorkSelect]);
+      setSelectedWork(work);
+      onWorkSelect(work);
+    },
+    [onWorkSelect],
+  );
 
   useEffect(() => {
     const fetchAllWorks = async () => {
@@ -37,15 +40,12 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         // Instead of calling useAuth() inside this function,
         // use the token and headers you already have from the parent scope
         const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
-        const response = await fetch(
-          url,
-          {
-            headers: {
-              'x-api-key': token,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        const response = await fetch(url, {
+          headers: {
+            'x-api-key': token,
+            'Content-Type': 'application/json',
+          },
+        });
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
@@ -59,13 +59,13 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         const jobData = await response.json();
         const works = [];
         if (jobData.job_progress) {
-          Object.entries(jobData.job_progress).forEach(([status, ids]) => {
-            ids.forEach(id => {
+          Object.entries(jobData.job_progress).forEach(([work_status, ids]) => {
+            ids.forEach((id) => {
               works.push({
                 work_id: id,
-                work_status: status,
+                work_status: work_status,
                 job_name: jobName,
-                job_type: jobData.job_type
+                job_type: jobData.job_type,
               });
             });
           });
@@ -74,7 +74,7 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
         setAllWorks(works);
 
         if (initialWorkId) {
-          const workToSelect = works.find(w => w.work_id === initialWorkId);
+          const workToSelect = works.find((w) => w.work_id === initialWorkId);
           if (workToSelect) {
             await handleWorkSelect(workToSelect);
           }
@@ -94,11 +94,14 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
     }
   }, [token, jobName, initialWorkId, handleWorkSelect, logout, navigate]);
 
+  // Include these setters in the return value
   return {
     allWorks,
     selectedWork,
     isLoading,
     error,
-    handleWorkSelect
+    handleWorkSelect,
+    setAllWorks,
+    setSelectedWork,
   };
 };

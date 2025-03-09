@@ -1,16 +1,30 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+// components/Metadata/hooks/useMetadataUpdate.js
+
 import { useCallback } from 'react';
-import { formatValue} from "../utils/formatter";
+import { formatValue } from '../utils/formatter';
 import { buildApiUrl } from '../../../utils/apiUrls';
 import { useAuth } from '../../../AuthContext';
 
 export default function useMetadataUpdate({
-  token, logout, navigate, setError, setIsLoading,
-  selectedWork, metadata, modifiedFields, setModifiedFields, setMetadata,
-  allWorks, fetchWorkDetails
+  token,
+  logout,
+  navigate,
+  setError,
+  setIsLoading,
+  selectedWork,
+  metadata,
+  modifiedFields,
+  setModifiedFields,
+  setMetadata,
+  allWorks,
+  fetchWorkDetails,
+  setAllWorks,
+  setSelectedWork,
 }) {
   const { getAuthHeaders } = useAuth();
   const updateMetadata = useCallback(async () => {
@@ -28,43 +42,41 @@ export default function useMetadataUpdate({
           if (typeof value.value === 'string') {
             processedModifiedFields[key] = {
               ...value,
-              value: value.value.includes(',') ?
-                value.value.split(',').map(item => item.trim()) :
-                value.value
+              value: value.value.includes(',') ? value.value.split(',').map((item) => item.trim()) : value.value,
             };
           } else {
             processedModifiedFields[key] = value;
           }
-        } else if (typeof value === 'string' &&
-                  metadata[key] &&
-                  typeof metadata[key] === 'object' &&
-                  Array.isArray(metadata[key].value)) {
+        } else if (
+          typeof value === 'string' &&
+          metadata[key] &&
+          typeof metadata[key] === 'object' &&
+          Array.isArray(metadata[key].value)
+        ) {
           processedModifiedFields[key] = {
             ...metadata[key],
-            value: value.includes(',') ?
-              value.split(',').map(item => item.trim()) :
-              [value]
+            value: value.includes(',') ? value.split(',').map((item) => item.trim()) : [value],
           };
         } else {
           processedModifiedFields[key] = value;
         }
       });
 
-      console.log("Sending update with fields:", processedModifiedFields);
+      console.log('Sending update with fields:', processedModifiedFields);
       const requestBody = {
         job_name: selectedWork.job_name,
         work_id: selectedWork.work_id,
-        updated_fields: processedModifiedFields
+        updated_fields: processedModifiedFields,
       };
-
+      console.log(`REQUEST BODY: ${JSON.stringify(requestBody)}`);
       const url = buildApiUrl(`/api/results`);
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
           ...getAuthHeaders(),
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -89,7 +101,19 @@ export default function useMetadataUpdate({
     } finally {
       setIsLoading(false);
     }
-  }, [token, logout, navigate, selectedWork, metadata, modifiedFields, setError, setIsLoading, setModifiedFields, setMetadata]);
+  }, [
+    token,
+    logout,
+    navigate,
+    selectedWork,
+    metadata,
+    modifiedFields,
+    setError,
+    setIsLoading,
+    setModifiedFields,
+    setMetadata,
+    getAuthHeaders,
+  ]);
 
   const downloadAllMetadata = useCallback(async () => {
     if (!allWorks || allWorks.length === 0 || !token) {
@@ -113,22 +137,22 @@ export default function useMetadataUpdate({
           allMetadataResults.push({
             ...metadata,
             work_id: work.work_id,
-            work_status: work.work_status
+            work_status: work.work_status,
           });
         } catch (err) {
           console.error(`Error fetching work ${work.work_id}:`, err);
           allMetadataResults.push({
             work_id: work.work_id,
             work_status: 'ERROR',
-            error: 'Failed to fetch metadata'
+            error: 'Failed to fetch metadata',
           });
         }
       }
 
       const headers = ['work_id', 'work_status'];
       const metadataKeys = new Set();
-      allMetadataResults.forEach(metadata => {
-        Object.keys(metadata).forEach(key => {
+      allMetadataResults.forEach((metadata) => {
+        Object.keys(metadata).forEach((key) => {
           if (!['work_id', 'work_status', 'image_s3_uris'].includes(key)) {
             metadataKeys.add(key);
           }
@@ -136,18 +160,20 @@ export default function useMetadataUpdate({
       });
       headers.push(...Array.from(metadataKeys));
 
-      const rows = allMetadataResults.map(metadata => {
-        return headers.map(header => {
-          const value = metadata[header];
-          if (!value) return '""';
-          if (typeof value === 'object' && value !== null) {
-            if ('explanation' in value && 'value' in value) {
-              return `"${formatValue(value.value)} (${value.explanation.replace(/"/g, '""')})"`;
+      const rows = allMetadataResults.map((metadata) => {
+        return headers
+          .map((header) => {
+            const value = metadata[header];
+            if (!value) return '""';
+            if (typeof value === 'object' && value !== null) {
+              if ('explanation' in value && 'value' in value) {
+                return `"${formatValue(value.value)} (${value.explanation.replace(/"/g, '""')})"`;
+              }
+              return `"${formatValue(value).replace(/"/g, '""')}"`;
             }
-            return `"${formatValue(value).replace(/"/g, '""')}"`;
-          }
-          return `"${String(value).replace(/"/g, '""')}"`;
-        }).join(',');
+            return `"${String(value).replace(/"/g, '""')}"`;
+          })
+          .join(',');
       });
 
       const csvContent = [headers.join(','), ...rows].join('\n');
@@ -168,5 +194,65 @@ export default function useMetadataUpdate({
     }
   }, [allWorks, token, selectedWork, fetchWorkDetails, setError, setIsLoading]);
 
-  return { updateMetadata, downloadAllMetadata };
+  const updateReviewStatus = useCallback(
+    async (work, newStatus) => {
+      if (!token || !work) {
+        setError('Unable to update: Missing required data');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        const url = buildApiUrl(`/api/results`);
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            job_name: work.job_name,
+            work_id: work.work_id,
+            updated_fields: { work_status: newStatus },
+          }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            logout();
+            navigate('/login');
+            throw new Error('Authentication failed. Please log in again.');
+          }
+
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          throw new Error(`Failed to update work status: ${response.status}`);
+        }
+
+        const updatedWork = await response.json();
+
+        // Update the work in allWorks
+        setAllWorks((prevWorks) =>
+          prevWorks.map((w) => (w.work_id === work.work_id ? { ...w, work_status: newStatus } : w)),
+        );
+
+        // Update the selectedWork if it's the one being updated
+        if (selectedWork && selectedWork.work_id === work.work_id) {
+          setSelectedWork({ ...selectedWork, work_status: newStatus });
+        }
+
+        setError(null);
+        return updatedWork;
+      } catch (err) {
+        console.error(`Error updating work status to ${newStatus}:`, err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token, logout, navigate, selectedWork, setError, setIsLoading, getAuthHeaders, setAllWorks, setSelectedWork],
+  );
+
+  return { updateMetadata, downloadAllMetadata, updateReviewStatus };
 }

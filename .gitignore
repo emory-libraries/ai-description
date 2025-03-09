@@ -38,3 +38,5 @@ __pycache__/
 
 # Research
 /projects/research/ground_truth/*
+.build_marker
+env.js

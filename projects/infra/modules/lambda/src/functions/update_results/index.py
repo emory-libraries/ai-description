@@ -23,7 +23,7 @@ CORS_HEADERS = {
 }
 JOB_NAME = "job_name"
 WORK_ID = "work_id"
-WORK_STATUS = "work_status"
+UPDATED_FIELDS = "updated_fields"
 
 # Initialize AWS clients globally
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -60,11 +60,20 @@ def handler(event: Any, context: Any) -> dict[str, Any]:
         body = json.loads(event["body"])
         job_name = body.get(JOB_NAME)
         work_id = body.get(WORK_ID)
-        updated_fields = body.get("updated_fields")
+        updated_fields = body.get(UPDATED_FIELDS)
 
-        if not job_name or not work_id or not updated_fields:
-            logger.error("Missing required parameters")
-            return create_response(400, {"error": "Missing required parameters"})
+        if not job_name:
+            msg = f"Missing required parameter '{JOB_NAME}'"
+            logger.error(msg)
+            return create_response(400, {"error": msg})
+        if not work_id:
+            msg = f"Missing required parameter '{WORK_ID}'"
+            logger.error(msg)
+            return create_response(400, {"error": msg})
+        if not updated_fields:
+            msg = f"Missing required parameter '{UPDATED_FIELDS}'"
+            logger.error(msg)
+            return create_response(400, {"error": msg})
 
         # Prepare the update expression and attribute values
         update_expression = "SET "

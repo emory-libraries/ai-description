@@ -160,7 +160,7 @@ def create_job(job_name: str, works: list[dict[str, str]], job_type: str) -> Non
             IMAGE_S3_URIS: image_s3_uris,
             CONTEXT_S3_URI: context_s3_uri,
             ORIGINAL_METADATA_S3_URI: original_metadata_s3_uri,
-            WORK_STATUS: "IN_QUEUE",
+            WORK_STATUS: "IN QUEUE",
         }
         table.put_item(Item=ddb_work_item)
         logger.debug(f"Successfully added job={job_name} work={work_id} to DynamoDB")
