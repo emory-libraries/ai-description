@@ -37,8 +37,6 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
 
       try {
         setIsLoading(true);
-        // Instead of calling useAuth() inside this function,
-        // use the token and headers you already have from the parent scope
         const url = buildApiUrl(`/api/job_progress?job_name=${jobName}`);
         const response = await fetch(url, {
           headers: {
@@ -94,7 +92,6 @@ export const useWorkData = (jobName, initialWorkId, onWorkSelect) => {
     }
   }, [token, jobName, initialWorkId, handleWorkSelect, logout, navigate]);
 
-  // Include these setters in the return value
   return {
     allWorks,
     selectedWork,

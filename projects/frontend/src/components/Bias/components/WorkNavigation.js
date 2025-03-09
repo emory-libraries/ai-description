@@ -72,7 +72,6 @@ export const WorkNavigation = React.memo(function WorkNavigation({ allWorks, sel
               const workToSelect = allWorks.find((work) => work.work_id === workId);
 
               if (workToSelect) {
-                // Just call onWorkSelect without additional condition
                 onWorkSelect(workToSelect);
               }
             }
