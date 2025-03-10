@@ -7,8 +7,6 @@ import json
 import logging
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urlparse
 
 import boto3
 from botocore.config import Config
@@ -65,157 +63,92 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
 
-def s3_path_to_file_list(s3_path_uri, recursive=True):
+def get_work_details(job_name, work_id):
     """
-    Processes an S3 URI path and returns a list of S3 URIs.
-    - If the path is a folder, returns all files within that folder
-    - If the path is a file, returns a list containing just that file URI
+    Get the details of a work item from DynamoDB.
 
     Args:
-        s3_path_uri (str): The S3 URI (e.g., 's3://bucket-name/folder/' or 's3://bucket-name/file.txt')
-        recursive (bool): Whether to list objects recursively in subfolders (default: True)
+        job_name (str): The job name
+        work_id (str): The work ID
 
     Returns:
-        list: List of complete S3 URIs
+        dict: Work item details
     """
-    # Parse the S3 URI
-    parsed_uri = urlparse(s3_path_uri)
-    if parsed_uri.scheme != "s3":
-        raise ValueError(f"Not a valid S3 URI: {s3_path_uri}")
-
-    bucket = parsed_uri.netloc
-
-    # Remove leading slash if present
-    key = parsed_uri.path.lstrip("/")
-
-    # Initialize S3 client
-    s3_client = boto3.client("s3")
-
-    # Check if the path exists directly as an object (file)
     try:
-        s3_client.head_object(Bucket=bucket, Key=key)
-        # If we get here, it's a file that exists
-        return [s3_path_uri]
-    except s3_client.exceptions.ClientError as e:
-        # If error code is 404, it's not a file, so we'll treat it as a folder
-        if e.response["Error"]["Code"] != "404":
-            # If there's a different error, re-raise it
-            raise
+        response = table.get_item(Key={JOB_NAME: job_name, WORK_ID: work_id})
 
-    # If we get here, the path doesn't exist as a direct object, so treat it as a folder
-    # Ensure the path ends with a slash to denote a folder
-    folder_prefix = key if key.endswith("/") else key + "/"
+        if "Item" not in response:
+            raise ValueError(f"No item found for job_name={job_name}, work_id={work_id}")
 
-    result_uris = []
-
-    # Use paginator to handle potentially large numbers of objects
-    paginator = s3_client.get_paginator("list_objects_v2")
-
-    # Configure the paginator
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=folder_prefix)
-
-    # Process each page of results
-    for page in page_iterator:
-        if "Contents" not in page:
-            # No objects found with this prefix
-            continue
-
-        for obj in page["Contents"]:
-            obj_key = obj["Key"]
-
-            # Skip the folder object itself
-            if obj_key == folder_prefix:
-                continue
-
-            # If not recursive, skip objects in subfolders
-            if not recursive and "/" in obj_key.replace(folder_prefix, "", 1):
-                continue
-
-            result_uris.append(f"s3://{bucket}/{obj_key}")
-
-    # If no files were found and the original path doesn't end with a slash,
-    # it might be a file pattern (like a prefix for filtering)
-    if not result_uris and not key.endswith("/"):
-        # Try to list objects with the given prefix
-        paginator = s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=key)
-
-        for page in page_iterator:
-            if "Contents" not in page:
-                continue
-
-            for obj in page["Contents"]:
-                obj_key = obj["Key"]
-                result_uris.append(f"s3://{bucket}/{obj_key}")
-
-    return result_uris
+        return response["Item"]
+    except ClientError as e:
+        logger.error(f"Error retrieving item from DynamoDB: {e}")
+        raise
 
 
-def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
+def update_dynamodb_item(
+    job_name: str,
+    work_id: str,
+    update_data: dict | None = None,
+    status: dict | None = None,
+):
     """
-    Expands a list of mixed S3 URIs (files and/or folders) into a flat list of all file URIs.
+    Update a DynamoDB item with new data and/or status.
 
     Args:
-        uri_list (list): List of S3 URIs (can be files or folders)
-        recursive (bool): Whether to include files in subfolders
-        max_workers (int): Maximum number of parallel workers for processing
-
-    Returns:
-        list: Flat list of all file URIs
+        job_name (str): The job name
+        work_id (str): The work ID
+        update_data (dict, optional): Dictionary of field-value pairs to update
+        status (str, optional): New status to set for the work item
     """
-    all_files = []
-
-    # Process URIs in parallel for better performance
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Map each URI to its expanded file list
-        future_to_uri = {executor.submit(s3_path_to_file_list, uri, recursive): uri for uri in uri_list}
-
-        # Collect results as they complete
-        for future in future_to_uri:
-            try:
-                files = future.result()
-                all_files.extend(files)
-            except Exception as e:
-                uri = future_to_uri[future]
-                print(f"Error processing {uri}: {e}")
-
-    # Remove any duplicates (in case folders overlapped)
-    return list(dict.fromkeys(all_files))
-
-
-def update_dynamodb_item(job_name, work_id, update_data):
-    status = "READY FOR REVIEW"
     try:
-        update_expression = "SET #status = :status"
-        expression_attribute_names = {"#status": WORK_STATUS}
-        expression_attribute_values = {":status": status}
+        # Start with empty update parts
+        update_expression_parts = []
+        expression_attribute_names = {}
+        expression_attribute_values = {}
 
-        for key, value in update_data.items():
-            update_expression += f", #{key} = :{key}"
-            expression_attribute_names[f"#{key}"] = key
-            expression_attribute_values[f":{key}"] = value
+        # Add status update if provided
+        if status is not None:
+            update_expression_parts.append("#status = :status")
+            expression_attribute_names["#status"] = WORK_STATUS
+            expression_attribute_values[":status"] = status
 
+        # Add field updates from update_data if provided
+        if update_data:
+            for key, value in update_data.items():
+                update_expression_parts.append(f"#{key} = :{key}")
+                expression_attribute_names[f"#{key}"] = key
+                expression_attribute_values[f":{key}"] = value
+
+        # If nothing to update, return early
+        if not update_expression_parts:
+            logger.warning(f"No updates provided for job={job_name}, work={work_id}")
+            return
+
+        # Create the full update expression
+        update_expression = "SET " + ", ".join(update_expression_parts)
+
+        # Perform the update
         table.update_item(
             Key={JOB_NAME: job_name, WORK_ID: work_id},
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
         )
-        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
+
+        # Log appropriate message based on what was updated
+        log_message = f"Updated DynamoDB item for job={job_name}, work={work_id}"
+        if status:
+            log_message += f" with status '{status}'"
+        if update_data:
+            fields = list(update_data.keys())
+            log_message += f" and fields: {fields}"
+
+        logger.info(log_message)
+
     except ClientError as e:
         logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
-
-
-def update_dynamodb_status(job_name, work_id, status):
-    try:
-        table.update_item(
-            Key={JOB_NAME: job_name, WORK_ID: work_id},
-            UpdateExpression=f"SET {WORK_STATUS} = :status",
-            ExpressionAttributeValues={":status": status},
-        )
-        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
-    except ClientError as e:
-        logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
+        raise
 
 
 def process_sqs_messages():
@@ -243,22 +176,25 @@ def process_sqs_messages():
                 # Parse the message body
                 message_body = json.loads(message["Body"])
                 job_name = message_body[JOB_NAME]
-                job_type = message_body[JOB_TYPE]
                 work_id = message_body[WORK_ID]
-                context_s3_uri = message_body[CONTEXT_S3_URI]
-                image_s3_uris = expand_s3_uris_to_files(message_body[IMAGE_S3_URIS])
-                original_metadata_s3_uri = message_body[ORIGINAL_METADATA_S3_URI]
 
-                logger.info(f"Message Body: {message_body}")
+                # Get work details from DynamoDB instead of SQS message
+                work_item = get_work_details(job_name, work_id)
+
+                job_type = work_item[JOB_TYPE]
+                context_s3_uri = work_item[CONTEXT_S3_URI]
+                image_s3_uris = work_item[IMAGE_S3_URIS]
+                original_metadata_s3_uri = work_item[ORIGINAL_METADATA_S3_URI]
+
                 logger.info(f"Job name: {job_name}")
-                logger.info(f"Job type: {job_type}")
                 logger.info(f"Work ID: {work_id}")
+                logger.info(f"Job type: {job_type}")
                 logger.info(f"Context S3 URI: {context_s3_uri}")
                 logger.info(f"Image S3 URIs: {image_s3_uris}")
                 logger.info(f"Original metadata S3 URI: {original_metadata_s3_uri}")
 
                 # Update work_status for the item in DynamoDB to "IN PROGRESS"
-                update_dynamodb_status(job_name=job_name, work_id=work_id, status="IN PROGRESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status="IN PROGRESS")
 
                 if job_type == "metadata":
                     work_structured_metadata = generate_work_structured_metadata(
@@ -279,9 +215,7 @@ def process_sqs_messages():
                     # Update DynamoDB with the bias_analysis field
                     update_data = work_structured_metadata.model_dump() | work_bias_analysis.model_dump()
                     update_dynamodb_item(
-                        job_name=job_name,
-                        work_id=work_id,
-                        update_data=update_data,
+                        job_name=job_name, work_id=work_id, update_data=update_data, status="READY FOR REVIEW"
                     )
                 elif job_type == "bias":
                     work_bias_analysis = generate_work_bias_analysis(
@@ -311,13 +245,13 @@ def process_sqs_messages():
                 else:
                     logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
 
-                # Parse the message body
+                # Parse the message body to get the job_name and work_id
                 message_body = json.loads(message["Body"])
                 job_name = message_body[JOB_NAME]
                 work_id = message_body[WORK_ID]
 
                 # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
-                update_dynamodb_status(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
 
 
 if __name__ == "__main__":
