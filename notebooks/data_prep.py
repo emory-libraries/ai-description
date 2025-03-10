@@ -9,6 +9,8 @@ import re
 import subprocess
 import tempfile
 from io import BytesIO
+import concurrent.futures
+from functools import partial
 
 import boto3
 import pandas as pd
@@ -238,7 +240,8 @@ def prepare_images(
     # Create the destination path
     destination_folder = f"{job_name}/{work_id}/images/"
     # Loop through each row in the dataframe
-    for _, row in work_df.iterrows():
+
+    for _, row in tqdm(work_df.iterrows(), total=len(work_df)):
         # Get the original file path/key and other necessary info
         page_sha = row["page_sha1"]
         page_index = convert_page_to_index(row["page_title"])
@@ -286,32 +289,76 @@ def translate_csv_to_job_objects(
     job_name: str,
     uploads_bucket: str,
     original_bucket: str = "fedora-cor-binaries",
+    max_workers: int = 10
 ) -> list[dict]:
-    """Translate CSV into job objects."""
+    """Translate CSV into job objects with parallel processing."""
     # Load data
     df = pd.read_csv(csv_path)
     # Group by work_id
     grouped_df = df.groupby("work_id")
 
-    job_objects = []
-    for _, work_df in tqdm(grouped_df):
-        images_s3_uris = prepare_images(
-            work_df=work_df,
+    # Process each work_id group in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Create a partial function with common parameters
+        process_work_group = partial(
+            process_single_work_group,
             job_name=job_name,
             uploads_bucket=uploads_bucket,
-            original_bucket=original_bucket,
+            original_bucket=original_bucket
         )
-        metadata_s3_uri = prepare_metadata(
-            work_df=work_df,
-            job_name=job_name,
-            uploads_bucket=uploads_bucket,
-        )
-        work_id = work_df["work_id"].iloc[0]
-        job_object = {
-            "work_id": work_id,
-            "image_s3_uris": images_s3_uris,
-            "original_metadata_s3_uri": metadata_s3_uri,
+
+        # Submit all work groups for processing
+        future_to_work_id = {
+            executor.submit(process_work_group, work_id, group_df): work_id 
+            for work_id, group_df in grouped_df
         }
-        job_objects.append(job_object)
+
+        # Collect results as they complete
+        job_objects = []
+        for future in concurrent.futures.as_completed(future_to_work_id):
+            job_objects.append(future.result())
 
     return job_objects
+
+def process_single_work_group(work_id, work_df, job_name, uploads_bucket, original_bucket):
+    """Process a single work group to create a job object."""
+    images_s3_uris = prepare_images_parallel(
+        work_df=work_df,
+        job_name=job_name,
+        uploads_bucket=uploads_bucket,
+        original_bucket=original_bucket,
+    )
+    metadata_s3_uri = prepare_metadata(
+        work_df=work_df,
+        job_name=job_name,
+        uploads_bucket=uploads_bucket,
+    )
+
+    return {
+        "work_id": work_id,
+        "image_s3_uris": images_s3_uris,
+        "original_metadata_s3_uri": metadata_s3_uri,
+    }
+
+def prepare_images_parallel(work_df, job_name, uploads_bucket, original_bucket, max_workers=5):
+    """Copy images in parallel using ThreadPoolExecutor."""
+    work_id = work_df["work_id"].iloc[0]
+    destination_folder = f"{job_name}/{work_id}/images/"
+
+    # Create a list of tasks (rows to process)
+    tasks = []
+    for _, row in work_df.iterrows():
+        page_sha = row["page_sha1"]
+        page_index = convert_page_to_index(row["page_title"])
+        dest_key = f"{destination_folder}page_{page_index}_{page_sha}.jpg"
+        tasks.append((original_bucket, page_sha, uploads_bucket, dest_key))
+
+    # Process images in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(tqdm(
+            executor.map(lambda args: copy_s3_file(*args, True), tasks),
+            total=len(tasks),
+            desc=f"Processing images for work_id {work_id}"
+        ))
+
+    return [f"s3://{uploads_bucket}/{destination_folder}"]
