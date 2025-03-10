@@ -94,7 +94,7 @@ def update_dynamodb_item(
 ):
     """
     Update a DynamoDB item with new data and/or status.
-    
+
     Args:
         job_name (str): The job name
         work_id (str): The work ID
@@ -106,28 +106,28 @@ def update_dynamodb_item(
         update_expression_parts = []
         expression_attribute_names = {}
         expression_attribute_values = {}
-        
+
         # Add status update if provided
         if status is not None:
             update_expression_parts.append("#status = :status")
             expression_attribute_names["#status"] = WORK_STATUS
             expression_attribute_values[":status"] = status
-        
+
         # Add field updates from update_data if provided
         if update_data:
             for key, value in update_data.items():
                 update_expression_parts.append(f"#{key} = :{key}")
                 expression_attribute_names[f"#{key}"] = key
                 expression_attribute_values[f":{key}"] = value
-        
+
         # If nothing to update, return early
         if not update_expression_parts:
             logger.warning(f"No updates provided for job={job_name}, work={work_id}")
             return
-        
+
         # Create the full update expression
         update_expression = "SET " + ", ".join(update_expression_parts)
-        
+
         # Perform the update
         table.update_item(
             Key={JOB_NAME: job_name, WORK_ID: work_id},
@@ -135,7 +135,7 @@ def update_dynamodb_item(
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
         )
-        
+
         # Log appropriate message based on what was updated
         log_message = f"Updated DynamoDB item for job={job_name}, work={work_id}"
         if status:
@@ -143,9 +143,9 @@ def update_dynamodb_item(
         if update_data:
             fields = list(update_data.keys())
             log_message += f" and fields: {fields}"
-        
+
         logger.info(log_message)
-        
+
     except ClientError as e:
         logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
         raise
@@ -215,10 +215,7 @@ def process_sqs_messages():
                     # Update DynamoDB with the bias_analysis field
                     update_data = work_structured_metadata.model_dump() | work_bias_analysis.model_dump()
                     update_dynamodb_item(
-                        job_name=job_name,
-                        work_id=work_id,
-                        update_data=update_data,
-                        status="READY FOR REVIEW"
+                        job_name=job_name, work_id=work_id, update_data=update_data, status="READY FOR REVIEW"
                     )
                 elif job_type == "bias":
                     work_bias_analysis = generate_work_bias_analysis(

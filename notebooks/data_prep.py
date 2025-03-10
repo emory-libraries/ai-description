@@ -2,15 +2,15 @@
 # Terms and the SOW between the parties dated 2025.
 
 """Data prep utils for the api_gateway_demo notebook."""
+import concurrent.futures
 import json
 import logging
 import os
 import re
 import subprocess
 import tempfile
-from io import BytesIO
-import concurrent.futures
 from functools import partial
+from io import BytesIO
 
 import boto3
 import pandas as pd
@@ -27,40 +27,40 @@ def populate_bucket(
 ) -> tuple[str, str, str]:
     """
     Upload image and related files to S3 bucket, with option to convert image to JPEG.
-    
+
     Args:
         bucket_name (str): Target S3 bucket
         image_fpath (str): Path to local image file
         context (str): Context text
         metadata (str): Metadata text
         convert_jpeg (bool): Whether to convert the image to JPEG
-        
+
     Returns:
         tuple[str, str, str]: URIs for image, metadata, and context
     """
     # Initialize S3 client
     s3_client = boto3.client("s3")
-    
+
     # Get image filename and create key
     image_filename = os.path.basename(image_fpath)
     base_name = os.path.splitext(image_filename)[0]
-    
+
     if convert_jpeg:
         # Convert the image to JPEG
         try:
             img = Image.open(image_fpath)
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-                
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
             # Save to a temporary file
-            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
                 temp_path = temp_file.name
-                img.save(temp_path, format='JPEG', quality=95)
-                
+                img.save(temp_path, format="JPEG", quality=95)
+
             # Use the temporary file for upload
             image_key = f"images/{base_name}.jpg"
-            s3_client.upload_file(temp_path, bucket_name, image_key, ExtraArgs={'ContentType': 'image/jpeg'})
-            
+            s3_client.upload_file(temp_path, bucket_name, image_key, ExtraArgs={"ContentType": "image/jpeg"})
+
             # Clean up
             os.unlink(temp_path)
         except Exception as e:
@@ -71,17 +71,17 @@ def populate_bucket(
         # Upload original image file
         image_key = f"images/{image_filename}"
         s3_client.upload_file(image_fpath, bucket_name, image_key)
-    
+
     # Create image S3 URI
     image_s3_uri = f"s3://{bucket_name}/{image_key}"
-    
+
     # Upload metadata JSON file
     original_metadata_key = f"metadata/{base_name}_metadata.txt"
     metadata_bytes = metadata.encode("utf-8")
     s3_client.put_object(Body=metadata_bytes, Bucket=bucket_name, Key=original_metadata_key)
     # Create metadata S3 URI
     original_metadata_s3_uri = f"s3://{bucket_name}/{original_metadata_key}"
-    
+
     # Upload context JSON file
     context_key = f"contexts/{base_name}_context.txt"
     context_bytes = context.encode("utf-8")
@@ -92,29 +92,28 @@ def populate_bucket(
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
-
 def convert_to_jpeg(file_content: bytes) -> bytes:
     """
     Convert binary image data to JPEG format
-    
+
     Args:
         file_content (bytes): Binary image data
-        
+
     Returns:
         bytes: JPEG formatted image data
     """
     try:
         # Open the image with PIL
         img = Image.open(BytesIO(file_content))
-        
+
         # Convert to RGB if needed (in case of RGBA or other formats)
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
-        
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+
         # Save as JPEG to a BytesIO object
         output = BytesIO()
-        img.save(output, format='JPEG', quality=95)
-        
+        img.save(output, format="JPEG", quality=95)
+
         # Get the bytes
         jpeg_content = output.getvalue()
         return jpeg_content
@@ -135,26 +134,26 @@ def copy_s3_file_using_subprocess(
     logging.debug(f"Trying alternative method with AWS CLI for {source_key}")
 
     if convert_jpeg:
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
             temp_path = temp_file.name
-        
+
         # Download the file
         download_cmd = f"aws s3 cp s3://{source_bucket}/{source_key} {temp_path}"
         subprocess.run(download_cmd, shell=True, check=True)
-        
+
         # Convert to JPEG
         try:
             img = Image.open(temp_path)
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-            img.save(temp_path, format='JPEG', quality=95)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(temp_path, format="JPEG", quality=95)
         except Exception as e:
             logging.error(f"Failed to convert image using subprocess method: {str(e)}")
-        
+
         # Upload the converted file
         upload_cmd = f"aws s3 cp {temp_path} s3://{dest_bucket}/{dest_key}"
         process = subprocess.run(upload_cmd, shell=True, capture_output=True, text=True)
-        
+
         # Clean up
         os.unlink(temp_path)
     else:
@@ -189,11 +188,11 @@ def copy_s3_file(
         logging.debug(f"Copying {source_bucket}/{source_key} to {dest_bucket}/{dest_key}")
         response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
         file_content = response["Body"].read()
-        
+
         # Convert to JPEG if requested
         if convert_jpeg:
             file_content = convert_to_jpeg(file_content)
-            
+
         s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_key, ContentType="image/jpeg")
 
     except Exception as e:
@@ -289,7 +288,7 @@ def translate_csv_to_job_objects(
     job_name: str,
     uploads_bucket: str,
     original_bucket: str = "fedora-cor-binaries",
-    max_workers: int = 10
+    max_workers: int = 10,
 ) -> list[dict]:
     """Translate CSV into job objects with parallel processing."""
     # Load data
@@ -301,16 +300,12 @@ def translate_csv_to_job_objects(
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Create a partial function with common parameters
         process_work_group = partial(
-            process_single_work_group,
-            job_name=job_name,
-            uploads_bucket=uploads_bucket,
-            original_bucket=original_bucket
+            process_single_work_group, job_name=job_name, uploads_bucket=uploads_bucket, original_bucket=original_bucket
         )
 
         # Submit all work groups for processing
         future_to_work_id = {
-            executor.submit(process_work_group, work_id, group_df): work_id 
-            for work_id, group_df in grouped_df
+            executor.submit(process_work_group, work_id, group_df): work_id for work_id, group_df in grouped_df
         }
 
         # Collect results as they complete
@@ -319,6 +314,7 @@ def translate_csv_to_job_objects(
             job_objects.append(future.result())
 
     return job_objects
+
 
 def process_single_work_group(work_id, work_df, job_name, uploads_bucket, original_bucket):
     """Process a single work group to create a job object."""
@@ -340,6 +336,7 @@ def process_single_work_group(work_id, work_df, job_name, uploads_bucket, origin
         "original_metadata_s3_uri": metadata_s3_uri,
     }
 
+
 def prepare_images_parallel(work_df, job_name, uploads_bucket, original_bucket, max_workers=5):
     """Copy images in parallel using ThreadPoolExecutor."""
     work_id = work_df["work_id"].iloc[0]
@@ -355,10 +352,12 @@ def prepare_images_parallel(work_df, job_name, uploads_bucket, original_bucket, 
 
     # Process images in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        list(tqdm(
-            executor.map(lambda args: copy_s3_file(*args, True), tasks),
-            total=len(tasks),
-            desc=f"Processing images for work_id {work_id}"
-        ))
+        list(
+            tqdm(
+                executor.map(lambda args: copy_s3_file(*args, True), tasks),
+                total=len(tasks),
+                desc=f"Processing images for work_id {work_id}",
+            )
+        )
 
     return [f"s3://{uploads_bucket}/{destination_folder}"]
