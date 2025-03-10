@@ -86,39 +86,69 @@ def get_work_details(job_name, work_id):
         raise
 
 
-def update_dynamodb_item(job_name, work_id, update_data):
-    status = "READY FOR REVIEW"
+def update_dynamodb_item(
+    job_name: str,
+    work_id: str,
+    update_data: dict | None = None,
+    status: dict | None = None,
+):
+    """
+    Update a DynamoDB item with new data and/or status.
+    
+    Args:
+        job_name (str): The job name
+        work_id (str): The work ID
+        update_data (dict, optional): Dictionary of field-value pairs to update
+        status (str, optional): New status to set for the work item
+    """
     try:
-        update_expression = "SET #status = :status"
-        expression_attribute_names = {"#status": WORK_STATUS}
-        expression_attribute_values = {":status": status}
-
-        for key, value in update_data.items():
-            update_expression += f", #{key} = :{key}"
-            expression_attribute_names[f"#{key}"] = key
-            expression_attribute_values[f":{key}"] = value
-
+        # Start with empty update parts
+        update_expression_parts = []
+        expression_attribute_names = {}
+        expression_attribute_values = {}
+        
+        # Add status update if provided
+        if status is not None:
+            update_expression_parts.append("#status = :status")
+            expression_attribute_names["#status"] = WORK_STATUS
+            expression_attribute_values[":status"] = status
+        
+        # Add field updates from update_data if provided
+        if update_data:
+            for key, value in update_data.items():
+                update_expression_parts.append(f"#{key} = :{key}")
+                expression_attribute_names[f"#{key}"] = key
+                expression_attribute_values[f":{key}"] = value
+        
+        # If nothing to update, return early
+        if not update_expression_parts:
+            logger.warning(f"No updates provided for job={job_name}, work={work_id}")
+            return
+        
+        # Create the full update expression
+        update_expression = "SET " + ", ".join(update_expression_parts)
+        
+        # Perform the update
         table.update_item(
             Key={JOB_NAME: job_name, WORK_ID: work_id},
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
         )
-        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
+        
+        # Log appropriate message based on what was updated
+        log_message = f"Updated DynamoDB item for job={job_name}, work={work_id}"
+        if status:
+            log_message += f" with status '{status}'"
+        if update_data:
+            fields = list(update_data.keys())
+            log_message += f" and fields: {fields}"
+        
+        logger.info(log_message)
+        
     except ClientError as e:
         logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
-
-
-def update_dynamodb_status(job_name, work_id, status):
-    try:
-        table.update_item(
-            Key={JOB_NAME: job_name, WORK_ID: work_id},
-            UpdateExpression=f"SET {WORK_STATUS} = :status",
-            ExpressionAttributeValues={":status": status},
-        )
-        logger.info(f"Updated DynamoDB item for job={job_name}, work={work_id} to {status}")
-    except ClientError as e:
-        logger.error(f"Failed to update DynamoDB for job={job_name}, work={work_id}: {str(e)}")
+        raise
 
 
 def process_sqs_messages():
@@ -157,14 +187,14 @@ def process_sqs_messages():
                 original_metadata_s3_uri = work_item[ORIGINAL_METADATA_S3_URI]
 
                 logger.info(f"Job name: {job_name}")
-                logger.info(f"Job type: {job_type}")
                 logger.info(f"Work ID: {work_id}")
+                logger.info(f"Job type: {job_type}")
                 logger.info(f"Context S3 URI: {context_s3_uri}")
                 logger.info(f"Image S3 URIs: {image_s3_uris}")
                 logger.info(f"Original metadata S3 URI: {original_metadata_s3_uri}")
 
                 # Update work_status for the item in DynamoDB to "IN PROGRESS"
-                update_dynamodb_status(job_name=job_name, work_id=work_id, status="IN PROGRESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status="IN PROGRESS")
 
                 if job_type == "metadata":
                     work_structured_metadata = generate_work_structured_metadata(
@@ -188,6 +218,7 @@ def process_sqs_messages():
                         job_name=job_name,
                         work_id=work_id,
                         update_data=update_data,
+                        status="READY FOR REVIEW"
                     )
                 elif job_type == "bias":
                     work_bias_analysis = generate_work_bias_analysis(
@@ -223,7 +254,7 @@ def process_sqs_messages():
                 work_id = message_body[WORK_ID]
 
                 # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
-                update_dynamodb_status(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
 
 
 if __name__ == "__main__":

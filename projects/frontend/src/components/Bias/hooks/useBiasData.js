@@ -97,7 +97,7 @@ export const useBiasData = (jobName) => {
         const { biases, image_s3_uris, status } = await fetchBiasDetails(work.work_id);
 
         // Handle failed work or missing data after fetch
-        if (status === 'FAILED' || !biases || biases.length === 0) {
+        if (status === 'FAILED TO PROCESS' || !biases || biases.length === 0) {
           setBiasData([]);
           return;
         }
