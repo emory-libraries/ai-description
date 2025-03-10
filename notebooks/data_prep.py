@@ -7,29 +7,81 @@ import logging
 import os
 import re
 import subprocess
+import tempfile
+from io import BytesIO
 
 import boto3
 import pandas as pd
+from PIL import Image
 from tqdm import tqdm
 
 
-def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: str) -> tuple[str, str, str]:
+def populate_bucket(
+    bucket_name: str,
+    image_fpath: str,
+    context: str,
+    metadata: str,
+    convert_jpeg: bool = True,
+) -> tuple[str, str, str]:
+    """
+    Upload image and related files to S3 bucket, with option to convert image to JPEG.
+    
+    Args:
+        bucket_name (str): Target S3 bucket
+        image_fpath (str): Path to local image file
+        context (str): Context text
+        metadata (str): Metadata text
+        convert_jpeg (bool): Whether to convert the image to JPEG
+        
+    Returns:
+        tuple[str, str, str]: URIs for image, metadata, and context
+    """
     # Initialize S3 client
     s3_client = boto3.client("s3")
-    # Upload image file
+    
+    # Get image filename and create key
     image_filename = os.path.basename(image_fpath)
-    image_key = f"images/{image_filename}"
-    s3_client.upload_file(image_fpath, bucket_name, image_key)
+    base_name = os.path.splitext(image_filename)[0]
+    
+    if convert_jpeg:
+        # Convert the image to JPEG
+        try:
+            img = Image.open(image_fpath)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+                
+            # Save to a temporary file
+            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+                temp_path = temp_file.name
+                img.save(temp_path, format='JPEG', quality=95)
+                
+            # Use the temporary file for upload
+            image_key = f"images/{base_name}.jpg"
+            s3_client.upload_file(temp_path, bucket_name, image_key, ExtraArgs={'ContentType': 'image/jpeg'})
+            
+            # Clean up
+            os.unlink(temp_path)
+        except Exception as e:
+            logging.error(f"Failed to convert image: {str(e)}. Uploading original.")
+            image_key = f"images/{image_filename}"
+            s3_client.upload_file(image_fpath, bucket_name, image_key)
+    else:
+        # Upload original image file
+        image_key = f"images/{image_filename}"
+        s3_client.upload_file(image_fpath, bucket_name, image_key)
+    
     # Create image S3 URI
     image_s3_uri = f"s3://{bucket_name}/{image_key}"
+    
     # Upload metadata JSON file
-    original_metadata_key = f"metadata/{os.path.splitext(image_filename)[0]}_metadata.txt"
+    original_metadata_key = f"metadata/{base_name}_metadata.txt"
     metadata_bytes = metadata.encode("utf-8")
     s3_client.put_object(Body=metadata_bytes, Bucket=bucket_name, Key=original_metadata_key)
     # Create metadata S3 URI
     original_metadata_s3_uri = f"s3://{bucket_name}/{original_metadata_key}"
+    
     # Upload context JSON file
-    context_key = f"contexts/{os.path.splitext(image_filename)[0]}_context.txt"
+    context_key = f"contexts/{base_name}_context.txt"
     context_bytes = context.encode("utf-8")
     s3_client.put_object(Body=context_bytes, Bucket=bucket_name, Key=context_key)
     # Create context S3 URI
@@ -38,17 +90,74 @@ def populate_bucket(bucket_name: str, image_fpath: str, context: str, metadata: 
     return image_s3_uri, original_metadata_s3_uri, context_s3_uri
 
 
+
+def convert_to_jpeg(file_content: bytes) -> bytes:
+    """
+    Convert binary image data to JPEG format
+    
+    Args:
+        file_content (bytes): Binary image data
+        
+    Returns:
+        bytes: JPEG formatted image data
+    """
+    try:
+        # Open the image with PIL
+        img = Image.open(BytesIO(file_content))
+        
+        # Convert to RGB if needed (in case of RGBA or other formats)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Save as JPEG to a BytesIO object
+        output = BytesIO()
+        img.save(output, format='JPEG', quality=95)
+        
+        # Get the bytes
+        jpeg_content = output.getvalue()
+        return jpeg_content
+    except Exception as e:
+        logging.error(f"Failed to convert image to JPEG: {str(e)}")
+        # Return original content if conversion fails
+        return file_content
+
+
 def copy_s3_file_using_subprocess(
     source_bucket: str,
     source_key: str,
     dest_bucket: str,
     dest_key: str,
+    convert_jpeg: bool = True,
 ) -> None:
     """Copy S3 file using subprocess"""
     logging.debug(f"Trying alternative method with AWS CLI for {source_key}")
 
-    cmd = f"aws s3 cp s3://{source_bucket}/{source_key} s3://{dest_bucket}/{dest_key}"
-    process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    if convert_jpeg:
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+            temp_path = temp_file.name
+        
+        # Download the file
+        download_cmd = f"aws s3 cp s3://{source_bucket}/{source_key} {temp_path}"
+        subprocess.run(download_cmd, shell=True, check=True)
+        
+        # Convert to JPEG
+        try:
+            img = Image.open(temp_path)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.save(temp_path, format='JPEG', quality=95)
+        except Exception as e:
+            logging.error(f"Failed to convert image using subprocess method: {str(e)}")
+        
+        # Upload the converted file
+        upload_cmd = f"aws s3 cp {temp_path} s3://{dest_bucket}/{dest_key}"
+        process = subprocess.run(upload_cmd, shell=True, capture_output=True, text=True)
+        
+        # Clean up
+        os.unlink(temp_path)
+    else:
+        cmd = f"aws s3 cp s3://{source_bucket}/{source_key} s3://{dest_bucket}/{dest_key}"
+        process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
     if process.returncode == 0:
         logging.debug(f"Successfully copied {source_key} using AWS CLI")
@@ -61,23 +170,29 @@ def copy_s3_file(
     source_key: str,
     dest_bucket: str,
     dest_key: str,
+    convert_jpeg: bool = True,
 ) -> None:
     """
-    Copy a file from source bucket to destination bucket using get_object and put_object
-    instead of copy_object to avoid permission issues.
+    Copy a file from source bucket to destination bucket, optionally converting to JPEG.
 
     Args:
         source_bucket (str): Bucket of source file
         source_key (str): Key the source file
         dest_bucket (str): Bucket of destination file
         dest_key (str): Key of destination file
+        convert_jpeg (bool): Whether to convert the file to JPEG
     """
     s3_client = boto3.client("s3")
     try:
         logging.debug(f"Copying {source_bucket}/{source_key} to {dest_bucket}/{dest_key}")
         response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
         file_content = response["Body"].read()
-        s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_key)
+        
+        # Convert to JPEG if requested
+        if convert_jpeg:
+            file_content = convert_to_jpeg(file_content)
+            
+        s3_client.put_object(Body=file_content, Bucket=dest_bucket, Key=dest_key, ContentType="image/jpeg")
 
     except Exception as e:
         logging.error(f"Error: {str(e)}")
@@ -86,6 +201,7 @@ def copy_s3_file(
             source_key=source_key,
             dest_bucket=dest_bucket,
             dest_key=dest_key,
+            convert_jpeg=convert_jpeg,
         )
 
 
@@ -126,12 +242,13 @@ def prepare_images(
         # Get the original file path/key and other necessary info
         page_sha = row["page_sha1"]
         page_index = convert_page_to_index(row["page_title"])
-        # Copy the file with the new naming convention
+        # Copy the file with the new naming convention and convert to JPEG
         copy_s3_file(
             source_bucket=original_bucket,
             source_key=page_sha,
             dest_bucket=uploads_bucket,
-            dest_key=f"{destination_folder}page_{page_index}_{page_sha}",
+            dest_key=f"{destination_folder}page_{page_index}_{page_sha}.jpg",
+            convert_jpeg=True,
         )
 
     # Return the destination folder URI in S3 format
