@@ -89,17 +89,17 @@ def generate_structured_metadata(
             # parse output and log chain of thought
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
             logger.info(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
-            return Metadata(**json_dict["metadata"])
+            return Metadata(**json_dict)
 
         except Exception as e:
-            logger.warning(f"Attempt {attempt+1}/5 failed: {str(e)}")
+            logger.warning(f"Attempt {attempt+1}/5 failed: {str(type(e))} : {str(e)}")
             if attempt == 4:
                 # need to raise exception that was thrown for debugging purposes as invocation is in try block
                 raise e
 
             if isinstance(e, LLMResponseParsingError) or isinstance(e, ValidationError):
                 raw_output = llm_output.split(p.COT_TAG_END)[-1]
-                logger.debug("Raw model output:", raw_output)
+                logger.warning(f"Raw model output: {raw_output}")
                 if (
                     "apologize" in raw_output.lower()
                     or "i cannot" in raw_output.lower()
