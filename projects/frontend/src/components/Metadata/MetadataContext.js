@@ -1,7 +1,10 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+// components/Metadata/MetadataContext.js
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
@@ -18,7 +21,7 @@ export function MetadataProvider({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { jobName, workId } = location.state || {};
-  
+
   const [selectedWork, setSelectedWork] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
@@ -27,16 +30,16 @@ export function MetadataProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
 
-  const { fetchWorkDetails, fetchAllWorks } = useMetadataFetch({ 
-    token, 
-    logout, 
-    navigate, 
-    setError
+  const { fetchWorkDetails, fetchAllWorks } = useMetadataFetch({
+    token,
+    logout,
+    navigate,
+    setError,
   });
-  
+
   const { getPresignedUrl } = useImageLoader({ token, logout, navigate });
-  
-  const { updateMetadata, downloadAllMetadata } = useMetadataUpdate({
+
+  const { updateMetadata, downloadAllMetadata, updateReviewStatus } = useMetadataUpdate({
     token,
     logout,
     navigate,
@@ -48,25 +51,27 @@ export function MetadataProvider({ children }) {
     setModifiedFields,
     setMetadata,
     allWorks,
-    fetchWorkDetails
+    fetchWorkDetails,
+    setAllWorks,
+    setSelectedWork,
   });
 
   const handleMetadataEdit = (key, value) => {
     if (key === 'job_name' || key === 'work_id') return;
-    
+
     let processedValue = value;
     if (typeof value === 'object' && value !== null && 'value' in value) {
       processedValue = { ...value };
     }
-    
-    setMetadata(prev => ({
+
+    setMetadata((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
-    
-    setModifiedFields(prev => ({
+
+    setModifiedFields((prev) => ({
       ...prev,
-      [key]: processedValue
+      [key]: processedValue,
     }));
   };
 
@@ -83,17 +88,17 @@ export function MetadataProvider({ children }) {
       setMetadata(workDetails);
 
       if (workDetails.image_s3_uris && workDetails.image_s3_uris.length > 0) {
-        const imagePromises = workDetails.image_s3_uris.map(async uri => {
+        const imagePromises = workDetails.image_s3_uris.map(async (uri) => {
           const imageUrl = await getPresignedUrl(uri);
           return { uri, imageUrl };
         });
-        
+
         const images = await Promise.all(imagePromises);
         const newImageData = {};
         images.forEach(({ uri, imageUrl }) => {
           if (imageUrl) newImageData[uri] = imageUrl;
         });
-        
+
         setImageData(newImageData);
       }
     } catch (err) {
@@ -107,21 +112,17 @@ export function MetadataProvider({ children }) {
   useEffect(() => {
     async function loadInitialData() {
       if (!token || !jobName) return;
-      
+
       try {
         setIsLoading(true);
         const works = await fetchAllWorks(jobName);
         setAllWorks(works);
 
         if (workId) {
-          const workToSelect = works.find(w => w.work_id === workId);
+          const workToSelect = works.find((w) => w.work_id === workId);
           if (workToSelect) {
             await handleWorkSelect(workToSelect);
-          } else if (works.length > 0) {
-            await handleWorkSelect(works[0]);
           }
-        } else if (works.length > 0) {
-          await handleWorkSelect(works[0]);
         }
       } catch (err) {
         console.error('Error loading initial data:', err);
@@ -132,7 +133,7 @@ export function MetadataProvider({ children }) {
     }
 
     loadInitialData();
-  }, [token, jobName, workId]);
+  }, [token, jobName, workId, fetchAllWorks]);
 
   const contextValue = {
     token,
@@ -148,12 +149,10 @@ export function MetadataProvider({ children }) {
     handleWorkSelect,
     handleMetadataEdit,
     updateMetadata,
-    downloadAllMetadata
+    downloadAllMetadata,
+    updateReviewStatus,
+    fetchAllWorks,
   };
 
-  return (
-    <MetadataContext.Provider value={contextValue}>
-      {children}
-    </MetadataContext.Provider>
-  );
+  return <MetadataContext.Provider value={contextValue}>{children}</MetadataContext.Provider>;
 }

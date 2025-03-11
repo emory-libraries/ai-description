@@ -1,10 +1,13 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
+
+// components/JobStatus/hooks/useJobStatus.js
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../AuthContext';
+import { buildApiUrl } from '../../../utils/apiUrls';
 
 const useJobStatus = (token, navigate) => {
   const { logout } = useAuth();
@@ -12,7 +15,7 @@ const useJobStatus = (token, navigate) => {
     const savedJobs = localStorage.getItem('jobStatus');
     return savedJobs ? new Map(JSON.parse(savedJobs)) : new Map();
   });
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submittedJobName, setSubmittedJobName] = useState(() => {
@@ -32,91 +35,99 @@ const useJobStatus = (token, navigate) => {
       setError(null);
     }
   }, [submittedJobName]);
+  const { getAuthHeaders } = useAuth();
+  const checkJobProgress = useCallback(
+    async (jobNameParam, isRefreshOperation = false) => {
+      const nameToUse = jobNameParam || submittedJobName;
+      if (!token || !nameToUse) return;
 
-  const checkJobProgress = useCallback(async () => {
-    if (!token || !submittedJobName) return;
+      try {
+        if (isRefreshOperation) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
+        }
+        const url = buildApiUrl('/api/job_progress');
+        console.log(`Fetching from: ${url}?job_name=${nameToUse}`);
 
-    try {
-      setIsLoading(true);
-      const apiUrl = '/api/job_progress';
-      console.log(`Fetching from: ${apiUrl}?job_name=${submittedJobName}`);
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'X-Request-Timestamp': String(Date.now())
-      };
-      console.log('Request Headers:', { ...headers, 'Authorization': 'Bearer [REDACTED]' });
+        // Use nameToUse in the API call
+        const response = await fetch(`${url}?job_name=${nameToUse}`, {
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+        });
 
-      const response = await fetch(
-        `${apiUrl}?job_name=${submittedJobName}`,
-        { headers }
-      );
+        console.log('Response Status:', response.status);
+        const responseText = await response.text();
+        console.log('Response Body:', responseText);
 
-      console.log('Response Status:', JSON.stringify(response.status));
-      const responseText = await response.text();
-      console.log('Response Body:', JSON.stringify(responseText));
+        if (!response.ok) {
+          // Handle unauthorized responses (token expired)
+          if (response.status === 401 || response.status === 403) {
+            logout();
+            navigate('/login');
+            return;
+          }
 
-      if (!response.ok) {
-        // Handle unauthorized responses (token expired)
-        if (response.status === 401 || response.status === 403) {
-          logout();
-          navigate('/login');
+          setJobs(new Map());
           return;
         }
 
-        setJobs(new Map());
-        return;
-      }
+        // Parse JSON after logging the raw text
+        let data;
+        try {
+          data = JSON.parse(responseText);
+          console.log('Parsed Data:', data);
+        } catch (parseError) {
+          console.error('JSON Parse Error:', parseError);
+          return;
+        }
 
-      // Parse JSON after logging the raw text
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('Parsed Data:', JSON.stringify(data));
-      } catch (parseError) {
-        console.error('JSON Parse Error:', JSON.stringify(parseError));
-        return;
-      }
+        const newJobs = new Map();
+        const jobKey = submittedJobName;
+        const workItems = [];
 
-      const newJobs = new Map();
-      const jobKey = submittedJobName;
-      const workItems = [];
-
-      if (data && data.job_progress) {
-        console.log('Job progress structure:', JSON.stringify(data.job_progress));
-        Object.entries(data.job_progress).forEach(([status, ids]) => {
-          // Check if ids is an array before processing
-          if (Array.isArray(ids)) {
-            ids.forEach(id => {
-              workItems.push({
-                work_id: id,
-                status: status,
-                job_name: jobKey,
-                job_type: data.job_type || 'unknown'
+        if (data && data.job_progress) {
+          console.log('Job progress structure:', data.job_progress);
+          Object.entries(data.job_progress).forEach(([work_status, ids]) => {
+            // Check if ids is an array before processing
+            if (Array.isArray(ids)) {
+              ids.forEach((id) => {
+                workItems.push({
+                  work_id: id,
+                  work_status: work_status,
+                  job_name: jobKey,
+                  job_type: data.job_type || 'unknown',
+                });
               });
-            });
-          } else {
-            console.warn(`Expected array for status "${status}" but got:`, JSON.stringify(ids));
-          }
-        });
+            } else {
+              console.warn(`Expected array for work_status "${work_status}" but got:`, ids);
+            }
+          });
+        }
+
+        const jobData = {
+          job_name: jobKey,
+          job_type: data.job_type || 'unknown',
+          works: workItems,
+        };
+
+        newJobs.set(jobKey, jobData);
+        setJobs(newJobs);
+      } catch (err) {
+        console.error('Error checking job progress:', err);
+        setError('Failed to fetch job progress. Please try again.');
+      } finally {
+        if (isRefreshOperation) {
+          setIsRefreshing(false);
+        } else {
+          setIsLoading(false);
+        }
       }
-
-      const jobData = {
-        job_name: jobKey,
-        job_type: data.job_type || 'unknown',
-        works: workItems
-      };
-
-      newJobs.set(jobKey, jobData);
-      setJobs(newJobs);
-
-    } catch (err) {
-      console.error('Error checking job progress:', JSON.stringify(err));
-      setError('Failed to fetch job progress. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, submittedJobName, logout, navigate]);
+    },
+    [token, submittedJobName, logout, navigate, getAuthHeaders],
+  );
 
   useEffect(() => {
     if (token && submittedJobName) {
@@ -129,9 +140,10 @@ const useJobStatus = (token, navigate) => {
     setJobs,
     isLoading,
     error,
+    isRefreshing,
     submittedJobName,
     setSubmittedJobName,
-    checkJobProgress
+    checkJobProgress,
   };
 };
 

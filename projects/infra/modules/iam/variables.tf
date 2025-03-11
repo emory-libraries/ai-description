@@ -8,8 +8,8 @@ variable "works_table_arn" {
   type        = string
 }
 
-variable "accounts_table_arn" {
-  description = "ARN of the DynamoDB accounts table"
+variable "website_bucket_arn" {
+  description = "ARN of the S3 website bucket"
   type        = string
 }
 
@@ -51,9 +51,4 @@ variable "ecr_processor_repository_name" {
 variable "enable_vpc_endpoints" {
   description = "Whether or not the application uses VPC endpoints"
   type        = bool
-}
-
-variable "jwt_secret_arn" {
-  description = "ARN of Secret used for JWT"
-  type        = string
 }

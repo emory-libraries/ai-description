@@ -1,7 +1,7 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-# Lambda functions variables
+# modules/lambda/variables.tf
 
 variable "uploads_bucket_name" {
   description = "Name of the S3 bucket for uploads"
@@ -10,11 +10,6 @@ variable "uploads_bucket_name" {
 
 variable "works_table_name" {
   description = "Name of the DynamoDB jobs table"
-  type        = string
-}
-
-variable "accounts_table_name" {
-  description = "Name of the DynamoDB accounts table"
   type        = string
 }
 
@@ -43,11 +38,6 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "vpc_security_group_id" {
-  description = "Aecurity group ID for VPC"
-  type        = string
-}
-
 variable "ecs_security_group_id" {
   description = "Security group IDs for ECS task"
   type        = string
@@ -55,11 +45,6 @@ variable "ecs_security_group_id" {
 
 variable "task_execution_role_arn" {
   description = "ARN of the ECS task execution role"
-  type        = string
-}
-
-variable "jwt_secret_name" {
-  description = "Name of Secret used for JWT"
   type        = string
 }
 

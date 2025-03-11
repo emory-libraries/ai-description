@@ -1,7 +1,7 @@
 /*
-* Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
-* Terms and the SOW between the parties dated 2025.
-*/
+ * Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+ * Terms and the SOW between the parties dated 2025.
+ */
 import React from 'react';
 import {
   Container,
@@ -10,8 +10,8 @@ import {
   Box,
   SpaceBetween,
   ColumnLayout,
-  StatusIndicator
-} from "@cloudscape-design/components";
+  StatusIndicator,
+} from '@cloudscape-design/components';
 import { getBiasLevelColor } from '../utils/biasHelpers';
 import { ImageViewer } from './ImageViewer';
 
@@ -31,15 +31,17 @@ export const BiasDetails = ({ bias, imageUrl }) => {
         <SpaceBetween size="l">
           <ColumnLayout columns={2} variant="text-grid">
             <div>
+              <Box variant="awsui-key-label">Page number</Box>
+              <Box variant="h5">{bias.pageNumber}</Box>
+            </div>
+            <div>
               <Box variant="awsui-key-label">Type</Box>
-              <Box variant="awsui-value-large">{bias.type}</Box>
+              <Box variant="h5">{bias.type}</Box>
             </div>
             <div>
               <Box variant="awsui-key-label">Level</Box>
               <Box>
-                <StatusIndicator type={getBiasLevelColor(bias.level)}>
-                  {bias.level} Risk
-                </StatusIndicator>
+                <StatusIndicator type={getBiasLevelColor(bias.level)}>{bias.level} Risk</StatusIndicator>
               </Box>
             </div>
           </ColumnLayout>

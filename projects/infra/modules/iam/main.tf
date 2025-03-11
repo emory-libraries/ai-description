@@ -69,6 +69,8 @@ resource "aws_iam_policy" "service_lambda_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
         ]
         Resource = [
           var.uploads_bucket_arn,
@@ -86,7 +88,6 @@ resource "aws_iam_policy" "service_lambda_policy" {
         ]
         Resource = [
           var.works_table_arn,
-          var.accounts_table_arn
         ]
       },
       {
@@ -101,11 +102,6 @@ resource "aws_iam_policy" "service_lambda_policy" {
           "arn:aws:ecs:*:*:task-definition/*",
           "arn:aws:ecs:*:*:task/*",
         ]
-      },
-      {
-        Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
-        Resource = [var.jwt_secret_arn]
       },
       {
         Effect = "Allow"
@@ -210,9 +206,21 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
         ]
         Resource = [
+          "${var.uploads_bucket_arn}",
           "${var.uploads_bucket_arn}/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          var.uploads_bucket_arn
         ]
       },
       {
@@ -220,7 +228,7 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
         ]
         Resource = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
       },
@@ -271,8 +279,28 @@ resource "aws_iam_role" "api_gateway_role" {
 }
 
 # API Gateway Policy
+resource "aws_iam_policy" "website_bucket_access_policy" {
+  name = "${var.deployment_prefix}-website-bucket-access-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          var.website_bucket_arn,
+          "${var.website_bucket_arn}/*",
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_policy" "invoke_lambda_policy" {
-  name = "${var.deployment_prefix}-base-lambda-policy-1"
+  name = "${var.deployment_prefix}-invoke-lambda-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -285,6 +313,14 @@ resource "aws_iam_policy" "invoke_lambda_policy" {
   })
 }
 # API Gateway Role-Policy Attachments
+resource "aws_iam_role_policy_attachment" "api_gateway_website_policy" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = aws_iam_policy.website_bucket_access_policy.arn
+}
+resource "aws_iam_role_policy_attachment" "api_gateway_lambda_policy" {
+  role       = aws_iam_role.api_gateway_role.name
+  policy_arn = aws_iam_policy.invoke_lambda_policy.arn
+}
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
   role       = aws_iam_role.api_gateway_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
@@ -292,10 +328,6 @@ resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy" {
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_full_access" {
   role       = aws_iam_role.api_gateway_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-}
-resource "aws_iam_role_policy_attachment" "api_gateway_lambda_policy" {
-  role       = aws_iam_role.api_gateway_role.name
-  policy_arn = aws_iam_policy.invoke_lambda_policy.arn
 }
 
 # VPC Endpoint policies
@@ -311,7 +343,8 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
         Principal = "*"
         Action = [
           "s3:GetObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:HeadObject",
         ]
         Resource = "*"
       }
