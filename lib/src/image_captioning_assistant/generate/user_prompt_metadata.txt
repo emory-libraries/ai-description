@@ -9,7 +9,7 @@ Explanatory definition:
        "description": ExplainedValue("Summary description"),
        "transcription": { "transcriptions":
                             [ # list required here
-                                # First image transcription, only include text on first image.  
+                                # First image transcription, only include text on first image.
                                 # If two pages are provided, INCLUDE THIS ENTRY but have printed_text and handwriting be empty lists.
                                 {
                                "printed_text": ["list of", "transcribed text", "in print", "in object"],
