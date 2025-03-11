@@ -3,7 +3,6 @@
 
 """Generate structured metadata for a work."""
 
-import json
 import logging
 from typing import Any
 
@@ -16,9 +15,7 @@ from image_captioning_assistant.aws.s3 import load_to_str
 from image_captioning_assistant.data.data_classes import Metadata
 from image_captioning_assistant.generate.utils import (
     extract_json_and_cot_from_text,
-    format_prompt_for_claude,
-    format_prompt_for_nova,
-    format_request_body,
+    format_prompt_for_converse,
     LLMResponseParsingError,
     load_and_resize_images,
 )
@@ -44,59 +41,52 @@ def generate_structured_metadata(
     Args:
         img_bytes_list: List of image bytes (front/back images, max 2 items)
         llm_kwargs: LLM configuration parameters including:
-            - model: Model ID (must contain 'nova' or 'claude')
+            - model_id: Model ID
             - region_name: (Optional) AWS region override
         work_context: Additional context to assist metadata generation
 
     Returns:
-        Dictionary containing:
-        - cot: Chain of Thought reasoning text
-        - metadata: Structured metadata object
+        Metadata: Structured metadata object
 
     Raises:
         ValueError: For unsupported model types
         RuntimeError: After 5 failed attempts to parse model output
     """
     # Configure Bedrock client
+    model_name = llm_kwargs["model_id"]
     if "region_name" in llm_kwargs:
         bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs["region_name"])
     else:
         bedrock_runtime = boto3.client("bedrock-runtime")
+
     # Construct augmented prompt
     text_prompt = f"{p.user_prompt_metadata}\nContextual Help: {work_context}"
-    model_name: str = llm_kwargs["model_id"]
-    court_order = False
-    # Create messages
-    if "claude" in model_name:
-        messages = format_prompt_for_claude(
-            prompt=text_prompt,
-            img_bytes_list=img_bytes_list,
-            assistant_start=p.COT_TAG,
-        )
-    elif "nova" in model_name:
-        messages = format_prompt_for_nova(
-            prompt=text_prompt,
-            img_bytes_list=img_bytes_list,
-            assistant_start=p.COT_TAG,
-        )
-    else:
-        raise ValueError(f"model {model_name} not supported")
 
+    # Create messages for converse API
+    messages = format_prompt_for_converse(
+        prompt=text_prompt,
+        img_bytes_list=img_bytes_list,
+        assistant_start=(p.COT_TAG if "llama" not in model_name else None),
+    )
+
+    court_order = False
     # Retry loop for robustness around structured metadata
     for attempt in range(5):
         try:
-            request_body = format_request_body(model_name, messages, court_order=court_order)
-            response = bedrock_runtime.invoke_model(modelId=model_name, body=json.dumps(request_body))
+            sys_prompt = p.system_prompt_court_order if court_order else p.system_prompt
+            response = bedrock_runtime.converse(
+                modelId=model_name,
+                messages=messages,
+                system=[{"text": sys_prompt}],
+                inferenceConfig={
+                    "temperature": 0.1,
+                    "maxTokens": 4000,
+                    "topP": 0.6,
+                },
+            )
+            llm_output = response["output"]["message"]["content"][0]["text"]
 
-            # Process the response
-            result = json.loads(response["body"].read())
-            if "claude" in model_name:
-                llm_output = result["content"][0]["text"]
-            elif "nova" in model_name:
-                llm_output = result["output"]["message"]["content"][0]["text"]
-            else:
-                raise ValueError("ModelId " + model_name + " not supported, must be set up")
-
+            # parse output and log chain of thought
             cot, json_dict = extract_json_and_cot_from_text(llm_output)
             logger.info(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
             return Metadata(**json_dict["metadata"])
