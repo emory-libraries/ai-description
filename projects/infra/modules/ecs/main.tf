@@ -8,7 +8,7 @@ data "aws_region" "current" {}
 locals {
   project_root_path = "${path.root}/../.."
   ecs_src_path      = "${path.module}/src"
-  lib_path          = "${local.project_root_path}/lib"
+  lib_path          = "${local.project_root_path}/lib/ruby"
   ecs_src_files     = fileset(local.ecs_src_path, "**")
   package_src_files = fileset(local.lib_path, "**")
   ecs_src_hash      = sha256(join("", [for f in local.ecs_src_files : filesha256("${local.ecs_src_path}/${f}")]))
@@ -29,7 +29,7 @@ resource "null_resource" "push_image" {
     command     = <<EOF
       echo "Starting Docker build and push process"
       aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${var.ecr_processor_repository_url}
-      docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile ${local.project_root_path} || exit 1
+      docker build -t ${var.ecr_processor_repository_url}:${local.image_tag} -f ${local.ecs_src_path}/Dockerfile.ruby ${local.project_root_path} || exit 1
       docker push ${var.ecr_processor_repository_url}:${local.image_tag} || exit 1
       echo "Docker build and push process completed"
     EOF
