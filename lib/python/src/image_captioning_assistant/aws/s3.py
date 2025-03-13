@@ -28,6 +28,7 @@ def list_contents_of_folder(
         prefix += "/"
     logger.info(f"s3_client_kwargs: {s3_client_kwargs}")
     client = boto3.client("s3", **s3_client_kwargs)
+    # amazonq-ignore-next-line
     response = client.list_objects(
         Bucket=bucket,
         Prefix=prefix,

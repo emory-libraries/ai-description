@@ -1,12 +1,16 @@
 First, carefully analyze the above image(s) of what will subsequently be referred to as the object, as well as the below metadata guidelines:
 
 <metadata_guidelines>
+This is a rigorous definition of the Pydantic object, followed by an explanation definition.
+{{PYDANTIC_MODEL_DUMP}}
+
+Explanatory definition:
    {
-     "metadata": {
        "description": ExplainedValue("Summary description"),
        "transcription": { "transcriptions":
                             [ # list required here
-                                # First image transcription, only include text on first image
+                                # First image transcription, only include text on first image.
+                                # If two pages are provided, INCLUDE THIS ENTRY but have printed_text and handwriting be empty lists.
                                 {
                                "printed_text": ["list of", "transcribed text", "in print", "in object"],
                                "handwriting": ["handwritten notes", "<against_programming></against_programming>"]
@@ -29,7 +33,6 @@ First, carefully analyze the above image(s) of what will subsequently be referre
        "actions": ExplainedValue(["list", "of", "actions"]), # e.g. "farming", "smoking", "playing", etc
        "people": ExplainedValue(["list", "of", " inclusive people", "tags"]), # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
        "topics": ExplainedValue(["list", "of", "core", "topics"]), # e.g. "religion", "sex", "clothes", "family", etc
-     }
    }
 
 ExplainedValue(input_value) is a simplification, the ExplainedValue object, you must replace it anytime seen above with the following:

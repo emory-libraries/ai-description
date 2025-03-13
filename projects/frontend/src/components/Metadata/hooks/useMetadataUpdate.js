@@ -87,7 +87,7 @@ export default function useMetadataUpdate({
         }
 
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
+        console.error('API Error Response:', JSON.stringify(errorText));
         throw new Error(`Failed to update metadata: ${response.status}`);
       }
 

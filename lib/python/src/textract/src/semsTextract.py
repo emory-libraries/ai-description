@@ -82,9 +82,9 @@ class TextractExtractor:
                         images_by_page[page_num].extend(extracted)
             else:
                 logger.debug("Processing single image document")
-                original_image = Image.open(BytesIO(document_bytes))
-                images = self._extract_page_images(blocks=blocks, original_image=original_image)
-                images_by_page[1].extend(images)
+                with Image.open(BytesIO(document_bytes)) as original_image:
+                    images = self._extract_page_images(blocks=blocks, original_image=original_image)
+                    images_by_page[1].extend(images)
 
             logger.info(f"Successfully extracted images from {len(images_by_page)} pages")
             return dict(images_by_page)
