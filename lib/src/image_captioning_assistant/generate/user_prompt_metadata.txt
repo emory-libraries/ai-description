@@ -90,7 +90,7 @@ Now, follow these steps to complete your task:
 
 5. Format your final output as a JSON object with the structure shown in the <metadata_guidelines> section.
 
-Before providing your final output, show your thought process for each step inside {{COT_TAG}} tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
+Before providing your final output, show your thought process for each step inside <object_detail_and_bias_analysis> tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
 
 Show your thought process by:
 
@@ -102,6 +102,6 @@ Show your thought process by:
 
 This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
 
-Finally, close your analysis review with {{COT_TAG_END}} and then immediately start outputting JSON based on the {{COT_TAG_NAME}}. Do not write any text outside of the {{COT_TAG}} tags, and the JSON object must conform exactly to what is described in <metadata_guidelines>. If not, this will break a very important technology system and you will fail this task.
+Finally, close your analysis review with </object_detail_and_bias_analysis> and then immediately start outputting JSON based on the object_detail_and_bias_analysis. Do not write any text outside of the <object_detail_and_bias_analysis> tags, and the JSON object must conform exactly to what is described in <metadata_guidelines>. If not, this will break a very important technology system and you will fail this task.
 
 Remember to always prioritize inclusivity and bias consciousness in your analysis and metadata generation. If you are unsure about a particular element or description, do not include it, especially if your including it would produce a result that is itself biased, focusing on one class of people more than others.

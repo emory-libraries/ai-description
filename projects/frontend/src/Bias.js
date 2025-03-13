@@ -38,7 +38,7 @@ function Bias() {
   const [imageData, setImageData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
+  const API_ENDPOINT = 'https://rf43g07ij7.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
     return new S3Client({
@@ -134,6 +134,7 @@ function Bias() {
       }
   
       const data = await response.json();
+      console.log('raw data: ', data)
       const image_s3_uris = data.item.image_s3_uris; 
       const biasEntries = data.item.page_biases.flatMap((page, pageIndex) => 
         page.biases.map(bias => ({

@@ -4,6 +4,7 @@
 # Lambda functions module
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 # Create dist directories for other functions
 resource "null_resource" "create_dist_dirs" {
@@ -16,8 +17,7 @@ resource "null_resource" "create_dist_dirs" {
   }
 
   provisioner "local-exec" {
-    command     = "mkdir .\\modules\\lambda\\dist\\functions 2>nul || exit 0"
-    interpreter = ["cmd", "/C"]
+    command = "mkdir -p ${each.value}"
   }
 
 }
@@ -48,6 +48,16 @@ locals {
         WORKS_TABLE_NAME = var.works_table_name
       }
     }
+    overall_progress = {
+      source_dir  = "${path.module}/src/functions/overall_progress"
+      description = "Checks SQS and ECS status"
+      timeout     = 15
+      environment = {
+        SQS_QUEUE_URL           = var.sqs_queue_url
+        ECS_CLUSTER_NAME        = var.ecs_cluster_name
+        ECS_TASK_DEFINITION_ARN = var.ecs_task_definition_arn
+      }
+    }
     get_results = {
       source_dir  = "${path.module}/src/functions/get_results"
       description = "Retrieve results for a work in a job"
@@ -55,6 +65,12 @@ locals {
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
       }
+    }
+    get_presigned_url = {
+      source_dir  = "${path.module}/src/functions/get_presigned_url"
+      description = "Get a pre-signed URL for an S3 item"
+      timeout     = 30
+      environment = {}
     }
     update_results = {
       source_dir  = "${path.module}/src/functions/update_results"

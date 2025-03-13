@@ -42,7 +42,7 @@ function Metadata() {
   const [modifiedFields, setModifiedFields] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [allWorks, setAllWorks] = useState([]);
-  const API_ENDPOINT = 'https://v1uu56980g.execute-api.us-east-1.amazonaws.com/dev';
+  const API_ENDPOINT = 'https://rf43g07ij7.execute-api.us-east-1.amazonaws.com/dev';
 
   const initializeS3Client = useCallback(() => {
     return new S3Client({
