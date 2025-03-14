@@ -20,11 +20,11 @@ EXPIRES_IN = 'expires_in'
 DEFAULT_EXPIRATION = 3600 # Default expiration time (in seconds)
 
 # Set up logging
-logger = Logger.new($stdout)
-logger.level = Logger::INFO
+$logger = Logger.new($stdout)
+$logger.level = Logger::INFO
 
-# Initialize AWS client globally
-Aws::S3::Client.new(region: AWS_REGION)
+# Initialize AWS S3 client globally
+$s3_client = Aws::S3::Client.new(region: AWS_REGION)
 
 def create_response(status_code, body)
   {
@@ -46,7 +46,7 @@ def generate_presigned_url(s3_uri, expiration = DEFAULT_EXPIRATION)
   raise 'S3 URI must contain both bucket name and object key' if bucket_name.nil? || object_key.empty?
 
   begin
-    signer = Aws::S3::Presigner.new(client: s3)
+    signer = Aws::S3::Presigner.new(client: $s3_client)
     signer.presigned_url(
       :get_object,
       bucket: bucket_name,
@@ -54,7 +54,7 @@ def generate_presigned_url(s3_uri, expiration = DEFAULT_EXPIRATION)
       expires_in: expiration
     )
   rescue StandardError => e
-    logger.error("Error generating presigned URL: #{e}")
+    $logger.error("Error generating presigned URL: #{e}")
     raise
   end
 end
@@ -63,8 +63,8 @@ def handler(event:, context:)
   # Extract parameters based on event source
   if event['queryStringParameters']
     # API Gateway invocation
-    s3_uri = event['queryStringParameters'][S3_URI]
-    expires_in_str = event['queryStringParameters'][EXPIRES_IN] || DEFAULT_EXPIRATION.to_s
+    s3_uri = event['queryStringParameters']&.[](S3_URI)
+    expires_in_str = event['queryStringParameters']&.[](EXPIRES_IN) || DEFAULT_EXPIRATION.to_s
   else
     # Direct Lambda invocation
     s3_uri = event[S3_URI]
@@ -73,7 +73,7 @@ def handler(event:, context:)
 
   # Validate required parameters
   if s3_uri.nil? || s3_uri.empty?
-    logger.error('No S3 URI provided')
+    $logger.error('No S3 URI provided')
     return create_response(400, { 'error' => "Missing required parameter 's3_uri'" })
   end
 
@@ -98,12 +98,12 @@ def handler(event:, context:)
     }
   )
 rescue URI::InvalidURIError, ArgumentError => e
-  logger.error("Validation error: #{e}")
+  $logger.error("Validation error: #{e}")
   create_response(400, { 'error' => e.message })
 rescue Aws::S3::Errors::ServiceError => e
-  logger.error("AWS service error: #{e}")
+  $logger.error("AWS service error: #{e}")
   create_response(500, { 'error' => 'Error accessing S3 resource' })
 rescue StandardError => e
-  logger.error("Unexpected error: #{e}")
+  $logger.error("Unexpected error: #{e}")
   create_response(500, { 'error' => 'Internal server error' })
 end
