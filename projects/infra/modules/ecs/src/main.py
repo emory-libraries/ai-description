@@ -15,7 +15,6 @@ from botocore.exceptions import ClientError
 from image_captioning_assistant.generate.bias_analysis.generate_bias_analysis import (
     generate_bias_analysis_from_s3_images,
 )
-from image_captioning_assistant.generate.errors import DocumentLengthError
 from image_captioning_assistant.generate.metadata.generate_metadata import generate_metadata_from_s3_images
 
 AWS_REGION = os.environ["AWS_REGION"]
@@ -47,6 +46,9 @@ IMAGE_S3_URIS = "image_s3_uris"
 CONTEXT_S3_URI = "context_s3_uri"
 ORIGINAL_METADATA_S3_URI = "original_metadata_s3_uri"
 WORK_STATUS = "work_status"
+READY_FOR_REVIEW = "READY FOR REVIEW"
+IN_PROGRESS = "IN PROGRESS"
+FAILED_TO_PROCESS = "FAILED TO PROCESS"
 
 # Set up logging
 logger = logging.getLogger()
@@ -194,7 +196,7 @@ def process_sqs_messages():
                 logger.info(f"Original metadata S3 URI: {original_metadata_s3_uri}")
 
                 # Update work_status for the item in DynamoDB to "IN PROGRESS"
-                update_dynamodb_item(job_name=job_name, work_id=work_id, status="IN PROGRESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status=IN_PROGRESS)
 
                 if job_type == "metadata":
                     work_structured_metadata = generate_metadata_from_s3_images(
@@ -214,9 +216,6 @@ def process_sqs_messages():
                     )
                     # Update DynamoDB with the bias_analysis field
                     update_data = work_structured_metadata.model_dump() | work_bias_analysis.model_dump()
-                    update_dynamodb_item(
-                        job_name=job_name, work_id=work_id, update_data=update_data, status="READY FOR REVIEW"
-                    )
                 elif job_type == "bias":
                     work_bias_analysis = generate_bias_analysis_from_s3_images(
                         image_s3_uris=image_s3_uris,
@@ -226,24 +225,21 @@ def process_sqs_messages():
                         s3_kwargs=S3_KWARGS,
                         resize_kwargs=RESIZE_KWARGS,
                     )
-                    # Update DynamoDB with the bias_analysis field
-                    update_dynamodb_item(
-                        job_name=job_name,
-                        work_id=work_id,
-                        update_data=work_bias_analysis.model_dump(),
-                    )
+                    update_data = work_bias_analysis.model_dump()
                 else:
                     raise ValueError(f"{JOB_TYPE}='{job_type}' not supported")
 
-                # Delete the message from the queue
+                # Update DynamoDB and SQS
+                update_dynamodb_item(
+                    job_name=job_name,
+                    work_id=work_id,
+                    update_data=update_data,
+                    status=READY_FOR_REVIEW,
+                )
                 sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
+                logger.info(f"Job {job_name} complete and ready for review")
             except Exception as exc:
-                if isinstance(exc, DocumentLengthError):
-                    # If it's a document length issue, remove from the queue, we don't intend to handle it
-                    logger.warning(f"Message {message['MessageId']} failed with error {str(exc)}")
-                    sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
-                else:
-                    logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
+                logger.exception(f"Message {message['MessageId']} failed with error {str(exc)}")
 
                 # Parse the message body to get the job_name and work_id
                 message_body = json.loads(message["Body"])
@@ -251,7 +247,10 @@ def process_sqs_messages():
                 work_id = message_body[WORK_ID]
 
                 # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
-                update_dynamodb_item(job_name=job_name, work_id=work_id, status="FAILED TO PROCESS")
+                update_dynamodb_item(job_name=job_name, work_id=work_id, status=FAILED_TO_PROCESS)
+
+                # Always delete the message from the queue after handling the failure
+                sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"])
 
 
 if __name__ == "__main__":

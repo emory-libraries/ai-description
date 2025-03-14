@@ -14,7 +14,6 @@ The application is designed to use S3 URIs, whereas Emory employees think in ter
 
 **NOTE:** Processing time is proportional to total page count. We'd recommend keeping jobs to a total page count under ~300. That could be 150 2-page works or 1 300-page book.
 
-
 ## Step 2: Create job
 
 ![Create job backend](./images/create_job_backend.png)
@@ -23,20 +22,22 @@ This is the manual step, for now. Under each library is a `client/` folder with 
 **NOTE:** We had issues displaying the original works in the UI, so one of the steps when creating works is to convert to JPEG.
 
 ### Request structure
+
 ```json
 {
-  "job_name" : "globally_unique",
-  "job_type" : "job_type | metadata",
+  "job_name": "globally_unique",
+  "job_type": "job_type | metadata",
   "works": [
     {
-      "work_id" : "001_normal",
+      "work_id": "001_normal",
       "image_s3_uris": ["s3://bucket/img.jpg", "s3://bucket/folder/"],
       "context_s3_uri": "s3://bucket/optional_context.txt",
-      "original_metadata_s3_uri": "s3://bucket/optional_metadata.json",
+      "original_metadata_s3_uri": "s3://bucket/optional_metadata.json"
     }
   ]
 }
 ```
+
 **Note:** `image_s3_uris` can be either an point to a specific file or just a folder - because SQS is limited to 2KB messages, we recommend using folders, especially when working with long works.
 
 ## Step 3: Log in
@@ -50,7 +51,6 @@ Because Cognito could not be used in our sandbox, we're using API Keys to author
 ![Job results search](./images/job_results_search.png)
 
 Whether you're searching for a bias or a metadata job, type the name in the search bar and you should find it.
-
 
 ## Step 5A: Review metadata job results
 
@@ -82,7 +82,7 @@ It'll download a spreadsheet like this.
 
 ![Bias](./images/bias.png)
 
-If your job was to analyze bias, you'll see a page like this. 
+If your job was to analyze bias, you'll see a page like this.
 
 ![Bias filter](./images/bias_filter.png)
 
