@@ -104,7 +104,7 @@ module ImageCaptioningAssistant
       end
 
       def self.create_messages(img_bytes_list:, model_name:, work_context: nil, original_metadata: nil)
-        prompt = Prompts::USER_PROMPT_BIAS_ONLY
+        prompt = Prompts::USER_PROMPT_BIAS
 
         if work_context || original_metadata
           context_str = "Additional Context:\n"
