@@ -18,15 +18,13 @@ module ImageCaptioningAssistant
       )
         if bedrock_runtime.nil?
           bedrock_runtime = if llm_kwargs[:region]
-            Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
-          else
-            Aws::BedrockRuntime::Client.new
-          end
+                              Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
+                            else
+                              Aws::BedrockRuntime::Client.new
+                            end
         end
 
-        if image_s3_uris.length > 2
-          raise RuntimeError, "maximum of 2 images (front and back) supported for short work"
-        end
+        raise 'maximum of 2 images (front and back) supported for short work' if image_s3_uris.length > 2
 
         img_bytes_list = []
         if image_s3_uris.length > 0
@@ -49,66 +47,63 @@ module ImageCaptioningAssistant
         llm_output = nil
 
         5.times do |attempt|
-          begin
-            request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
+          request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
 
-            response = bedrock_runtime.invoke_model({
-              model_id: model_name,
-              body: JSON.generate(request_body)
-            })
+          response = bedrock_runtime.invoke_model({
+                                                    model_id: model_name,
+                                                    body: JSON.generate(request_body)
+                                                  })
 
-            result = JSON.parse(response.body.read)
-            llm_output = if model_name.include?('claude')
-              result["content"][0]["text"]
-            elsif model_name.include?('nova')
-              result["output"]["message"]["content"][0]["text"]
-            else
-              raise ArgumentError, "ModelId #{model_name} not supported"
+          result = JSON.parse(response.body.read)
+          llm_output = if model_name.include?('claude')
+                         result['content'][0]['text']
+                       elsif model_name.include?('nova')
+                         result['output']['message']['content'][0]['text']
+                       else
+                         raise ArgumentError, "ModelId #{model_name} not supported"
+                       end
+
+          cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
+          Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
+
+          if image_s3_uris.length != json_dict['page_biases'].length
+            raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"
+          end
+
+          if json_dict['metadata_biases'] && json_dict['metadata_biases']['biases']
+            json_dict['metadata_biases']['biases'].each do |bias|
+              bias['level'] = bias['level'].to_s.downcase if bias['level']
+              bias['type'] = bias['type'].to_s.downcase if bias['type']
             end
+          end
 
-            cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
-            Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
+          json_dict['page_biases'].each do |page|
+            next unless page && page['biases']
 
-            if image_s3_uris.length != json_dict["page_biases"].length
-              raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"
+            page['biases'].each do |bias|
+              bias['level'] = bias['level'].to_s.downcase if bias['level']
+              bias['type'] = bias['type'].to_s.downcase if bias['type']
             end
+          end
 
-            if json_dict["metadata_biases"] && json_dict["metadata_biases"]["biases"]
-              json_dict["metadata_biases"]["biases"].each do |bias|
-                bias["level"] = bias["level"].to_s.downcase if bias["level"]
-                bias["type"] = bias["type"].to_s.downcase if bias["type"]
-              end
-            end
+          return Data::WorkBiasAnalysis.new(
+            metadata_biases: json_dict['metadata_biases'],
+            page_biases: json_dict['page_biases']
+          )
+        rescue StandardError => e
+          Utils::LOGGER.warn("Attempt #{attempt + 1}/5 failed: #{e.message}")
+          raise e if attempt == 4
 
-            json_dict["page_biases"].each do |page|
-              if page && page["biases"]
-                page["biases"].each do |bias|
-                  bias["level"] = bias["level"].to_s.downcase if bias["level"]
-                  bias["type"] = bias["type"].to_s.downcase if bias["type"]
-                end
-              end
-            end
-
-            return Data::WorkBiasAnalysis.new(
-              metadata_biases: json_dict["metadata_biases"],
-              page_biases: json_dict["page_biases"]
-            )
-
-          rescue StandardError => e
-            Utils::LOGGER.warn("Attempt #{attempt + 1}/5 failed: #{e.message}")
-            raise e if attempt == 4
-
-            if e.is_a?(Utils::LLMResponseParsingError) || e.is_a?(ArgumentError)
-              raw_output = llm_output.to_s.split(Prompts::COT_TAG_END)[-1].to_s.downcase
-              court_order = true if raw_output =~ /apologize|i cannot|i can't/
-            end
+          if e.is_a?(Utils::LLMResponseParsingError) || e.is_a?(ArgumentError)
+            raw_output = llm_output.to_s.split(Prompts::COT_TAG_END)[-1].to_s.downcase
+            court_order = true if raw_output =~ /apologize|i cannot|i can't/
           end
         end
 
-        raise RuntimeError, "Failed to parse model output after 5 attempts"
+        raise 'Failed to parse model output after 5 attempts'
       end
 
-      def self.create_messages(img_bytes_list:, work_context: nil, original_metadata: nil, model_name:)
+      def self.create_messages(img_bytes_list:, model_name:, work_context: nil, original_metadata: nil)
         prompt = Prompts::USER_PROMPT_BIAS_ONLY
 
         if work_context || original_metadata

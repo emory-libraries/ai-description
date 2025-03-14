@@ -52,69 +52,66 @@ def create_response(status_code, body)
 end
 
 def handler(event:, context:)
-  begin
-    # Parse the request body
-    body = JSON.parse(event['body'])
-    job_name = body[JOB_NAME]
-    work_id = body[WORK_ID]
-    updated_fields = body[UPDATED_FIELDS]
+  # Parse the request body
+  body = JSON.parse(event['body'])
+  job_name = body[JOB_NAME]
+  work_id = body[WORK_ID]
+  updated_fields = body[UPDATED_FIELDS]
 
-    if job_name.nil?
-      msg = "Missing required parameter '#{JOB_NAME}'"
-      LOGGER.error(msg)
-      return create_response(400, { error: msg })
-    end
-    if work_id.nil?
-      msg = "Missing required parameter '#{WORK_ID}'"
-      LOGGER.error(msg)
-      return create_response(400, { error: msg })
-    end
-    if updated_fields.nil?
-      msg = "Missing required parameter '#{UPDATED_FIELDS}'"
-      LOGGER.error(msg)
-      return create_response(400, { error: msg })
-    end
-
-    # Prepare the update expression and attribute values
-    update_expression = 'SET '
-    expression_attribute_values = {}
-    expression_attribute_names = {}
-
-    updated_fields.each do |key, value|
-      update_expression += "##{key} = :#{key}, "
-      expression_attribute_values[":#{key}"] = value
-      expression_attribute_names["##{key}"] = key
-    end
-
-    # Remove the trailing comma and space
-    update_expression = update_expression[0...-2]
-
-    # Update the item in DynamoDB
-    response = TABLE.update_item({
-      key: { JOB_NAME => job_name, WORK_ID => work_id },
-      update_expression: update_expression,
-      expression_attribute_values: expression_attribute_values,
-      expression_attribute_names: expression_attribute_names,
-      return_values: 'ALL_NEW'
-    })
-
-    updated_item = response.attributes
-    if updated_item
-      LOGGER.info("Successfully updated item for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
-      create_response(200, { message: 'Item updated successfully', item: updated_item })
-    else
-      LOGGER.warn("No item found for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
-      create_response(404, { error: 'Item not found' })
-    end
-
-  rescue Aws::DynamoDB::Errors::ServiceError => e
-    LOGGER.error("AWS service error: #{e}")
-    create_response(500, { error: 'Internal server error' })
-  rescue JSON::ParserError
-    LOGGER.error('Invalid JSON in request body')
-    create_response(400, { error: 'Invalid JSON in request body' })
-  rescue StandardError => e
-    LOGGER.error("Unexpected error: #{e}")
-    create_response(500, { error: 'Internal server error' })
+  if job_name.nil?
+    msg = "Missing required parameter '#{JOB_NAME}'"
+    LOGGER.error(msg)
+    return create_response(400, { error: msg })
   end
+  if work_id.nil?
+    msg = "Missing required parameter '#{WORK_ID}'"
+    LOGGER.error(msg)
+    return create_response(400, { error: msg })
+  end
+  if updated_fields.nil?
+    msg = "Missing required parameter '#{UPDATED_FIELDS}'"
+    LOGGER.error(msg)
+    return create_response(400, { error: msg })
+  end
+
+  # Prepare the update expression and attribute values
+  update_expression = 'SET '
+  expression_attribute_values = {}
+  expression_attribute_names = {}
+
+  updated_fields.each do |key, value|
+    update_expression += "##{key} = :#{key}, "
+    expression_attribute_values[":#{key}"] = value
+    expression_attribute_names["##{key}"] = key
+  end
+
+  # Remove the trailing comma and space
+  update_expression = update_expression[0...-2]
+
+  # Update the item in DynamoDB
+  response = TABLE.update_item({
+                                 key: { JOB_NAME => job_name, WORK_ID => work_id },
+                                 update_expression: update_expression,
+                                 expression_attribute_values: expression_attribute_values,
+                                 expression_attribute_names: expression_attribute_names,
+                                 return_values: 'ALL_NEW'
+                               })
+
+  updated_item = response.attributes
+  if updated_item
+    LOGGER.info("Successfully updated item for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
+    create_response(200, { message: 'Item updated successfully', item: updated_item })
+  else
+    LOGGER.warn("No item found for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
+    create_response(404, { error: 'Item not found' })
+  end
+rescue Aws::DynamoDB::Errors::ServiceError => e
+  LOGGER.error("AWS service error: #{e}")
+  create_response(500, { error: 'Internal server error' })
+rescue JSON::ParserError
+  LOGGER.error('Invalid JSON in request body')
+  create_response(400, { error: 'Invalid JSON in request body' })
+rescue StandardError => e
+  LOGGER.error("Unexpected error: #{e}")
+  create_response(500, { error: 'Internal server error' })
 end

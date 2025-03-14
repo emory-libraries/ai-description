@@ -4,7 +4,7 @@
 module ImageCaptioningAssistant
   module Generate
     module Prompts
-      COT_TAG_NAME = "object_detail_and_bias_analysis"
+      COT_TAG_NAME = 'object_detail_and_bias_analysis'
       COT_TAG = "<#{COT_TAG_NAME}>"
       COT_TAG_END = "</#{COT_TAG_NAME}>"
 

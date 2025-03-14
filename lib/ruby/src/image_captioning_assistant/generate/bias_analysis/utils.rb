@@ -21,13 +21,11 @@ module ImageCaptioningAssistant
           s3_client_kwargs: s3_kwargs
         )
 
-        resized_image = Utils.convert_and_reduce_image(
+        Utils.convert_and_reduce_image(
           image_bytes: img_bytes,
           max_dimension: resize_kwargs[:max_dimension] || 2048,
           jpeg_quality: resize_kwargs[:jpeg_quality] || 95
         )
-
-        resized_image
       end
 
       def self.load_and_resize_images(

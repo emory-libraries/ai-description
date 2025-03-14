@@ -34,7 +34,7 @@ def generate_presigned_urls(s3_uris)
   s3_uris.each do |uri|
     parsed_uri = URI.parse(uri)
     bucket_name = parsed_uri.host
-    object_key = parsed_uri.path.sub(/^\//, '')
+    object_key = parsed_uri.path.sub(%r{^/}, '')
 
     begin
       presigned_url = $s3.get_object(
@@ -44,7 +44,7 @@ def generate_presigned_urls(s3_uris)
       ).presigned_url
 
       presigned_urls << presigned_url
-    rescue => e
+    rescue StandardError => e
       $logger.error("Error generating presigned URL for #{uri}: #{e.message}")
       presigned_urls << nil
     end
@@ -55,21 +55,19 @@ end
 
 # Deserialize DynamoDB data to native Ruby types
 def deserialize_dynamodb_item(raw_data)
-  if raw_data.is_a?(Array)
-    return raw_data.map { |item| deserialize_dynamodb_item(item) }
-  end
+  return raw_data.map { |item| deserialize_dynamodb_item(item) } if raw_data.is_a?(Array)
 
   return raw_data unless raw_data.is_a?(Hash)
 
   deserialized_data = {}
   raw_data.each do |key, value|
-    if value.is_a?(Hash) && (value.keys & ['S', 'N', 'B', 'M', 'L', 'BOOL', 'NULL', 'SS', 'NS', 'BS']).any?
-      deserialized_data[key] = Aws::DynamoDB::Types::AttributeValue.new(value).value
-    elsif value.is_a?(Hash)
-      deserialized_data[key] = deserialize_dynamodb_item(value)
-    else
-      deserialized_data[key] = value
-    end
+    deserialized_data[key] = if value.is_a?(Hash) && (value.keys & %w[S N B M L BOOL NULL SS NS BS]).any?
+                               Aws::DynamoDB::Types::AttributeValue.new(value).value
+                             elsif value.is_a?(Hash)
+                               deserialize_dynamodb_item(value)
+                             else
+                               value
+                             end
   end
 
   deserialized_data
@@ -85,42 +83,40 @@ def create_response(status_code, body)
 end
 
 def handler(event:, context:)
-  begin
-    query_params = event['queryStringParameters'] || {}
+  query_params = event['queryStringParameters'] || {}
 
-    job_name = query_params[JOB_NAME]
-    unless job_name
-      msg = "Missing '#{JOB_NAME}' in query parameters"
-      $logger.error(msg)
-      return create_response(400, { error: msg })
-    end
-
-    work_id = query_params[WORK_ID]
-    unless work_id
-      msg = "Missing '#{WORK_ID}' in query parameters"
-      $logger.error(msg)
-      return create_response(400, { error: msg })
-    end
-
-    response = $table.get_item(key: { JOB_NAME => job_name, WORK_ID => work_id })
-    item = response.item
-
-    if item
-      deserialized_item = deserialize_dynamodb_item(item)
-
-      image_s3_uris = deserialized_item[IMAGE_S3_URIS]
-      deserialized_item[IMAGE_S3_PRESIGNED_URLS] = generate_presigned_urls(image_s3_uris)
-
-      return create_response(200, { item: deserialized_item })
-    else
-      $logger.warn("Results not available for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
-      return create_response(404, { error: "Results not available" })
-    end
-  rescue Aws::DynamoDB::Errors::ServiceError => e
-    $logger.error("AWS DynamoDB service error: #{e}")
-    create_response(500, { error: "Internal server error" })
-  rescue => e
-    $logger.error("Unexpected error: #{e}")
-    create_response(500, { error: "Internal server error" })
+  job_name = query_params[JOB_NAME]
+  unless job_name
+    msg = "Missing '#{JOB_NAME}' in query parameters"
+    $logger.error(msg)
+    return create_response(400, { error: msg })
   end
+
+  work_id = query_params[WORK_ID]
+  unless work_id
+    msg = "Missing '#{WORK_ID}' in query parameters"
+    $logger.error(msg)
+    return create_response(400, { error: msg })
+  end
+
+  response = $table.get_item(key: { JOB_NAME => job_name, WORK_ID => work_id })
+  item = response.item
+
+  if item
+    deserialized_item = deserialize_dynamodb_item(item)
+
+    image_s3_uris = deserialized_item[IMAGE_S3_URIS]
+    deserialized_item[IMAGE_S3_PRESIGNED_URLS] = generate_presigned_urls(image_s3_uris)
+
+    create_response(200, { item: deserialized_item })
+  else
+    $logger.warn("Results not available for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
+    create_response(404, { error: 'Results not available' })
+  end
+rescue Aws::DynamoDB::Errors::ServiceError => e
+  $logger.error("AWS DynamoDB service error: #{e}")
+  create_response(500, { error: 'Internal server error' })
+rescue StandardError => e
+  $logger.error("Unexpected error: #{e}")
+  create_response(500, { error: 'Internal server error' })
 end

@@ -19,7 +19,7 @@ module ImageCaptioningAssistant
         if s3_uri.start_with?('s3://')
           uri = URI.parse(s3_uri)
           bucket = uri.host
-          key = uri.path.sub(/^\//, '')
+          key = uri.path.sub(%r{^/}, '')
           puts "Parsed s3:// URI - bucket: #{bucket}, key: #{key}"
           return [bucket, key]
         end
@@ -28,20 +28,21 @@ module ImageCaptioningAssistant
         if s3_uri.include?('/')
           parts = s3_uri.split('/', 2)
           puts "Parsed bucket/key format - bucket: #{parts[0]}, key: #{parts[1]}"
-          return [parts[0], parts[1]]
+          [parts[0], parts[1]]
         else
           # If it's just a key, use the UPLOADS_BUCKET_NAME from environment
           bucket = ENV['UPLOADS_BUCKET_NAME']
           puts "Using uploads bucket - bucket: #{bucket}, key: #{s3_uri}"
-          raise ArgumentError, "S3 key must not be blank" if s3_uri.strip.empty?
-          return [bucket, s3_uri]
+          raise ArgumentError, 'S3 key must not be blank' if s3_uri.strip.empty?
+
+          [bucket, s3_uri]
         end
       end
 
       # Load S3 object to string
       def self.load_to_str(s3_bucket:, s3_key:, s3_client_kwargs: {})
-        raise ArgumentError, "S3 bucket must not be blank" if s3_bucket.nil? || s3_bucket.strip.empty?
-        raise ArgumentError, "S3 key must not be blank" if s3_key.nil? || s3_key.strip.empty?
+        raise ArgumentError, 'S3 bucket must not be blank' if s3_bucket.nil? || s3_bucket.strip.empty?
+        raise ArgumentError, 'S3 key must not be blank' if s3_key.nil? || s3_key.strip.empty?
 
         puts "Loading S3 object as string - bucket: #{s3_bucket}, key: #{s3_key}"
         s3_client = Aws::S3::Client.new(**s3_client_kwargs)
@@ -51,8 +52,8 @@ module ImageCaptioningAssistant
 
       # Load S3 object to binary
       def self.load_to_bytes(s3_bucket:, s3_key:, s3_client_kwargs: {})
-        raise ArgumentError, "S3 bucket must not be blank" if s3_bucket.nil? || s3_bucket.strip.empty?
-        raise ArgumentError, "S3 key must not be blank" if s3_key.nil? || s3_key.strip.empty?
+        raise ArgumentError, 'S3 bucket must not be blank' if s3_bucket.nil? || s3_bucket.strip.empty?
+        raise ArgumentError, 'S3 key must not be blank' if s3_key.nil? || s3_key.strip.empty?
 
         puts "Loading S3 object as bytes - bucket: #{s3_bucket}, key: #{s3_key}"
         s3_client = Aws::S3::Client.new(**s3_client_kwargs)

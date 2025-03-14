@@ -106,39 +106,32 @@ def create_response(status_code, body)
 end
 
 def handler(event:, context:)
-  begin
-    query_params = event['queryStringParameters'] || {}
+  query_params = event['queryStringParameters'] || {}
 
-    job_name = query_params[JOB_NAME]
+  job_name = query_params[JOB_NAME]
 
-    if job_name.nil?
-      return create_response(400, { error: "Missing required query parameter: #{JOB_NAME}" })
-    end
+  return create_response(400, { error: "Missing required query parameter: #{JOB_NAME}" }) if job_name.nil?
 
-    LOGGER.info("Getting progress of job=#{job_name}")
-    items = query_all_items(job_name)
+  LOGGER.info("Getting progress of job=#{job_name}")
+  items = query_all_items(job_name)
 
-    if items.empty?
-      return create_response(404, { message: "No data found for #{JOB_NAME}=#{job_name}" })
-    end
+  return create_response(404, { message: "No data found for #{JOB_NAME}=#{job_name}" }) if items.empty?
 
-    work_ids_by_status, job_type = organize_items(items)
+  work_ids_by_status, job_type = organize_items(items)
 
-    # Return success response
-    response = {
-      job_progress: work_ids_by_status,
-      job_type: job_type
-    }
+  # Return success response
+  response = {
+    job_progress: work_ids_by_status,
+    job_type: job_type
+  }
 
-    create_response(200, response)
-
-  rescue Aws::DynamoDB::Errors::ServiceError => e
-    LOGGER.error("DynamoDB error: #{e}")
-    create_response(500, { error: "Database error", details: e.message })
-  rescue StandardError => e
-    LOGGER.error("Unexpected error: #{e}")
-    create_response(500, { error: "Internal server error" })
-  end
+  create_response(200, response)
+rescue Aws::DynamoDB::Errors::ServiceError => e
+  LOGGER.error("DynamoDB error: #{e}")
+  create_response(500, { error: 'Database error', details: e.message })
+rescue StandardError => e
+  LOGGER.error("Unexpected error: #{e}")
+  create_response(500, { error: 'Internal server error' })
 end
 
 # Custom error class

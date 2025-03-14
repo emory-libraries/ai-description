@@ -21,7 +21,7 @@ module ImageCaptioningAssistant
 
       def self.convert_and_reduce_image(image_bytes:, max_dimension: 2048, jpeg_quality: 95)
         image = MiniMagick::Image.read(image_bytes)
-        image.format "jpg"
+        image.format 'jpg'
         image.resize "#{max_dimension}x#{max_dimension}>"
         image.quality jpeg_quality
         image.to_blob
@@ -51,49 +51,45 @@ module ImageCaptioningAssistant
       end
 
       def self.format_prompt_for_claude(prompt:, img_bytes_list:, assistant_start:)
-        content = [{"type" => "text", "text" => prompt}]
+        content = [{ 'type' => 'text', 'text' => prompt }]
 
         img_bytes_list.each do |img_bytes|
           img_message = {
-            "type" => "image",
-            "source" => {
-              "type" => "base64",
-              "media_type" => "image/jpeg",
-              "data" => convert_bytes_to_base64_str(img_bytes)
+            'type' => 'image',
+            'source' => {
+              'type' => 'base64',
+              'media_type' => 'image/jpeg',
+              'data' => convert_bytes_to_base64_str(img_bytes)
             }
           }
           content << img_message
         end
 
-        msg_list = [{"role" => "user", "content" => content}]
+        msg_list = [{ 'role' => 'user', 'content' => content }]
 
-        if assistant_start
-          msg_list << {"role" => "assistant", "content" => assistant_start}
-        end
+        msg_list << { 'role' => 'assistant', 'content' => assistant_start } if assistant_start
 
         msg_list
       end
 
       def self.format_prompt_for_nova(prompt:, img_bytes_list:, assistant_start:)
-        content = [{"text" => prompt}]
+        content = [{ 'text' => prompt }]
 
         img_bytes_list.each do |img_bytes|
           img_message = {
-            "image" => {
-              "format" => "jpeg",
-              "source" => {
-                "bytes" => convert_bytes_to_base64_str(img_bytes)
+            'image' => {
+              'format' => 'jpeg',
+              'source' => {
+                'bytes' => convert_bytes_to_base64_str(img_bytes)
               }
             }
           }
           content << img_message
         end
 
-        msg_list = [{"role" => "user", "content" => content}]
+        msg_list = [{ 'role' => 'user', 'content' => content }]
 
-        if assistant_start
-          msg_list << {"role" => "assistant", "content" => assistant_start}
-        end
+        msg_list << { 'role' => 'assistant', 'content' => assistant_start } if assistant_start
 
         msg_list
       end
@@ -101,24 +97,22 @@ module ImageCaptioningAssistant
       def self.format_request_body(model_name, messages, court_order: false)
         if model_name.include?('claude')
           request_body = {
-            "anthropic_version" => "bedrock-2023-05-31",
-            "max_tokens" => 4096,
-            "temperature" => 0.2,
-            "system" => court_order ? Prompts::SYSTEM_PROMPT_COURT_ORDER : Prompts::SYSTEM_PROMPT
+            'anthropic_version' => 'bedrock-2023-05-31',
+            'max_tokens' => 4096,
+            'temperature' => 0.2,
+            'system' => court_order ? Prompts::SYSTEM_PROMPT_COURT_ORDER : Prompts::SYSTEM_PROMPT
           }
 
-          request_body["messages"] = messages
+          request_body['messages'] = messages
 
           request_body
         elsif model_name.include?('nova')
-          if court_order
-            messages[0]["content"][0]["text"] = Prompts::SYSTEM_PROMPT_COURT_ORDER
-          end
+          messages[0]['content'][0]['text'] = Prompts::SYSTEM_PROMPT_COURT_ORDER if court_order
 
           {
-            "messages" => messages,
-            "max_tokens" => 4096,
-            "temperature" => 0.2
+            'messages' => messages,
+            'max_tokens' => 4096,
+            'temperature' => 0.2
           }
         else
           raise ArgumentError, "Unsupported model: #{model_name}"
@@ -129,15 +123,15 @@ module ImageCaptioningAssistant
         parts = text.split(Prompts::COT_TAG_END)
         if parts.length < 2
           LOGGER.error("Could not find COT_TAG_END in response: #{text}")
-          raise LLMResponseParsingError, "No COT_TAG_END found in response"
+          raise LLMResponseParsingError, 'No COT_TAG_END found in response'
         end
 
-        cot = parts[0].sub(Prompts::COT_TAG, "").strip
+        cot = parts[0].sub(Prompts::COT_TAG, '').strip
         json_text = parts[1].strip
 
         begin
           json_dict = JSON.parse(json_text)
-          return [cot, json_dict]
+          [cot, json_dict]
         rescue JSON::ParserError
           json_pattern = /```(?:json)?\s*(.*?)\s*```/m
           json_match = json_text.match(json_pattern)
@@ -145,16 +139,16 @@ module ImageCaptioningAssistant
           if json_match
             begin
               json_dict = JSON.parse(json_match[1].strip)
-              return [cot, json_dict]
+              [cot, json_dict]
             rescue JSON::ParserError => e
               LOGGER.error("Failed to parse JSON from code block: #{e.message}")
               LOGGER.error("JSON content: #{json_match[1].strip}")
               raise LLMResponseParsingError, "Failed to parse JSON from code block: #{e.message}"
             end
           else
-            LOGGER.error("No JSON found in response")
+            LOGGER.error('No JSON found in response')
             LOGGER.error("Response text: #{json_text}")
-            raise LLMResponseParsingError, "No JSON found in response"
+            raise LLMResponseParsingError, 'No JSON found in response'
           end
         end
       end

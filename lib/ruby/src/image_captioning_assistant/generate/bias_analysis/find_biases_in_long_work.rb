@@ -17,7 +17,7 @@ module ImageCaptioningAssistant
         llm_kwargs:,
         work_context: nil
       )
-        LOGGER.info("Analyzing original metadata")
+        LOGGER.info('Analyzing original metadata')
         llm_output = find_biases_in_short_work(
           image_s3_uris: [],
           s3_kwargs: {},
@@ -66,10 +66,10 @@ module ImageCaptioningAssistant
         work_context: nil
       )
         bedrock_runtime = if llm_kwargs[:region]
-          Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
-        else
-          Aws::BedrockRuntime::Client.new
-        end
+                            Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
+                          else
+                            Aws::BedrockRuntime::Client.new
+                          end
 
         metadata_biases = Data::Biases.new(biases: [])
         if original_metadata
@@ -95,8 +95,8 @@ module ImageCaptioningAssistant
             metadata_biases: metadata_biases,
             page_biases: page_biases
           )
-        rescue => e
-          LOGGER.warn("Failed to cast metadata biases and page biases into WorkBiasAnalysis, debug to log full output")
+        rescue StandardError => e
+          LOGGER.warn('Failed to cast metadata biases and page biases into WorkBiasAnalysis, debug to log full output')
           LOGGER.debug("metadata_biases:\n #{metadata_biases.inspect} \n\n\n")
           LOGGER.debug("page_biases:\n #{page_biases.inspect} \n\n\n")
           raise e

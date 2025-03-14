@@ -24,7 +24,7 @@ logger = Logger.new($stdout)
 logger.level = Logger::INFO
 
 # Initialize AWS client globally
-s3 = Aws::S3::Client.new(region: AWS_REGION)
+Aws::S3::Client.new(region: AWS_REGION)
 
 def create_response(status_code, body)
   {
@@ -38,26 +38,21 @@ def generate_presigned_url(s3_uri, expiration = DEFAULT_EXPIRATION)
   parsed_uri = URI.parse(s3_uri)
 
   # Validate S3 URI format
-  if parsed_uri.scheme != 's3'
-    raise "Invalid S3 URI scheme: #{parsed_uri.scheme}. Expected 's3'"
-  end
+  raise "Invalid S3 URI scheme: #{parsed_uri.scheme}. Expected 's3'" if parsed_uri.scheme != 's3'
 
   bucket_name = parsed_uri.host
-  object_key = parsed_uri.path.sub(/^\//, '')
+  object_key = parsed_uri.path.sub(%r{^/}, '')
 
-  if bucket_name.nil? || object_key.empty?
-    raise 'S3 URI must contain both bucket name and object key'
-  end
+  raise 'S3 URI must contain both bucket name and object key' if bucket_name.nil? || object_key.empty?
 
   begin
     signer = Aws::S3::Presigner.new(client: s3)
-    presigned_url = signer.presigned_url(
+    signer.presigned_url(
       :get_object,
       bucket: bucket_name,
       key: object_key,
       expires_in: expiration
     )
-    return presigned_url
   rescue StandardError => e
     logger.error("Error generating presigned URL: #{e}")
     raise
@@ -65,52 +60,50 @@ def generate_presigned_url(s3_uri, expiration = DEFAULT_EXPIRATION)
 end
 
 def handler(event:, context:)
-  begin
-    # Extract parameters based on event source
-    if event['queryStringParameters']
-      # API Gateway invocation
-      s3_uri = event['queryStringParameters'][S3_URI]
-      expires_in_str = event['queryStringParameters'][EXPIRES_IN] || DEFAULT_EXPIRATION.to_s
-    else
-      # Direct Lambda invocation
-      s3_uri = event[S3_URI]
-      expires_in_str = (event[EXPIRES_IN] || DEFAULT_EXPIRATION).to_s
-    end
-
-    # Validate required parameters
-    if s3_uri.nil? || s3_uri.empty?
-      logger.error('No S3 URI provided')
-      return create_response(400, { 'error' => "Missing required parameter 's3_uri'" })
-    end
-
-    # Parse expiration time
-    begin
-      expires_in = expires_in_str.to_i
-      expires_in = DEFAULT_EXPIRATION if expires_in <= 0
-    rescue
-      expires_in = DEFAULT_EXPIRATION
-    end
-
-    # Generate the presigned URL
-    presigned_url = generate_presigned_url(s3_uri, expires_in)
-
-    # Return success response
-    return create_response(
-      200,
-      {
-        'presigned_url' => presigned_url,
-        's3_uri' => s3_uri,
-        'expires_in_seconds' => expires_in
-      }
-    )
-  rescue URI::InvalidURIError, ArgumentError => e
-    logger.error("Validation error: #{e}")
-    return create_response(400, { 'error' => e.message })
-  rescue Aws::S3::Errors::ServiceError => e
-    logger.error("AWS service error: #{e}")
-    return create_response(500, { 'error' => 'Error accessing S3 resource' })
-  rescue StandardError => e
-    logger.error("Unexpected error: #{e}")
-    return create_response(500, { 'error' => 'Internal server error' })
+  # Extract parameters based on event source
+  if event['queryStringParameters']
+    # API Gateway invocation
+    s3_uri = event['queryStringParameters'][S3_URI]
+    expires_in_str = event['queryStringParameters'][EXPIRES_IN] || DEFAULT_EXPIRATION.to_s
+  else
+    # Direct Lambda invocation
+    s3_uri = event[S3_URI]
+    expires_in_str = (event[EXPIRES_IN] || DEFAULT_EXPIRATION).to_s
   end
+
+  # Validate required parameters
+  if s3_uri.nil? || s3_uri.empty?
+    logger.error('No S3 URI provided')
+    return create_response(400, { 'error' => "Missing required parameter 's3_uri'" })
+  end
+
+  # Parse expiration time
+  begin
+    expires_in = expires_in_str.to_i
+    expires_in = DEFAULT_EXPIRATION if expires_in <= 0
+  rescue StandardError
+    expires_in = DEFAULT_EXPIRATION
+  end
+
+  # Generate the presigned URL
+  presigned_url = generate_presigned_url(s3_uri, expires_in)
+
+  # Return success response
+  create_response(
+    200,
+    {
+      'presigned_url' => presigned_url,
+      's3_uri' => s3_uri,
+      'expires_in_seconds' => expires_in
+    }
+  )
+rescue URI::InvalidURIError, ArgumentError => e
+  logger.error("Validation error: #{e}")
+  create_response(400, { 'error' => e.message })
+rescue Aws::S3::Errors::ServiceError => e
+  logger.error("AWS service error: #{e}")
+  create_response(500, { 'error' => 'Error accessing S3 resource' })
+rescue StandardError => e
+  logger.error("Unexpected error: #{e}")
+  create_response(500, { 'error' => 'Internal server error' })
 end

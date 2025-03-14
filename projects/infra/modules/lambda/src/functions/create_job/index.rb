@@ -69,17 +69,15 @@ $s3_client = Aws::S3::Client.new(region: AWS_REGION)
 $logger = Logger.new($stdout)
 $logger.level = Logger::INFO
 
-def s3_path_to_file_list(s3_path_uri, recursive=true)
+def s3_path_to_file_list(s3_path_uri, recursive = true)
   # Parse the S3 URI
   parsed_uri = URI.parse(s3_path_uri)
-  if parsed_uri.scheme != 's3'
-    raise "Not a valid S3 URI: #{s3_path_uri}"
-  end
+  raise "Not a valid S3 URI: #{s3_path_uri}" if parsed_uri.scheme != 's3'
 
   bucket = parsed_uri.host
 
   # Remove leading slash if present
-  key = parsed_uri.path.sub(/^\//, '')
+  key = parsed_uri.path.sub(%r{^/}, '')
 
   # Check if the path exists directly as an object (file)
   begin
@@ -88,7 +86,7 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
     return [s3_path_uri]
   rescue Aws::S3::Errors::NotFound
     # If not found, we'll treat it as a folder
-  rescue => e
+  rescue StandardError => e
     # For any other error, re-raise
     raise e
   end
@@ -127,9 +125,10 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
 
       # Continue if there are more objects
       break unless response.is_truncated
+
       continuation_token = response.next_continuation_token
     end
-  rescue => e
+  rescue StandardError => e
     $logger.error("Error listing objects: #{e.message}")
     raise e
   end
@@ -156,9 +155,10 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
 
         # Continue if there are more objects
         break unless response.is_truncated
+
         continuation_token = response.next_continuation_token
       end
-    rescue => e
+    rescue StandardError => e
       $logger.error("Error listing objects with prefix: #{e.message}")
       raise e
     end
@@ -167,18 +167,16 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
   result_uris.sort
 end
 
-def expand_s3_uris_to_files(uri_list, recursive=true)
+def expand_s3_uris_to_files(uri_list, recursive = true)
   all_files = []
 
   # Process each URI sequentially instead of in parallel
   uri_list.each do |uri|
-    begin
-      files = s3_path_to_file_list(uri, recursive)
-      all_files.concat(files) if files
-    rescue => e
-      $logger.error("Error processing URI: #{e.message}")
-      raise e
-    end
+    files = s3_path_to_file_list(uri, recursive)
+    all_files.concat(files) if files
+  rescue StandardError => e
+    $logger.error("Error processing URI: #{e.message}")
+    raise e
   end
 
   # Remove any duplicates
@@ -189,11 +187,11 @@ def validate_request_body(body)
   job_keys = [JOB_NAME, JOB_TYPE, WORKS]
   job_keys_present = job_keys.map { |key| body.key?(key) }
 
-  if job_keys_present.any? && !job_keys_present.all?
-    msg = "Request body requires the following keys: #{job_keys}. Request body keys received: #{body.keys}"
-    $logger.warn(msg)
-    raise msg
-  end
+  return unless job_keys_present.any? && !job_keys_present.all?
+
+  msg = "Request body requires the following keys: #{job_keys}. Request body keys received: #{body.keys}"
+  $logger.warn(msg)
+  raise msg
 end
 
 def job_exists(table, job_name)
@@ -223,14 +221,14 @@ def create_ecs_task(run_task_kwargs)
     desired_status: 'RUNNING'
   )
 
-  if !running_tasks.task_arns.empty?
-    message = "A task is already running. No new task will be started."
+  unless running_tasks.task_arns.empty?
+    message = 'A task is already running. No new task will be started.'
     $logger.warn(message)
     return message
   end
 
   # If no task is running, start a new one
-  $logger.info("Running task")
+  $logger.info('Running task')
   $logger.debug("Task kwargs: #{run_task_kwargs.to_json}")
   response = $ecs_client.run_task(run_task_kwargs)
   message = "New ECS task #{response.tasks[0].task_arn} started successfully"
@@ -273,7 +271,7 @@ def create_job(job_name, job_type, works)
       IMAGE_S3_URIS => expand_s3_uris_to_files(image_s3_uris),
       CONTEXT_S3_URI => context_s3_uri,
       ORIGINAL_METADATA_S3_URI => original_metadata_s3_uri,
-      WORK_STATUS => "IN QUEUE"
+      WORK_STATUS => 'IN QUEUE'
     }
 
     table.put_item(item: ddb_work_item)
@@ -284,40 +282,38 @@ end
 
 # This is the entry point for AWS Lambda
 def handler(event:, context:)
-  begin
-    response_message = {}
+  response_message = {}
 
-    # Load args from event
-    body = JSON.parse(event['body'])
+  # Load args from event
+  body = JSON.parse(event['body'])
 
-    # Job creation
-    if body.key?(JOB_NAME) && body.key?(JOB_TYPE) && body.key?(WORKS)
-      begin
-        validate_request_body(body)
-        create_job(
-          body[JOB_NAME],
-          body[JOB_TYPE],
-          body[WORKS]
-        )
-        response_message['job_creation'] = 'Success'
-      rescue StandardError => e
-        response_message['job_creation'] = "Failed: #{e.message}"
-      end
-    else
-      response_message['job_creation'] = 'No job arguments provided'
-    end
-
-    # ECS task creation
+  # Job creation
+  if body.key?(JOB_NAME) && body.key?(JOB_TYPE) && body.key?(WORKS)
     begin
-      ecs_message = create_ecs_task(RUN_TASK_KWARGS)
-      response_message['ecs_task_creation'] = ecs_message
+      validate_request_body(body)
+      create_job(
+        body[JOB_NAME],
+        body[JOB_TYPE],
+        body[WORKS]
+      )
+      response_message['job_creation'] = 'Success'
     rescue StandardError => e
-      response_message['ecs_task_creation'] = "Failed: #{e.message}"
+      response_message['job_creation'] = "Failed: #{e.message}"
     end
-
-    create_response(200, response_message)
-  rescue => e
-    $logger.error("Unexpected error: #{e.message}\n#{e.backtrace.join("\n")}")
-    create_response(500, { 'error' => 'Internal server error' })
+  else
+    response_message['job_creation'] = 'No job arguments provided'
   end
+
+  # ECS task creation
+  begin
+    ecs_message = create_ecs_task(RUN_TASK_KWARGS)
+    response_message['ecs_task_creation'] = ecs_message
+  rescue StandardError => e
+    response_message['ecs_task_creation'] = "Failed: #{e.message}"
+  end
+
+  create_response(200, response_message)
+rescue StandardError => e
+  $logger.error("Unexpected error: #{e.message}\n#{e.backtrace.join("\n")}")
+  create_response(500, { 'error' => 'Internal server error' })
 end
