@@ -142,7 +142,7 @@ def get_job_results(api_url: str, job_name: str, work_id: str, api_key: str) -> 
         response.raise_for_status()
 
 
-def update_job_results(api_url: str, job_name: str, work_id: str, api_key: str) -> dict:
+def update_job_results(api_url: str, job_name: str, work_id: str, api_key: str, updated_fields: dict) -> dict:
     # Construct the full URL
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/results"
@@ -153,11 +153,10 @@ def update_job_results(api_url: str, job_name: str, work_id: str, api_key: str) 
         "x-api-key": api_key,
     }
 
-    updated_fields = {"work_status": "REVIEWED"}
     request_body = {"job_name": job_name, "work_id": work_id, "updated_fields": updated_fields}
 
-    # Make the POST request
-    response = requests.post(endpoint, data=json.dumps(request_body), headers=headers)
+    # Make the PUT request
+    response = requests.put(endpoint, data=json.dumps(request_body), headers=headers)
 
     # Check if the request was successful
     if response.status_code == 200:
