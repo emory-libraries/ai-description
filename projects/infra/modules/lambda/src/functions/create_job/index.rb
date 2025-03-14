@@ -276,9 +276,6 @@ def create_job(job_name, job_type, works)
       WORK_STATUS => "IN QUEUE"
     }
 
-    # Remove nil values to avoid DynamoDB issues
-    ddb_work_item.delete_if { |_, v| v.nil? }
-
     table.put_item(item: ddb_work_item)
     $logger.debug("Successfully added job=#{job_name} work=#{work_id} to DynamoDB")
   end

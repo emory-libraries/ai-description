@@ -13,7 +13,7 @@ from image_captioning_assistant.generate.bias_analysis.find_biases_in_long_work 
 from image_captioning_assistant.generate.bias_analysis.find_biases_in_short_work import find_biases_in_short_work
 
 
-def generate_work_bias_analysis(
+def generate_bias_analysis_from_s3_images(
     image_s3_uris: str,
     llm_kwargs: dict[str, Any],
     s3_kwargs: dict[str, Any],

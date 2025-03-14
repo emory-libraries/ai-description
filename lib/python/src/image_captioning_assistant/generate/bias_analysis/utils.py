@@ -4,23 +4,64 @@
 """Generate bias analysis for an image."""
 
 import logging
-from pathlib import Path
 from typing import Any
 
-from cloudpathlib import S3Path
-from jinja2 import Environment, FileSystemLoader
-from retry import retry
-
-from image_captioning_assistant.aws.s3 import load_to_bytes
-from image_captioning_assistant.generate.utils import convert_and_reduce_image, format_prompt_for_converse
+import image_captioning_assistant.generate.prompts as p
+from image_captioning_assistant.data.data_classes import WorkBiasAnalysis
+from image_captioning_assistant.generate.errors import LLMResponseParsingError
+from image_captioning_assistant.generate.utils import (
+    extract_json_and_cot_from_text,
+    format_prompt_for_converse,
+    load_and_resize_images,
+)
 
 logger = logging.getLogger(__name__)
 
-COT_TAG_NAME = "object_detail_and_bias_analysis"
-COT_TAG = f"<{COT_TAG_NAME}>"
-COT_TAG_END = f"</{COT_TAG_NAME}>"
 
-jinja_env = Environment(loader=FileSystemLoader(Path(__file__).parent / "prompts"), autoescape=True)
+def prepare_images(
+    image_s3_uris: list[str], s3_kwargs: dict[str, Any], resize_kwargs: dict[str, Any], model_name: str
+) -> list[bytes]:
+    """Load and resize images from S3 URIs."""
+    if len(image_s3_uris) > 2:
+        raise RuntimeError("maximum of 2 images (front and back) supported for short work")
+
+    if len(image_s3_uris) == 0:
+        return []
+
+    # Adjust resize parameters for specific models
+    if "llama" in model_name:
+        resize_kwargs["max_dimension"] = 1024
+
+    return load_and_resize_images(image_s3_uris, s3_kwargs, resize_kwargs)
+
+
+def call_model(bedrock_runtime: Any, model_name: str, messages: list[dict[str, Any]], court_order: bool = False) -> str:
+    """Call the model and return the output."""
+    sys_prompt = p.system_prompt_court_order if court_order else p.system_prompt
+
+    response = bedrock_runtime.converse(
+        modelId=model_name,
+        messages=messages,
+        system=[{"text": sys_prompt}],
+        inferenceConfig={
+            "temperature": 0.1,
+            "maxTokens": 4000,
+            "topP": 0.6,
+        },
+    )
+
+    return response["output"]["message"]["content"][0]["text"]
+
+
+def parse_model_output(llm_output: str, image_count: int) -> tuple[str, WorkBiasAnalysis]:
+    """Parse the model output and validate the result."""
+    cot, json_dict = extract_json_and_cot_from_text(llm_output)
+
+    # validate correct number of biases output
+    if image_count != len(json_dict["page_biases"]):
+        raise LLMResponseParsingError(f"incorrect number of bias lists for {image_count} pages")
+
+    return cot, WorkBiasAnalysis(**json_dict)
 
 
 def create_messages(
@@ -31,64 +72,17 @@ def create_messages(
 ) -> dict[str, Any]:
     """Create Messages list to pass to LLM, supports Claude and Nova models"""
     # Create system prompt
-    prompt_template = jinja_env.get_template("user_prompt_bias.jinja")
-    inputs = {
-        "work_context": work_context,
-        "original_metadata": original_metadata,
-        "COT_TAG_NAME": COT_TAG_NAME,
-        "COT_TAG": COT_TAG,
-        "COT_TAG_END": COT_TAG_END,
-    }
-    prompt = prompt_template.render(inputs)
+    prompt = p.bias_analysis_template.render(
+        COT_TAG=p.COT_TAG,
+        COT_TAG_END=p.COT_TAG_END,
+        COT_TAG_NAME=p.COT_TAG_NAME,
+        work_context=work_context,
+        original_metadata=original_metadata,
+    )
     logger.debug(f"PROMPT:\n```\n{prompt}\n```\n")
     messages = format_prompt_for_converse(
         prompt=prompt,
         img_bytes_list=img_bytes_list,
-        assistant_start=(COT_TAG if "llama" not in model_name else None),
+        assistant_start=(p.COT_TAG if "llama" not in model_name else None),
     )
     return messages
-
-
-def load_and_resize_image(
-    image_s3_uri: str,
-    s3_kwargs: dict[str, Any],
-    resize_kwargs: dict[str, Any],
-) -> bytes:
-    """Load and resize image."""
-    s3_path = S3Path(image_s3_uri)
-    img_bytes = load_to_bytes(
-        s3_bucket=s3_path.bucket,
-        s3_key=s3_path.key,
-        s3_client_kwargs=s3_kwargs,
-    )
-    resized_image = convert_and_reduce_image(
-        image_bytes=img_bytes,
-        **resize_kwargs,
-    )
-    return resized_image
-
-
-def load_and_resize_images(
-    image_s3_uris: list[str],
-    s3_kwargs: dict[str, Any],
-    resize_kwargs: dict[str, Any],
-) -> list[bytes]:
-    """Load and resize images."""
-    # Load all img bytes into list
-    resized_img_bytes_list = []
-    for image_s3_uri in image_s3_uris:
-        resized_img_bytes = load_and_resize_image(
-            image_s3_uri=image_s3_uri,
-            s3_kwargs=s3_kwargs,
-            resize_kwargs=resize_kwargs,
-        )
-        resized_img_bytes_list.append(resized_img_bytes)
-    return resized_img_bytes_list
-
-
-@retry(exceptions=Exception, tries=5, delay=10, backoff=2)
-def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
-    logger.info("Invoking structured LLM...")
-    response = structured_llm.invoke(messages)
-    logger.info("Invocation successful")
-    return response

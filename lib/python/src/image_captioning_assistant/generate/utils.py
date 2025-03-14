@@ -1,32 +1,22 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
-import base64
 import json
 import logging
 from io import BytesIO
 from typing import Any
 
+import boto3
 from cloudpathlib import S3Path
 from PIL import Image
+from pydantic_core import ValidationError
 from retry import retry
 
-import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.aws.s3 import load_to_bytes
+from image_captioning_assistant.generate import prompts as p
+from image_captioning_assistant.generate.errors import LLMResponseParsingError
 
 logger = logging.getLogger(__name__)
-
-
-def convert_bytes_to_base64_str(img_bytes: bytes) -> str:
-    """Convert bytes to Base64 encoding.
-
-    Args:
-        img_bytes (bytes): Image bytes
-
-    Returns:
-        str: Image bytes as base64 string
-    """
-    return base64.b64encode(img_bytes).decode("utf-8")
 
 
 def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
@@ -44,157 +34,6 @@ def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
 
     buffer.seek(0)
     return buffer.read()
-
-
-def get_front_and_back_bytes_from_paths(image_path: str, image_path_back: str = None) -> tuple:
-    """
-    Encode the front image and optionally the back image of a ticket.
-
-    Args:
-        image_path (str): Path to the front image file.
-        image_path_back (str, optional): Path to the back image file. Defaults to None.
-
-    Returns:
-        list: A list containing the base64 encoded strings of the front and back images (if provided).
-    """
-    image_list = []
-    with open(image_path, "rb") as image_file:
-        image_list.append(image_file.read())
-    if image_path_back:
-        with open(image_path_back, "rb") as image_file_back:
-            image_list.append(image_file_back.read())
-    return image_list
-
-
-def encode_image_from_path(image_full_path, max_size=2048, jpeg_quality=95):
-    with open(image_full_path, "rb") as image_file:
-        # Open image and convert to RGB (removes alpha channel if present)
-        image = Image.open(image_file).convert("RGB")
-
-        # Set maximum dimensions while maintaining aspect ratio
-        max_dimension = 2048  # Adjust this based on your size requirements
-        image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
-
-        # Optimize JPEG quality and save to buffer
-        buffer = BytesIO()
-        image.save(
-            buffer, format="JPEG", quality=jpeg_quality, optimize=True  # Adjust between 75-95 for quality/size balance
-        )
-
-        buffer.seek(0)
-        image_data = buffer.read()
-
-    return image_data
-
-
-class LLMResponseParsingError(Exception):
-    def __init__(self, message, error_code=None):
-        self.message = message
-        self.error_code = error_code
-        super().__init__(self.message)
-
-    def __str__(self):
-        return f"LLMResponseParsingError: {self.message} (Error Code: {self.error_code})"
-
-
-def extract_json_and_cot_from_text(text):
-    # split chain of thought
-    cot, text = text.split(p.COT_TAG_END)
-    try:
-        return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
-    except json.JSONDecodeError:
-        logger.warning(f"Could not parse {text}")
-        raise LLMResponseParsingError("Could not parse and decode JSON output")
-
-
-def format_prompt_for_claude(
-    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
-) -> list[dict]:
-    """Format prompt for Anthropic Claude LLM.
-
-    Args:
-        prompt (str): Text prompt for model
-        img_bytes_list (list[bytes]): Image(s) for model
-
-    Returns:
-        list[dict]: Prompt formatted for Anthropic's Claude models.
-    """
-    content = [{"type": "text", "text": prompt}]
-    for img_bytes in img_bytes_list:
-        img_message = {
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/jpeg",
-                "data": convert_bytes_to_base64_str(img_bytes),
-            },
-        }
-        content.append(img_message)
-    msg_list = [{"role": "user", "content": content}]
-    if assistant_start:
-        msg_list.append({"role": "assistant", "content": assistant_start})
-    return msg_list
-
-
-def format_prompt_for_converse(
-    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
-) -> list[dict]:
-    """Format prompt for Bedrock Converse API.
-
-    Args:
-        prompt (str): Text prompt for model
-        img_bytes_list (list[bytes]): Image(s) for model
-
-    Returns:
-        list[dict]: Prompt formatted for Bedrock Converse API.
-    """
-    content = []
-    for img_bytes in img_bytes_list:
-        img_message = {
-            "image": {
-                "format": "jpeg",
-                "source": {"bytes": img_bytes},
-            }
-        }
-        content.append(img_message)
-    content.append({"text": prompt})
-    msg_list = [{"role": "user", "content": content}]
-    if assistant_start:
-        msg_list.append({"role": "assistant", "content": [{"text": assistant_start}]})
-    # logger.info(str(msg_list))
-    return msg_list
-
-
-def format_prompt_for_nova(prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None) -> list[dict]:
-    return format_prompt_for_converse(prompt, img_bytes_list, assistant_start=assistant_start)
-
-
-def format_request_body(model_name: str, messages: list[dict], court_order=False) -> dict:
-    system_prompt = p.system_prompt_court_order if court_order else p.system_prompt
-    if "nova" in model_name:
-        request_body = {
-            "schemaVersion": "messages-v1",
-            "messages": messages,
-            "system": [{"text": system_prompt}],
-            "toolConfig": {},
-            "inferenceConfig": {
-                "max_new_tokens": 4096,
-                "top_p": 0.6,
-                "temperature": 0.1,
-            },
-        }
-    elif "claude" in model_name:
-        request_body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "system": system_prompt,
-            "max_tokens": 4096,
-            "temperature": 0.1,
-            "top_p": 0.6,
-            "messages": messages,
-        }
-    else:
-        raise ValueError(f"Expected 'nova' or 'claude' in model name, got {model_name}")
-    return request_body
 
 
 def load_and_resize_image(
@@ -240,3 +79,56 @@ def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
     response = structured_llm.invoke(messages)
     logger.info("Invocation successful")
     return response
+
+
+def format_prompt_for_converse(
+    prompt: str, img_bytes_list: list[bytes], assistant_start: str | None = None
+) -> list[dict]:
+    """Format prompt for Bedrock Converse API.
+
+    Args:
+        prompt (str): Text prompt for model
+        img_bytes_list (list[bytes]): Image(s) for model
+
+    Returns:
+        list[dict]: Prompt formatted for Bedrock Converse API.
+    """
+    content = []
+    for img_bytes in img_bytes_list:
+        img_message = {
+            "image": {
+                "format": "jpeg",
+                "source": {"bytes": img_bytes},
+            }
+        }
+        content.append(img_message)
+    content.append({"text": prompt})
+    msg_list = [{"role": "user", "content": content}]
+    if assistant_start:
+        msg_list.append({"role": "assistant", "content": [{"text": assistant_start}]})
+    return msg_list
+
+
+def extract_json_and_cot_from_text(text):
+    cot, text = text.split(p.COT_TAG_END)
+    try:
+        return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))
+    except json.JSONDecodeError:
+        logger.warning(f"Could not parse {text}")
+        raise LLMResponseParsingError("Could not parse and decode JSON output")
+
+
+def needs_court_order(e: Exception, llm_output: str) -> bool:
+    """Determine if we need to use the court order system prompt."""
+    if isinstance(e, (LLMResponseParsingError, ValidationError)):
+        raw_output = llm_output.split(p.COT_TAG_END)[-1]
+        return any(phrase in raw_output.lower() for phrase in ["apologize", "i cannot", "i can't"])
+    return False
+
+
+def initialize_bedrock_runtime(llm_kwargs: dict[str, Any]) -> Any:
+    """Initialize and return the bedrock runtime client."""
+    if "region_name" in llm_kwargs:
+        return boto3.client("bedrock-runtime", region_name=llm_kwargs["region_name"])
+    else:
+        return boto3.client("bedrock-runtime")
