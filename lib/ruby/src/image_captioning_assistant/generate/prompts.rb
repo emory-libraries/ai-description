@@ -12,7 +12,8 @@ module ImageCaptioningAssistant
       ASSISTANT_START_COURT_ORDER = COT_TAG
 
       SYSTEM_PROMPT = File.read(File.join(File.dirname(__FILE__), 'prompt_templates/system_prompt.txt'))
-      SYSTEM_PROMPT_COURT_ORDER = File.read(File.join(File.dirname(__FILE__), 'prompt_templates/system_prompt_court_order.txt'))
+      SYSTEM_PROMPT_COURT_ORDER = File.read(File.join(File.dirname(__FILE__),
+                                                      'prompt_templates/system_prompt_court_order.txt'))
 
       USER_PROMPT_METADATA = File.read(File.join(File.dirname(__FILE__), 'prompt_templates/user_prompt_metadata.txt'))
       USER_PROMPT_BIAS = File.read(File.join(File.dirname(__FILE__), 'prompt_templates/user_prompt_bias.erb'))
