@@ -8,12 +8,7 @@ from typing import Any
 
 import image_captioning_assistant.generate.prompts as p
 from image_captioning_assistant.data.data_classes import Metadata
-from image_captioning_assistant.generate.utils import (
-    extract_json_and_cot_from_text,
-    format_prompt_for_converse,
-    initialize_bedrock_runtime,
-    needs_court_order,
-)
+from image_captioning_assistant.generate.utils import extract_json_and_cot_from_text, format_prompt_for_converse
 
 logger = logging.getLogger(__name__)
 
