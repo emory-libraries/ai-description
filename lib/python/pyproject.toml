@@ -9,19 +9,18 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-aiobotocore = "*"           # TODO: Pin this
+aiobotocore = "^2.19.0"
 boto3 = "^1.36.2"
-cloudpathlib = "*"          # TODO: Pin this
-Jinja2 = "*"                # TODO: Pin this
+cloudpathlib = "^0.20.0"
+Jinja2 = "^3.1.5"
 langchain-aws = "^0.2.11"
 load_dotenv = "^0.1.0"
 loguru = "^0.7.3"
 pandas = "^2.2.3"
-pdf2image = "*"             # TODO: Pin this
-pillow = "*"                # TODO: Pin this
+pillow = "^11.1.0"
 pydantic = "^2.10.5"
-pydantic-settings = "*"     # TODO: Pin this
-retry = "*"                 # TODO: Pin this
+pydantic-settings = "^2.7.1"
+retry = "^0.9.2"
 tqdm = "^4.67.1"
 
 
