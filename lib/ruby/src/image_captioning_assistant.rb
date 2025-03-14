@@ -11,8 +11,6 @@ module ImageCaptioningAssistant
     puts "Warning: Could not load module #{module_path}: #{e.message}"
   end
   
-  load_module 'image_captioning_assistant/aws/secrets_manager'
-  
   Dir[File.join(File.dirname(__FILE__), 'image_captioning_assistant', 'generate', '**', '*.rb')].sort.each do |file|
     require file
   end
