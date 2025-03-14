@@ -17,16 +17,11 @@ WORKS_TABLE_NAME = ENV['WORKS_TABLE_NAME']
 SQS_QUEUE_URL = ENV['SQS_QUEUE_URL']
 UPLOADS_BUCKET_NAME = ENV['UPLOADS_BUCKET_NAME']
 
-# Configure AWS clients with the same settings as Python
-S3_CONFIG = {
-  s3_us_east_1_regional_endpoint: 'regional',
-  s3_addressing_style: 'virtual',
-  signature_version: 's3v4'
-}
-
+# Configure AWS clients properly for Ruby
 S3_KWARGS = {
   region: AWS_REGION,
-  config: S3_CONFIG
+  # In Ruby SDK, v4 is the default signature version, no need to specify
+  force_path_style: false
 }
 
 LLM_KWARGS = {
@@ -57,7 +52,7 @@ $logger.formatter = proc do |severity, datetime, progname, msg|
 end
 
 # Initialize AWS clients
-$s3 = Aws::S3::Client.new(region: AWS_REGION, config: S3_CONFIG)
+$s3 = Aws::S3::Client.new(S3_KWARGS)
 $sqs = Aws::SQS::Client.new(region: AWS_REGION)
 $dynamodb = Aws::DynamoDB::Resource.new(region: AWS_REGION)
 $table = $dynamodb.table(WORKS_TABLE_NAME)
