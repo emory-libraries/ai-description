@@ -8,7 +8,7 @@ require 'logger'
 module ImageCaptioningAssistant
   module Generate
     module BiasAnalysis
-      LOGGER = Logger.new(\$stdout)
+      LOGGER = Logger.new($stdout)
       LOGGER.level = Logger::INFO
 
       # Helper method to generate a fresh error bias object

@@ -14,7 +14,7 @@ class ApiClient
 
   def submit_job(api_url, job_name, job_type, works, api_key)
     # Construct the full URL
-    api_url = api_url.sub(%r{/+\$}, '')
+    api_url = api_url.sub(%r{/+$}, '')
     endpoint = "#{api_url}/create_job"
     uri = URI(endpoint)
 
@@ -36,7 +36,7 @@ class ApiClient
 
   def get_job_progress(api_url, job_name, api_key)
     # Construct the full URL
-    api_url = api_url.sub(%r{/+\$}, '')
+    api_url = api_url.sub(%r{/+$}, '')
     endpoint = "#{api_url}/job_progress"
     uri = URI(endpoint)
     uri.query = URI.encode_www_form(job_name: job_name)
@@ -57,7 +57,7 @@ class ApiClient
 
   def get_overall_progress(api_url, api_key)
     # Construct the full URL
-    api_url = api_url.sub(%r{/+\$}, '')
+    api_url = api_url.sub(%r{/+$}, '')
     endpoint = "#{api_url}/overall_progress"
     uri = URI(endpoint)
 
@@ -71,7 +71,7 @@ class ApiClient
 
   def get_job_results(api_url, job_name, work_id, api_key)
     # Construct the full URL
-    api_url = api_url.sub(%r{/+\$}, '')
+    api_url = api_url.sub(%r{/+$}, '')
     endpoint = "#{api_url}/results"
     uri = URI(endpoint)
     uri.query = URI.encode_www_form(job_name: job_name, work_id: work_id)
@@ -86,7 +86,7 @@ class ApiClient
 
   def update_job_results(api_url, job_name, work_id, api_key, updated_fields)
     # Construct the full URL
-    api_url = api_url.sub(%r{/+\$}, '')
+    api_url = api_url.sub(%r{/+$}, '')
     endpoint = "#{api_url}/results"
     uri = URI(endpoint)
 
