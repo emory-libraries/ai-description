@@ -29,7 +29,7 @@ module ImageCaptioningAssistant
 
       def self.load_and_resize_images(image_s3_uris, s3_kwargs, resize_kwargs)
         resized_img_bytes_list = []
-        
+
         image_s3_uris.each do |image_s3_uri|
           bucket, key = AWS::S3.parse_s3_uri(image_s3_uri)
           img_bytes = AWS::S3.load_to_bytes(
@@ -37,22 +37,22 @@ module ImageCaptioningAssistant
             s3_key: key,
             s3_client_kwargs: s3_kwargs
           )
-          
+
           resized_img_bytes = convert_and_reduce_image(
             image_bytes: img_bytes,
             max_dimension: resize_kwargs[:max_dimension] || 2048,
             jpeg_quality: resize_kwargs[:jpeg_quality] || 95
           )
-          
+
           resized_img_bytes_list << resized_img_bytes
         end
-        
+
         resized_img_bytes_list
       end
 
       def self.format_prompt_for_claude(prompt:, img_bytes_list:, assistant_start:)
         content = [{"type" => "text", "text" => prompt}]
-        
+
         img_bytes_list.each do |img_bytes|
           img_message = {
             "type" => "image",
@@ -64,19 +64,19 @@ module ImageCaptioningAssistant
           }
           content << img_message
         end
-        
+
         msg_list = [{"role" => "user", "content" => content}]
-        
+
         if assistant_start
           msg_list << {"role" => "assistant", "content" => assistant_start}
         end
-        
+
         msg_list
       end
 
       def self.format_prompt_for_nova(prompt:, img_bytes_list:, assistant_start:)
         content = [{"text" => prompt}]
-        
+
         img_bytes_list.each do |img_bytes|
           img_message = {
             "image" => {
@@ -88,13 +88,13 @@ module ImageCaptioningAssistant
           }
           content << img_message
         end
-        
+
         msg_list = [{"role" => "user", "content" => content}]
-        
+
         if assistant_start
           msg_list << {"role" => "assistant", "content" => assistant_start}
         end
-        
+
         msg_list
       end
 
@@ -106,15 +106,15 @@ module ImageCaptioningAssistant
             "temperature" => 0.2,
             "system" => court_order ? Prompts::SYSTEM_PROMPT_COURT_ORDER : Prompts::SYSTEM_PROMPT
           }
-          
+
           request_body["messages"] = messages
-          
+
           request_body
         elsif model_name.include?('nova')
           if court_order
             messages[0]["content"][0]["text"] = Prompts::SYSTEM_PROMPT_COURT_ORDER
           end
-          
+
           {
             "messages" => messages,
             "max_tokens" => 4096,
@@ -131,17 +131,17 @@ module ImageCaptioningAssistant
           LOGGER.error("Could not find COT_TAG_END in response: #{text}")
           raise LLMResponseParsingError, "No COT_TAG_END found in response"
         end
-        
+
         cot = parts[0].sub(Prompts::COT_TAG, "").strip
         json_text = parts[1].strip
-        
+
         begin
           json_dict = JSON.parse(json_text)
           return [cot, json_dict]
         rescue JSON::ParserError
           json_pattern = /```(?:json)?\s*(.*?)\s*```/m
           json_match = json_text.match(json_pattern)
-          
+
           if json_match
             begin
               json_dict = JSON.parse(json_match[1].strip)

@@ -77,7 +77,7 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
   end
 
   bucket = parsed_uri.host
-  
+
   # Remove leading slash if present
   key = parsed_uri.path.sub(/^\//, '')
 
@@ -104,13 +104,13 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
     continuation_token = nil
     loop do
       list_options = {
-        bucket: bucket, 
+        bucket: bucket,
         prefix: folder_prefix,
         continuation_token: continuation_token
       }
-      
+
       response = $s3_client.list_objects_v2(list_options)
-      
+
       if response.contents
         response.contents.each do |obj|
           obj_key = obj.key
@@ -124,7 +124,7 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
           result_uris << "s3://#{bucket}/#{obj_key}"
         end
       end
-      
+
       # Continue if there are more objects
       break unless response.is_truncated
       continuation_token = response.next_continuation_token
@@ -145,15 +145,15 @@ def s3_path_to_file_list(s3_path_uri, recursive=true)
           prefix: key,
           continuation_token: continuation_token
         }
-        
+
         response = $s3_client.list_objects_v2(list_options)
-        
+
         if response.contents
           response.contents.each do |obj|
             result_uris << "s3://#{bucket}/#{obj.key}"
           end
         end
-        
+
         # Continue if there are more objects
         break unless response.is_truncated
         continuation_token = response.next_continuation_token
@@ -169,7 +169,7 @@ end
 
 def expand_s3_uris_to_files(uri_list, recursive=true)
   all_files = []
-  
+
   # Process each URI sequentially instead of in parallel
   uri_list.each do |uri|
     begin
@@ -180,7 +180,7 @@ def expand_s3_uris_to_files(uri_list, recursive=true)
       raise e
     end
   end
-  
+
   # Remove any duplicates
   all_files.uniq
 end
@@ -188,7 +188,7 @@ end
 def validate_request_body(body)
   job_keys = [JOB_NAME, JOB_TYPE, WORKS]
   job_keys_present = job_keys.map { |key| body.key?(key) }
-  
+
   if job_keys_present.any? && !job_keys_present.all?
     msg = "Request body requires the following keys: #{job_keys}. Request body keys received: #{body.keys}"
     $logger.warn(msg)

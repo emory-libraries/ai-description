@@ -9,7 +9,7 @@ module ImageCaptioningAssistant
         LOW = "low"           # Low potential for harm: unintentional exclusion
         MEDIUM = "medium"     # Medium potential for harm: obsolete language terms
         HIGH = "high"         # High potential for harm: offensive terminology
-        
+
         def self.all
           [LOW, MEDIUM, HIGH]
         end
@@ -29,7 +29,7 @@ module ImageCaptioningAssistant
         POLITICAL = "political"
         NUDITY = "nudity"
         OTHER = "other"
-        
+
         def self.all
           constants.map { |c| const_get(c) }
         end
@@ -52,7 +52,7 @@ module ImageCaptioningAssistant
         TACTILE = "Tactile"
         TEXT = "Text"
         UNSPECIFIED = "Unspecified"
-        
+
         def self.all
           constants.map { |c| const_get(c) }
         end

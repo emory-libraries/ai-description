@@ -20,13 +20,13 @@ module ImageCaptioningAssistant
           s3_key: key,
           s3_client_kwargs: s3_kwargs
         )
-        
+
         resized_image = Utils.convert_and_reduce_image(
           image_bytes: img_bytes,
           max_dimension: resize_kwargs[:max_dimension] || 2048,
           jpeg_quality: resize_kwargs[:jpeg_quality] || 95
         )
-        
+
         resized_image
       end
 
@@ -36,7 +36,7 @@ module ImageCaptioningAssistant
         resize_kwargs:
       )
         resized_img_bytes_list = []
-        
+
         image_s3_uris.each do |image_s3_uri|
           resized_img_bytes = load_and_resize_image(
             image_s3_uri: image_s3_uri,
@@ -45,7 +45,7 @@ module ImageCaptioningAssistant
           )
           resized_img_bytes_list << resized_img_bytes
         end
-        
+
         resized_img_bytes_list
       end
     end

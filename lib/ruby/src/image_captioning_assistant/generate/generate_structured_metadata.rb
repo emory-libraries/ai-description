@@ -8,12 +8,12 @@ module ImageCaptioningAssistant
   module Generate
     class DocumentLengthError < StandardError
       attr_reader :error_code
-      
+
       def initialize(message, error_code = nil)
         @error_code = error_code
         super(message)
       end
-      
+
       def to_s
         "DocumentLengthError: #{message} (Error Code: #{error_code})"
       end
@@ -51,7 +51,7 @@ module ImageCaptioningAssistant
         5.times do |attempt|
           begin
             request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
-            
+
             response = bedrock_runtime.invoke_model({
               model_id: model_name,
               body: JSON.generate(request_body)
@@ -68,30 +68,30 @@ module ImageCaptioningAssistant
 
             cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
             Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
-            
+
             if json_dict["metadata"].is_a?(Hash)
               metadata = {}
-              
+
               metadata[:description] = { value: json_dict["metadata"]["description"], explanation: "Generated from image analysis" }
-              
+
               transcription_data = json_dict["metadata"]["transcription"]
               if transcription_data.is_a?(Hash) && transcription_data.key?("transcriptions")
                 metadata[:transcription] = {
-                  transcriptions: transcription_data["transcriptions"].map { |t| 
-                    { 
-                      printed_text: t["printed_text"] || [], 
-                      handwriting: t["handwriting"] || [] 
-                    } 
+                  transcriptions: transcription_data["transcriptions"].map { |t|
+                    {
+                      printed_text: t["printed_text"] || [],
+                      handwriting: t["handwriting"] || []
+                    }
                   },
                   model_notes: transcription_data["model_notes"] || ""
                 }
               elsif transcription_data.is_a?(Array)
                 metadata[:transcription] = {
-                  transcriptions: transcription_data.map { |t| 
-                    { 
-                      printed_text: t["printed_text"] || [], 
-                      handwriting: t["handwriting"] || [] 
-                    } 
+                  transcriptions: transcription_data.map { |t|
+                    {
+                      printed_text: t["printed_text"] || [],
+                      handwriting: t["handwriting"] || []
+                    }
                   },
                   model_notes: ""
                 }
@@ -103,24 +103,24 @@ module ImageCaptioningAssistant
                   model_notes: ""
                 }
               end
-              
+
               metadata[:date] = { value: json_dict["metadata"]["date"], explanation: "Generated from image analysis" }
               metadata[:location] = { value: json_dict["metadata"]["location"] || [], explanation: "Generated from image analysis" }
               metadata[:publication_info] = { value: json_dict["metadata"]["publication_info"] || "", explanation: "Generated from image analysis" }
               metadata[:contextual_info] = { value: json_dict["metadata"]["contextual_info"] || "", explanation: "Generated from image analysis" }
-              
+
               format_value = json_dict["metadata"]["format"]
               unless Data::Constants::LibraryFormat.all.include?(format_value)
-                format_value = "Still Image" 
+                format_value = "Still Image"
               end
               metadata[:format] = { value: format_value, explanation: "Generated from image analysis" }
-              
+
               metadata[:genre] = { value: json_dict["metadata"]["genre"] || [], explanation: "Generated from image analysis" }
               metadata[:objects] = { value: json_dict["metadata"]["objects"] || [], explanation: "Generated from image analysis" }
               metadata[:actions] = { value: json_dict["metadata"]["actions"] || [], explanation: "Generated from image analysis" }
               metadata[:people] = { value: json_dict["metadata"]["people"] || [], explanation: "Generated from image analysis" }
               metadata[:topics] = { value: json_dict["metadata"]["topics"] || [], explanation: "Generated from image analysis" }
-              
+
               return Data::Metadata.new(metadata)
             else
               raise Utils::LLMResponseParsingError, "Invalid metadata format in response"
@@ -129,7 +129,7 @@ module ImageCaptioningAssistant
           rescue StandardError => e
             Utils::LOGGER.warn("Attempt #{attempt + 1}/5 failed: #{e.message}")
             raise e if attempt == 4
-            
+
             if e.is_a?(Utils::LLMResponseParsingError)
               raw_output = llm_output.to_s.split(Prompts::COT_TAG_END)[-1].to_s.downcase
               court_order = true if raw_output =~ /apologize|i cannot|i can't/
@@ -148,7 +148,7 @@ module ImageCaptioningAssistant
         end
 
         llm_kwargs[:model_id] ||= "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-        
+
         work_context = nil
         if context_s3_uri && !context_s3_uri.to_s.empty?
           bucket, key = AWS::S3.parse_s3_uri(context_s3_uri)
@@ -160,7 +160,7 @@ module ImageCaptioningAssistant
         end
 
         img_bytes_list = Utils.load_and_resize_images(image_s3_uris, s3_kwargs, resize_kwargs)
-        
+
         generate_structured_metadata(
           img_bytes_list: img_bytes_list,
           llm_kwargs: llm_kwargs,

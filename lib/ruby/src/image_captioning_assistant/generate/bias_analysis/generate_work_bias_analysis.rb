@@ -18,7 +18,7 @@ module ImageCaptioningAssistant
         original_metadata_s3_uri: nil
       )
         llm_kwargs[:model_id] ||= "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
-        
+
         original_metadata = nil
         if original_metadata_s3_uri && !original_metadata_s3_uri.to_s.empty?
           bucket, key = AWS::S3.parse_s3_uri(original_metadata_s3_uri)

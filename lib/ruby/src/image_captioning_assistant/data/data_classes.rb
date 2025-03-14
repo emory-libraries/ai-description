@@ -96,13 +96,13 @@ module ImageCaptioningAssistant
       end
 
       def validate!
-        [@description, @date, @location, @publication_info, @contextual_info, 
+        [@description, @date, @location, @publication_info, @contextual_info,
          @format, @genre, @objects, @actions, @people, @topics].each do |field|
           raise ArgumentError, "Required field is missing" if field.nil?
         end
-        
+
         raise ArgumentError, "Transcription is required" if @transcription.nil?
-        
+
         # Validate format is a valid LibraryFormat
         unless Constants::LibraryFormat.all.include?(@format.value)
           raise ArgumentError, "Invalid format value: #{@format.value}"
@@ -174,7 +174,7 @@ module ImageCaptioningAssistant
 
       def initialize(biases: [])
         # Handle both array of hashes and array of Bias objects
-        @biases = biases.map do |b| 
+        @biases = biases.map do |b|
           if b.is_a?(Bias)
             b
           else
@@ -212,7 +212,7 @@ module ImageCaptioningAssistant
                           else
                             metadata_biases || Biases.new
                           end
-        
+
         # Handle page_biases as array of hashes or array of Biases objects
         @page_biases = if page_biases.is_a?(Array)
                         page_biases.map do |pb|
@@ -225,7 +225,7 @@ module ImageCaptioningAssistant
                       else
                         []
                       end
-        
+
         validate!
       end
 
@@ -246,7 +246,7 @@ module ImageCaptioningAssistant
     # Custom error for document length issues
     class DocumentLengthError < StandardError
       attr_reader :error_code
-      
+
       def initialize(message, error_code = nil)
         @error_code = error_code
         super(message)

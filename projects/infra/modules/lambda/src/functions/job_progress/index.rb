@@ -50,30 +50,30 @@ def query_all_items(job_name)
     },
     projection_expression: "#{WORK_ID}, #{WORK_STATUS}, #{JOB_TYPE}"
   }
-  
+
   last_evaluated_key = nil
-  
+
   loop do
     query_params[:exclusive_start_key] = last_evaluated_key if last_evaluated_key
-    
+
     response = TABLE.query(query_params)
     items.concat(response.items)
-    
+
     last_evaluated_key = response.last_evaluated_key
     break unless last_evaluated_key
   end
-  
+
   items
 end
 
 def organize_items(items)
   work_ids_by_status = Hash.new { |h, k| h[k] = [] }
   job_types = Set.new
-  
+
   items.each do |item|
     work_id = item[WORK_ID]
     job_type = item[JOB_TYPE]
-    
+
     if work_id.nil?
       msg = "Field #{WORK_ID} not found for item."
       LOGGER.warn(msg)
@@ -87,13 +87,13 @@ def organize_items(items)
       job_types.add(job_type)
     end
   end
-  
+
   if job_types.size > 1
     msg = "Multiple job types found for the same job: #{job_types}."
     LOGGER.warn(msg)
     raise ValueError, msg
   end
-  
+
   [work_ids_by_status, job_types.first]
 end
 
@@ -108,30 +108,30 @@ end
 def handler(event:, context:)
   begin
     query_params = event['queryStringParameters'] || {}
-    
+
     job_name = query_params[JOB_NAME]
-    
+
     if job_name.nil?
       return create_response(400, { error: "Missing required query parameter: #{JOB_NAME}" })
     end
-    
+
     LOGGER.info("Getting progress of job=#{job_name}")
     items = query_all_items(job_name)
-    
+
     if items.empty?
       return create_response(404, { message: "No data found for #{JOB_NAME}=#{job_name}" })
     end
-    
+
     work_ids_by_status, job_type = organize_items(items)
-    
+
     # Return success response
     response = {
       job_progress: work_ids_by_status,
       job_type: job_type
     }
-    
+
     create_response(200, response)
-    
+
   rescue Aws::DynamoDB::Errors::ServiceError => e
     LOGGER.error("DynamoDB error: #{e}")
     create_response(500, { error: "Database error", details: e.message })

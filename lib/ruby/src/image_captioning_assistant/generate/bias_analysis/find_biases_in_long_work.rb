@@ -19,10 +19,10 @@ module ImageCaptioningAssistant
       )
         LOGGER.info("Analyzing original metadata")
         llm_output = find_biases_in_short_work(
-          image_s3_uris: [],  
-          s3_kwargs: {},      
+          image_s3_uris: [],
+          s3_kwargs: {},
           llm_kwargs: llm_kwargs,
-          resize_kwargs: {},  
+          resize_kwargs: {},
           work_context: work_context,
           original_metadata: original_metadata,
           bedrock_runtime: bedrock_runtime
@@ -40,11 +40,11 @@ module ImageCaptioningAssistant
       )
         LOGGER.info("Analyzing #{image_s3_uris.length} images")
         page_biases = []
-        
+
         image_s3_uris.each do |image_s3_uri|
           LOGGER.debug("Analyzing image #{image_s3_uri}")
           llm_output = find_biases_in_short_work(
-            image_s3_uris: [image_s3_uri],  
+            image_s3_uris: [image_s3_uri],
             s3_kwargs: s3_kwargs,
             llm_kwargs: llm_kwargs,
             resize_kwargs: resize_kwargs,
@@ -92,8 +92,8 @@ module ImageCaptioningAssistant
 
         begin
           Data::WorkBiasAnalysis.new(
-            metadata_biases: metadata_biases,  
-            page_biases: page_biases         
+            metadata_biases: metadata_biases,
+            page_biases: page_biases
           )
         rescue => e
           LOGGER.warn("Failed to cast metadata biases and page biases into WorkBiasAnalysis, debug to log full output")

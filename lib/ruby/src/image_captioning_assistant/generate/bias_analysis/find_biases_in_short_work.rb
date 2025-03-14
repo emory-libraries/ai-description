@@ -51,7 +51,7 @@ module ImageCaptioningAssistant
         5.times do |attempt|
           begin
             request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
-            
+
             response = bedrock_runtime.invoke_model({
               model_id: model_name,
               body: JSON.generate(request_body)
@@ -68,7 +68,7 @@ module ImageCaptioningAssistant
 
             cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
             Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
-            
+
             if image_s3_uris.length != json_dict["page_biases"].length
               raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"
             end
@@ -79,7 +79,7 @@ module ImageCaptioningAssistant
                 bias["type"] = bias["type"].to_s.downcase if bias["type"]
               end
             end
-            
+
             json_dict["page_biases"].each do |page|
               if page && page["biases"]
                 page["biases"].each do |bias|
@@ -97,7 +97,7 @@ module ImageCaptioningAssistant
           rescue StandardError => e
             Utils::LOGGER.warn("Attempt #{attempt + 1}/5 failed: #{e.message}")
             raise e if attempt == 4
-            
+
             if e.is_a?(Utils::LLMResponseParsingError) || e.is_a?(ArgumentError)
               raw_output = llm_output.to_s.split(Prompts::COT_TAG_END)[-1].to_s.downcase
               court_order = true if raw_output =~ /apologize|i cannot|i can't/
@@ -110,14 +110,14 @@ module ImageCaptioningAssistant
 
       def self.create_messages(img_bytes_list:, work_context: nil, original_metadata: nil, model_name:)
         prompt = Prompts::USER_PROMPT_BIAS_ONLY
-        
+
         if work_context || original_metadata
           context_str = "Additional Context:\n"
           context_str += "Work Context: #{work_context}\n" if work_context
           context_str += "Original Metadata: #{original_metadata}\n" if original_metadata
           prompt = "#{prompt}\n\n#{context_str}"
         end
-        
+
         if model_name.include?('claude')
           Utils.format_prompt_for_claude(
             prompt: prompt,

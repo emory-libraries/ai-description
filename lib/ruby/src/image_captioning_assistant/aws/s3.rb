@@ -14,7 +14,7 @@ module ImageCaptioningAssistant
 
         # Add logging
         puts "Parsing S3 URI: #{s3_uri}"
-        
+
         # Handle s3://bucket-name/key format
         if s3_uri.start_with?('s3://')
           uri = URI.parse(s3_uri)
@@ -23,7 +23,7 @@ module ImageCaptioningAssistant
           puts "Parsed s3:// URI - bucket: #{bucket}, key: #{key}"
           return [bucket, key]
         end
-        
+
         # Handle bucket-name/key format or just the key if bucket is known
         if s3_uri.include?('/')
           parts = s3_uri.split('/', 2)
@@ -42,7 +42,7 @@ module ImageCaptioningAssistant
       def self.load_to_str(s3_bucket:, s3_key:, s3_client_kwargs: {})
         raise ArgumentError, "S3 bucket must not be blank" if s3_bucket.nil? || s3_bucket.strip.empty?
         raise ArgumentError, "S3 key must not be blank" if s3_key.nil? || s3_key.strip.empty?
-        
+
         puts "Loading S3 object as string - bucket: #{s3_bucket}, key: #{s3_key}"
         s3_client = Aws::S3::Client.new(**s3_client_kwargs)
         response = s3_client.get_object(bucket: s3_bucket, key: s3_key)
@@ -53,7 +53,7 @@ module ImageCaptioningAssistant
       def self.load_to_bytes(s3_bucket:, s3_key:, s3_client_kwargs: {})
         raise ArgumentError, "S3 bucket must not be blank" if s3_bucket.nil? || s3_bucket.strip.empty?
         raise ArgumentError, "S3 key must not be blank" if s3_key.nil? || s3_key.strip.empty?
-        
+
         puts "Loading S3 object as bytes - bucket: #{s3_bucket}, key: #{s3_key}"
         s3_client = Aws::S3::Client.new(**s3_client_kwargs)
         response = s3_client.get_object(bucket: s3_bucket, key: s3_key)

@@ -38,11 +38,11 @@ def generate_presigned_urls(s3_uris)
 
     begin
       presigned_url = $s3.get_object(
-        bucket: bucket_name, 
-        key: object_key, 
+        bucket: bucket_name,
+        key: object_key,
         expires_in: 60
       ).presigned_url
-      
+
       presigned_urls << presigned_url
     rescue => e
       $logger.error("Error generating presigned URL for #{uri}: #{e.message}")
@@ -87,7 +87,7 @@ end
 def handler(event:, context:)
   begin
     query_params = event['queryStringParameters'] || {}
-    
+
     job_name = query_params[JOB_NAME]
     unless job_name
       msg = "Missing '#{JOB_NAME}' in query parameters"
@@ -104,13 +104,13 @@ def handler(event:, context:)
 
     response = $table.get_item(key: { JOB_NAME => job_name, WORK_ID => work_id })
     item = response.item
-    
+
     if item
       deserialized_item = deserialize_dynamodb_item(item)
-      
+
       image_s3_uris = deserialized_item[IMAGE_S3_URIS]
       deserialized_item[IMAGE_S3_PRESIGNED_URLS] = generate_presigned_urls(image_s3_uris)
-      
+
       return create_response(200, { item: deserialized_item })
     else
       $logger.warn("Results not available for #{JOB_NAME}=#{job_name} and #{WORK_ID}=#{work_id}")
