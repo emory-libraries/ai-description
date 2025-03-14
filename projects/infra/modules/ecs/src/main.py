@@ -12,11 +12,11 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from image_captioning_assistant.generate.bias_analysis.generate_work_bias_analysis import generate_work_bias_analysis
-from image_captioning_assistant.generate.generate_structured_metadata import (
-    DocumentLengthError,
-    generate_work_structured_metadata,
+from image_captioning_assistant.generate.bias_analysis.generate_bias_analysis import (
+    generate_bias_analysis_from_s3_images,
 )
+from image_captioning_assistant.generate.errors import DocumentLengthError
+from image_captioning_assistant.generate.metadata.generate_metadata import generate_metadata_from_s3_images
 
 AWS_REGION = os.environ["AWS_REGION"]
 WORKS_TABLE_NAME = os.environ["WORKS_TABLE_NAME"]
@@ -197,14 +197,14 @@ def process_sqs_messages():
                 update_dynamodb_item(job_name=job_name, work_id=work_id, status="IN PROGRESS")
 
                 if job_type == "metadata":
-                    work_structured_metadata = generate_work_structured_metadata(
+                    work_structured_metadata = generate_metadata_from_s3_images(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
                         llm_kwargs=LLM_KWARGS,
                         s3_kwargs=S3_KWARGS,
                         resize_kwargs=RESIZE_KWARGS,
                     )
-                    work_bias_analysis = generate_work_bias_analysis(
+                    work_bias_analysis = generate_bias_analysis_from_s3_images(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
                         original_metadata_s3_uri=original_metadata_s3_uri,
@@ -218,7 +218,7 @@ def process_sqs_messages():
                         job_name=job_name, work_id=work_id, update_data=update_data, status="READY FOR REVIEW"
                     )
                 elif job_type == "bias":
-                    work_bias_analysis = generate_work_bias_analysis(
+                    work_bias_analysis = generate_bias_analysis_from_s3_images(
                         image_s3_uris=image_s3_uris,
                         context_s3_uri=context_s3_uri,
                         original_metadata_s3_uri=original_metadata_s3_uri,

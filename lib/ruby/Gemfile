@@ -1,0 +1,10 @@
+source 'https://rubygems.org'
+
+gem 'aws-sdk-bedrockruntime'
+gem 'aws-sdk-dynamodb'
+gem 'aws-sdk-s3'
+gem 'aws-sdk-secretsmanager'
+gem 'aws-sdk-sqs'
+gem 'json'
+gem 'mini_magick'
+gem 'retry_block'

@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "image-captioning-assistant"
+version = "0.1.0"
+description = "Image captioning assistant"
+authors = ["Amazon Web Services"]
+packages = [
+    { include = "image_captioning_assistant", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiobotocore = "^2.19.0"
+boto3 = "^1.36.2"
+cloudpathlib = "^0.20.0"
+Jinja2 = "^3.1.5"
+langchain-aws = "^0.2.11"
+load_dotenv = "^0.1.0"
+loguru = "^0.7.3"
+pandas = "^2.2.3"
+pillow = "^11.1.0"
+pydantic = "^2.10.5"
+pydantic-settings = "^2.7.1"
+retry = "^0.9.2"
+tqdm = "^4.67.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

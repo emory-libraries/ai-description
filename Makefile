@@ -1,5 +1,5 @@
 .PHONY: \
-	checkAwsCredentials createPythonEnvironment createTerraformBackend installPythonRequirements installTypeScriptRequirements \
+	checkAwsCredentials createPythonEnvironment createTerraformBackend installPythonRequirements installJavaScriptRequirements \
 	deploy destroy \
 	clean cleanPython cleanTerraform cleanTypeScript \
 	terraformInit terraformFmtValidate terraformPlan terraformApply terraformDestroy \
@@ -69,12 +69,12 @@ installPythonRequirements:
 
 
 ## Install TypeScript dependencies for development
-installTypeScriptRequirements:
+installJavaScriptRequirements:
 	npm install --prefix $(PROJECT_DIR)/projects/frontend
 
 
 ## Install Python and TypeScript dependencies for development
-install: installPythonRequirements installTypeScriptRequirements
+install: installPythonRequirements installJavaScriptRequirements
 
 
 ## Delete all local compiled Python files and related artifacts

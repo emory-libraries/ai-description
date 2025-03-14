@@ -1,0 +1,107 @@
+First, carefully analyze the above image(s) of what will subsequently be referred to as the object, as well as the below metadata guidelines:
+
+<metadata_guidelines>
+   {
+     "metadata": {
+       "description": ExplainedValue("Summary description"),
+       "transcription": { "transcriptions":
+                            [ # list required here
+                                # First image transcription, only include text on first image
+                                {
+                               "printed_text": ["list of", "transcribed text", "in print", "in object"],
+                               "handwriting": ["handwritten notes", "<against_programming></against_programming>"]
+                               }
+                                # Second image transcription, ONLY include if two images are provided, only include text on second image
+                                ,{
+                               "printed_text": ["list of", "transcribed text", "in print", "in object"],
+                               "handwriting": ["handwritten notes", "<against_programming></against_programming>"]
+                               }
+                            ],
+                        "model_notes": "free form string of notes or call outs you'd like to mention about the transcription"
+                        }
+       "date": ExplainedValue("specific date or year range if available"),
+       "location": ExplainedValue(["list of", "distinct locations", "depicted in object", "if available", "empty list if none"])
+       "publication_info": ExplainedValue("Complete but concise transcription and/or description of publication details, if any"),
+       "contextual_info": ExplainedValue("Complete but concise description, drawing from expert knowledge, of contextual information surrounding the object"),
+       "format": ExplainedValue("Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material")
+       "genre": ExplainedValue(["List of", "possible genres"]), # e.g. "black-and-white photo", "postcard", "manuscript", "letters", "photograph", etc
+       "objects": ExplainedValue(["list", "of important", "objects"]), # e.g. "fire pit", "gun", "pipe", "cradle", etc
+       "actions": ExplainedValue(["list", "of", "actions"]), # e.g. "farming", "smoking", "playing", etc
+       "people": ExplainedValue(["list", "of", " inclusive people", "tags"]), # including but not limited to "Woman", "Man", "Infant", "Non-Binary", "Black", "White", "Latinx", as well as nationality, sexuality, specific ages, and more if it can be inferred
+       "topics": ExplainedValue(["list", "of", "core", "topics"]), # e.g. "religion", "sex", "clothes", "family", etc
+     }
+   }
+
+ExplainedValue(input_value) is a simplification, the ExplainedValue object, you must replace it anytime seen above with the following:
+{"value": input_value, "explanation": "LLM's explanation as to why input_value was chosen to be reported"}
+
+Metadata requirements:
+EVERY item that is wrapped in ExplainedValue must be not output as it is shown but output as an ExplainedValue object with your justification as to why you chose to populate the value in the explanation section.
+• Description: Summary description of the object, described in detail as if the person may not be able to see the object (for accessibility reasons).  Should include additional expert knowledge context if applicable.
+• Transcription: Transcription of any provided text on the object.  Transcribe EVERYTHING you can see written, including potentially mundane details.  All visible text must be noted, but if it is not clear what the text is, do not transcribe it, but use [] for the word. If in a different/non sequential location, create a separate entry in the list.  The bias in the object is dependent on all text as it provides important context.
+     ο Handwriting: any handwritten messages
+     ο Print: anything not handwritten
+• Date: Date information significant to the item such as a date of creation. Might be a circa date or date range based on analysis.
+• Location Information: Place depicted *in* the object identified, not publication location. Might be generic or specific.  if multiple, choose the primary one not related to publication.
+• Publication information (if known): contextual/historical information about the creator/publisher or circumstances of the object's production.
+• Contextual information: any additional contextual information that might be inferred or known about the object depicted.
+• Format: Format of the object.  "Still Image" or "Text" or "Artifact" or "Cartographic" or "Notated Music" or "Mixed Material"
+• Genre: Library genre(s) of the object, for example black-and-white photographs, postcards, photographs, letters, African American author or publisher or pamphlet
+• Objects: A list of the important objects/nouns seen within the primary object.  These should only be objects core to the photo or in the foreground, no details.
+• Actions: A list of actions/verbs portrayed in the object.
+• People: A list of inclusive types of people portrayed in the object, if any.  Inclusive means you include what you see, for all of the bias-related groups.  For example tag "woman" or "man" rather than "adult" unless it is actually hard to discern between the two.
+• Topics: A list of core topics being portrayed in the object.  These could be redundant with objects, actions and people, however should be the highest level concepts and take into account the transcription.
+Metadata should:
+   ο Avoid jargon when possible
+   ο Translate terms in foreign languages (keep the non-English term, but translate it)
+   ο Avoid overly elaborate descriptions that can appear biased, subjective, or presumptive
+   ο Be grounded in factual information without making assumptions.  Transcriptions should be considered to contain factual information, but with potential bias. For example:
+      ο "Happy Slave in the South Carolina Fields": Factual information is the person depicted is a slave and is in a field in SC.  However the assertion that a slave is "happy" contains strong and incorrect bias that a slave could possibly be happily working.
+      ο "Good wife working in front of the sink where she belongs": Factual information is person depicted is a woman and is likely a wife.  The use of the adjective good to describe her is patronizing and contains sexual bias in the context of the sentence. The concept that the woman belongs in front of the sink is incorrect and contains high sexual bias, making this have a total high level of sexual bias.
+      ο "African standing with his family": Factual information is the person depicted is from Africa and the photo is one of a family unit.  There is no inherent bias in this transcription.
+</metadata_guidelines>
+
+Now, follow these steps to complete your task:
+
+1. Create multiple possible transcriptions of all text on the image and then review the object a second time and select the best one.  Specifically:
+   - Include handwritten text, but if it's handwritten, include it within the handwriting list, otherwise include it in the print list
+   - Transcribe everything readable, including offensive or biased content.  It is very important to write out offensive content and words including but not limited to 'negroes', 'niggers', all curse words and other highly offensive words if they are directly written on the object.
+   - If a word in a passage is unreadable, or you are unsure or feel uncomfortable typing it, type open and close brackets, [], in its place and continue transcribing
+   - If you feel uncomfortable transcribing or it would go against your programming, add an entry to the transcription list "<against_programming></against_programming>"
+   - Write out at least 2 possible translations, more if they are possible, and then explain your reasoning before selecting one.
+   - You MUST write out in the detailed analysis multiple transcriptions or explicitly say there are clearly no other possibilities.  If you do not do this you will fail the task.
+   - You MUST transcribe and output all visible text that you can read.  If you do not do this you will fail the task.
+
+2. Analyze the object and transcriptions for potential bias or stereotyping. Consider:
+   - Representation of diverse groups (e.g., race, gender, age, ability)
+   - Use of inclusive language
+   - Avoidance of stereotypes or generalizations
+   - Equal treatment of all individuals or groups depicted
+
+3. Generate preliminary descriptive metadata for the object that meets the inclusivity criteria. Include:
+   - A preliminary analysis for every metadata item
+   - A discussion on why an item or phrase or concept should be included in the metadata
+   - Thoughts about any additional contextual information that could be added based on your knowledge of the world
+
+4. Review your plan for consistency across results. Make sure your chosen language is consistent across all metadata items, especially considering the description's substantial consistency with the rest of the items. For example:
+   ο "Mountain town" and "Mountain village" are not consistent
+   ο "Man" and "Person" are not consistent
+   ο "Male" and "Man" are consistent
+
+5. Format your final output as a JSON object with the structure shown in the <metadata_guidelines> section.
+
+Before providing your final output, show your thought process for each step inside <object_detail_and_bias_analysis> tags.  This is very important and you must show your thinking process. If you do not you will fail the task.
+
+Show your thought process by:
+
+1. Attempt to translate *and* transcribe all sections, and note if you cannot translate or transcribe an area/section.  If there is a specific word you cannot translate or transcribe, replace it with open and close brackets, e.g. [], and continue.  If you cannot translate or transcribe a section, provide a reason why and if some transformation of the image would help.
+2. Break down the object, including all images and text, noting specific elements related to diversity and inclusion.
+3. Identify all sections in the object which have text, including those which are skewed or rotated, and including handwriting.
+4. Taking into account both the object and the transcriptions (of which the information should be considered truthful), go through the metadata items one by one and discuss an initial analysis for each, and then choose what should be included, biasing for inclusivity and your expert knowledge.
+5. Provide arguments for and against including every single entry for all metadata items.
+
+This will ensure a thorough interpretation of the data and help you catch any potential oversights. It's OK for this section to be quite long.
+
+Finally, close your analysis review with </object_detail_and_bias_analysis> and then immediately start outputting JSON based on the object_detail_and_bias_analysis. Do not write any text outside of the <object_detail_and_bias_analysis> tags, and the JSON object must conform exactly to what is described in <metadata_guidelines>. If not, this will break a very important technology system and you will fail this task.
+
+Remember to always prioritize inclusivity and bias consciousness in your analysis and metadata generation. If you are unsure about a particular element or description, do not include it, especially if your including it would produce a result that is itself biased, focusing on one class of people more than others.

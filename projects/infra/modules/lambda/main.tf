@@ -125,6 +125,6 @@ resource "aws_lambda_function" "functions" {
   image_uri        = null
   filename         = data.archive_file.function_zips[each.key].output_path
   handler          = "index.handler"
-  runtime          = "python3.12"
-  source_code_hash = filebase64sha256("${each.value.source_dir}/index.py")
+  runtime          = "ruby3.3"
+  source_code_hash = filebase64sha256("${each.value.source_dir}/index.rb")
 }
