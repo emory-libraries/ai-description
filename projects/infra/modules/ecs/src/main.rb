@@ -17,8 +17,16 @@ WORKS_TABLE_NAME = ENV['WORKS_TABLE_NAME']
 SQS_QUEUE_URL = ENV['SQS_QUEUE_URL']
 UPLOADS_BUCKET_NAME = ENV['UPLOADS_BUCKET_NAME']
 
+# Configure AWS clients with the same settings as Python
+S3_CONFIG = {
+  s3_us_east_1_regional_endpoint: 'regional',
+  s3_addressing_style: 'virtual',
+  signature_version: 's3v4'
+}
+
 S3_KWARGS = {
-  region: AWS_REGION
+  region: AWS_REGION,
+  config: S3_CONFIG
 }
 
 LLM_KWARGS = {
@@ -49,46 +57,82 @@ $logger.formatter = proc do |severity, datetime, progname, msg|
 end
 
 # Initialize AWS clients
-$s3 = Aws::S3::Client.new(region: AWS_REGION)
+$s3 = Aws::S3::Client.new(region: AWS_REGION, config: S3_CONFIG)
 $sqs = Aws::SQS::Client.new(region: AWS_REGION)
 $dynamodb = Aws::DynamoDB::Resource.new(region: AWS_REGION)
 $table = $dynamodb.table(WORKS_TABLE_NAME)
 
-def update_dynamodb_item(job_name:, work_id:, update_data:)
-  status = 'READY FOR REVIEW'
+def get_work_details(job_name, work_id)
   begin
-    update_expression = 'SET #status = :status'
-    expression_attribute_names = { '#status' => WORK_STATUS }
-    expression_attribute_values = { ':status' => status }
+    response = $table.get_item(
+      key: { JOB_NAME => job_name, WORK_ID => work_id }
+    )
 
-    update_data.each do |key, value|
-      update_expression += ", ##{key} = :#{key}"
-      expression_attribute_names["##{key}"] = key
-      expression_attribute_values[":#{key}"] = value
+    if response.item.nil?
+      raise "No item found for job_name=#{job_name}, work_id=#{work_id}"
     end
 
+    return response.item
+  rescue Aws::DynamoDB::Errors::ServiceError => e
+    $logger.error("Error retrieving item from DynamoDB: #{e}")
+    raise
+  end
+end
+
+def update_dynamodb_item(job_name:, work_id:, update_data: nil, status: nil)
+  begin
+    # Start with empty update parts
+    update_expression_parts = []
+    expression_attribute_names = {}
+    expression_attribute_values = {}
+
+    # Add status update if provided
+    if status
+      update_expression_parts << "#status = :status"
+      expression_attribute_names["#status"] = WORK_STATUS
+      expression_attribute_values[":status"] = status
+    end
+
+    # Add field updates from update_data if provided
+    if update_data
+      update_data.each do |key, value|
+        update_expression_parts << "##{key} = :#{key}"
+        expression_attribute_names["##{key}"] = key
+        expression_attribute_values[":#{key}"] = value
+      end
+    end
+
+    # If nothing to update, return early
+    if update_expression_parts.empty?
+      $logger.warn("No updates provided for job=#{job_name}, work=#{work_id}")
+      return
+    end
+
+    # Create the full update expression
+    update_expression = "SET " + update_expression_parts.join(", ")
+
+    # Perform the update
     $table.update_item(
       key: { JOB_NAME => job_name, WORK_ID => work_id },
       update_expression: update_expression,
       expression_attribute_names: expression_attribute_names,
       expression_attribute_values: expression_attribute_values
     )
-    $logger.info("Updated DynamoDB item for job=#{job_name}, work=#{work_id} to #{status}")
-  rescue Aws::DynamoDB::Errors::ServiceError => e
-    $logger.error("Failed to update DynamoDB for job=#{job_name}, work=#{work_id}: #{e}")
-  end
-end
 
-def update_dynamodb_status(job_name:, work_id:, status:)
-  begin
-    $table.update_item(
-      key: { JOB_NAME => job_name, WORK_ID => work_id },
-      update_expression: "SET #{WORK_STATUS} = :status",
-      expression_attribute_values: { ':status' => status }
-    )
-    $logger.info("Updated DynamoDB item for job=#{job_name}, work=#{work_id} to #{status}")
+    # Log appropriate message based on what was updated
+    log_message = "Updated DynamoDB item for job=#{job_name}, work=#{work_id}"
+    if status
+      log_message += " with status '#{status}'"
+    end
+    if update_data
+      fields = update_data.keys.to_a
+      log_message += " and fields: #{fields}"
+    end
+
+    $logger.info(log_message)
   rescue Aws::DynamoDB::Errors::ServiceError => e
     $logger.error("Failed to update DynamoDB for job=#{job_name}, work=#{work_id}: #{e}")
+    raise
   end
 end
 
@@ -117,22 +161,25 @@ def process_sqs_messages
         # Parse the message body
         message_body = JSON.parse(message.body)
         job_name = message_body[JOB_NAME]
-        job_type = message_body[JOB_TYPE]
         work_id = message_body[WORK_ID]
-        context_s3_uri = message_body[CONTEXT_S3_URI]
-        image_s3_uris = message_body[IMAGE_S3_URIS]
-        original_metadata_s3_uri = message_body[ORIGINAL_METADATA_S3_URI]
 
-        $logger.info("Message Body: #{message_body}")
+        # Get work details from DynamoDB instead of SQS message
+        work_item = get_work_details(job_name, work_id)
+
+        job_type = work_item[JOB_TYPE]
+        context_s3_uri = work_item[CONTEXT_S3_URI]
+        image_s3_uris = work_item[IMAGE_S3_URIS]
+        original_metadata_s3_uri = work_item[ORIGINAL_METADATA_S3_URI]
+
         $logger.info("Job name: #{job_name}")
-        $logger.info("Job type: #{job_type}")
         $logger.info("Work ID: #{work_id}")
+        $logger.info("Job type: #{job_type}")
         $logger.info("Context S3 URI: #{context_s3_uri}")
         $logger.info("Image S3 URIs: #{image_s3_uris}")
         $logger.info("Original metadata S3 URI: #{original_metadata_s3_uri}")
 
-        # Update work_status for the item in DynamoDB to "PROCESSING"
-        update_dynamodb_status(job_name: job_name, work_id: work_id, status: 'PROCESSING')
+        # Update work_status for the item in DynamoDB to "IN PROGRESS"
+        update_dynamodb_item(job_name: job_name, work_id: work_id, status: 'IN PROGRESS')
 
         case job_type
         when 'metadata'
@@ -151,12 +198,13 @@ def process_sqs_messages
             s3_kwargs: S3_KWARGS,
             resize_kwargs: RESIZE_KWARGS
           )
-          # Update DynamoDB with the bias_analysis field
+          # Update DynamoDB with structured metadata and bias analysis fields
           update_data = work_structured_metadata.to_h.merge(work_bias_analysis.to_h)
           update_dynamodb_item(
             job_name: job_name,
             work_id: work_id,
-            update_data: update_data
+            update_data: update_data,
+            status: 'READY FOR REVIEW'
           )
         when 'bias'
           work_bias_analysis = ImageCaptioningAssistant::Generate::BiasAnalysis.generate_work_bias_analysis(
@@ -171,7 +219,8 @@ def process_sqs_messages
           update_dynamodb_item(
             job_name: job_name,
             work_id: work_id,
-            update_data: work_bias_analysis.to_h
+            update_data: work_bias_analysis.to_h,
+            status: 'READY FOR REVIEW'
           )
         else
           raise ArgumentError, "#{JOB_TYPE}='#{job_type}' not supported"
@@ -199,7 +248,7 @@ def process_sqs_messages
         work_id = message_body[WORK_ID]
 
         # Update work_status for the item in DynamoDB to "FAILED TO PROCESS"
-        update_dynamodb_status(
+        update_dynamodb_item(
           job_name: job_name,
           work_id: work_id,
           status: 'FAILED TO PROCESS'
