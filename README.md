@@ -1,8 +1,24 @@
 # Archival Image Captioning Assistant
 
-This repository contains the full-stack solution for the Archival Image Captioning Assistant.
+This repository contains the full-stack solution for the Archival Image Captioning Assistant. 
 
-## Prerequisites
+This is meant to be a "minimum lovable product" (MVP) meaning it's ready for beta testers but may need modifications before being released to wider audiences.
+
+Workflow is outlined in [this markdown file](./assets/workflow.md).
+
+Architecture is outlined [here](./assets/images/architecture.png).
+
+## Code organization
+```
+lib/				- Python/Ruby libraries defining app logic
+notebooks/			- Examples interacting with API
+projects/		
+    frontend/		- ReactJS frontend
+    infra/			- Terraform setup 
+    research/		- Jupyer notebooks from experiments
+```
+
+## Deployment prerequisites
 
 - AWS CLI configured with appropriate credentials
 - Terraform (>= 1.0.0)
@@ -36,7 +52,7 @@ deployment_name = "your-deployment-name"  # Required
 - `make createPythonEnvironment` - Creates a Python virtual environment
 - `make createTerraformBackend` - Creates Terraform backend configuration in S3 and DynamoDB
 - `make installPythonRequirements` - Installs Python dependencies
-- `make installTypeScriptRequirements` - Installs TypeScript dependencies
+- `make installJavaScriptRequirements` - Installs JavaScript dependencies
 - `make install` - Installs all dependencies
 
 ### Terraform Commands
