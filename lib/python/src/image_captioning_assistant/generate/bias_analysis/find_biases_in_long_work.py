@@ -8,10 +8,15 @@ from typing import Any
 
 import boto3
 
-from image_captioning_assistant.data.data_classes import Biases, WorkBiasAnalysis
+from image_captioning_assistant.data.data_classes import Bias, Biases, BiasLevel, BiasType, WorkBiasAnalysis
 from image_captioning_assistant.generate.bias_analysis.find_biases_in_short_work import find_biases_in_short_work
 
 logger = logging.getLogger(__name__)
+
+
+def create_error_bias():
+    """Create fill-in object for when individual page cannot be processed."""
+    return Biases(biases=[Bias(level=BiasLevel.high, type=BiasType.other, explanation="COULD NOT PROCESS PAGE")])
 
 
 def find_biases_in_original_metadata(
@@ -49,15 +54,20 @@ def find_biases_in_images(
     page_biases = []
     for image_s3_uri in image_s3_uris:
         logger.debug(f"Analyzing image {image_s3_uri}")
-        llm_output = find_biases_in_short_work(
-            image_s3_uris=[image_s3_uri],  # one image
-            s3_kwargs=s3_kwargs,
-            llm_kwargs=llm_kwargs,
-            resize_kwargs=resize_kwargs,
-            work_context=work_context,
-            bedrock_runtime=bedrock_runtime,
-        )
-        page_biases.append(llm_output.page_biases[0])
+        try:
+            llm_output = find_biases_in_short_work(
+                image_s3_uris=[image_s3_uri],  # one image
+                s3_kwargs=s3_kwargs,
+                llm_kwargs=llm_kwargs,
+                resize_kwargs=resize_kwargs,
+                work_context=work_context,
+                bedrock_runtime=bedrock_runtime,
+            )
+            page_biases.append(llm_output.page_biases[0])
+        except Exception as exc:
+            logger.warning(f"Failed to process {image_s3_uri}: {exc}")
+            biases_error = create_bias_error()
+            page_biases.append(biases_error)
 
     return page_biases
 

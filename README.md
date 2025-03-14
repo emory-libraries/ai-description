@@ -1,6 +1,6 @@
 # Archival Image Captioning Assistant
 
-This repository contains the full-stack solution for the Archival Image Captioning Assistant. 
+This repository contains the full-stack solution for the Archival Image Captioning Assistant.
 
 This is meant to be a "minimum lovable product" (MVP) meaning it's ready for beta testers but may need modifications before being released to wider audiences.
 
@@ -9,12 +9,13 @@ Workflow is outlined in [this markdown file](./assets/workflow.md).
 Architecture is outlined [here](./assets/architecture.md).
 
 ## Code organization
+
 ```
 lib/				- Python/Ruby libraries defining app logic
 notebooks/			- Examples interacting with API
-projects/		
+projects/
     frontend/		- ReactJS frontend
-    infra/			- Terraform setup 
+    infra/			- Terraform setup
     research/		- Jupyer notebooks from experiments
 ```
 

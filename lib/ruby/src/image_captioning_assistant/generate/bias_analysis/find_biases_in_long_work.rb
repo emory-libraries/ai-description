@@ -11,6 +11,19 @@ module ImageCaptioningAssistant
       LOGGER = Logger.new($stdout)
       LOGGER.level = Logger::INFO
 
+      # Helper method to generate a fresh error bias object
+      def self.create_error_bias
+        ImageCaptioningAssistant::Data::Biases.new(
+          biases: [
+            ImageCaptioningAssistant::Data::Bias.new(
+              level: ImageCaptioningAssistant::Data::BiasLevel::HIGH,
+              type: ImageCaptioningAssistant::Data::BiasType::OTHER,
+              explanation: "COULD NOT PROCESS PAGE"
+            )
+          ]
+        )
+      end
+
       def self.find_biases_in_original_metadata(
         original_metadata:,
         bedrock_runtime:,
@@ -27,6 +40,7 @@ module ImageCaptioningAssistant
           original_metadata: original_metadata,
           bedrock_runtime: bedrock_runtime
         )
+        # Return only metadata biases
         llm_output.metadata_biases
       end
 
@@ -43,15 +57,20 @@ module ImageCaptioningAssistant
 
         image_s3_uris.each do |image_s3_uri|
           LOGGER.debug("Analyzing image #{image_s3_uri}")
-          llm_output = find_biases_in_short_work(
-            image_s3_uris: [image_s3_uri],
-            s3_kwargs: s3_kwargs,
-            llm_kwargs: llm_kwargs,
-            resize_kwargs: resize_kwargs,
-            work_context: work_context,
-            bedrock_runtime: bedrock_runtime
-          )
-          page_biases << llm_output.page_biases[0]
+          begin
+            llm_output = find_biases_in_short_work(
+              image_s3_uris: [image_s3_uri],
+              s3_kwargs: s3_kwargs,
+              llm_kwargs: llm_kwargs,
+              resize_kwargs: resize_kwargs,
+              work_context: work_context,
+              bedrock_runtime: bedrock_runtime
+            )
+            page_biases << llm_output.page_biases[0]
+          rescue StandardError => exc
+            LOGGER.warn("Failed to process #{image_s3_uri}: #{exc}")
+            page_biases << create_error_bias
+          end
         end
 
         page_biases
@@ -59,19 +78,19 @@ module ImageCaptioningAssistant
 
       def self.find_biases_in_long_work(
         image_s3_uris:,
-        llm_kwargs:,
         s3_kwargs:,
+        llm_kwargs:,
         resize_kwargs:,
         original_metadata: nil,
         work_context: nil
       )
-        bedrock_runtime = if llm_kwargs[:region]
-                            Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
+        bedrock_runtime = if llm_kwargs["region_name"]
+                            Aws::BedrockRuntime::Client.new(region: llm_kwargs["region_name"])
                           else
                             Aws::BedrockRuntime::Client.new
                           end
 
-        metadata_biases = Data::Biases.new(biases: [])
+        metadata_biases = ImageCaptioningAssistant::Data::Biases.new(biases: [])
         if original_metadata
           metadata_biases = find_biases_in_original_metadata(
             original_metadata: original_metadata,
@@ -91,7 +110,7 @@ module ImageCaptioningAssistant
         )
 
         begin
-          Data::WorkBiasAnalysis.new(
+          ImageCaptioningAssistant::Data::WorkBiasAnalysis.new(
             metadata_biases: metadata_biases,
             page_biases: page_biases
           )

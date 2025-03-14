@@ -346,16 +346,16 @@ def prepare_images_parallel(
 )
     work_id = work_df.first["work_id"]
     destination_folder = "#{job_name}/#{work_id}/images/"
-    
+
     # Create a thread pool
     pool = Concurrent::FixedThreadPool.new(max_workers)
-    
+
     # Process images in parallel
     work_df.each do |row|
         page_sha = row["page_sha1"]
         page_index = convert_page_to_index(row["page_title"])
         dest_key = "#{destination_folder}page_#{page_index}_#{page_sha}.jpg"
-        
+
         pool.post do
         copy_s3_file(
             source_bucket: original_bucket,
@@ -366,14 +366,14 @@ def prepare_images_parallel(
         )
         end
     end
-    
+
     # Wait for all tasks to complete
     pool.shutdown
     pool.wait_for_termination
-    
+
     return ["s3://#{uploads_bucket}/#{destination_folder}"]
 end
-    
+
 def process_single_work_group(work_id, work_df, job_name, uploads_bucket, original_bucket)
     images_s3_uris = prepare_images_parallel(
         work_df: work_df,
@@ -381,20 +381,20 @@ def process_single_work_group(work_id, work_df, job_name, uploads_bucket, origin
         uploads_bucket: uploads_bucket,
         original_bucket: original_bucket
     )
-    
+
     metadata_s3_uri = prepare_metadata(
         work_df: work_df,
         job_name: job_name,
         uploads_bucket: uploads_bucket
     )
-    
+
     return {
         "work_id" => work_id,
         "image_s3_uris" => images_s3_uris,
         "original_metadata_s3_uri" => metadata_s3_uri
     }
 end
-    
+
 def translate_csv_to_job_objects(
     csv_path:,
     job_name:,
@@ -404,14 +404,14 @@ def translate_csv_to_job_objects(
 )
     # Load data
     rows = CSV.read(csv_path, headers: true)
-    
+
     # Group by work_id
     grouped_df = rows.group_by { |row| row["work_id"] }
-    
+
     # Create a thread pool
     pool = Concurrent::FixedThreadPool.new(max_workers)
     futures = {}
-    
+
     # Process each work_id group in parallel
     grouped_df.each do |work_id, group_df|
         future = Concurrent::Future.execute(executor: pool) do
@@ -419,17 +419,17 @@ def translate_csv_to_job_objects(
         end
         futures[work_id] = future
     end
-    
+
     # Collect results as they complete
     job_objects = []
     futures.each_value do |future|
         future.wait  # Wait for completion
         job_objects << future.value if future.fulfilled?
     end
-    
+
     # Shut down the thread pool
     pool.shutdown
     pool.wait_for_termination
-    
+
     return job_objects
 end
