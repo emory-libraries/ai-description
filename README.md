@@ -6,7 +6,7 @@ This is meant to be a "minimum lovable product" (MVP) meaning it's ready for bet
 
 Workflow is outlined in [this markdown file](./assets/workflow.md).
 
-Architecture is outlined [here](./assets/images/architecture.png).
+Architecture is outlined [here](./assets/architecture.md).
 
 ## Code organization
 ```
