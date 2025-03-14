@@ -9,7 +9,7 @@ module ImageCaptioningAssistant
       LOGGER = Logger.new($stdout)
       LOGGER.level = Logger::INFO
 
-      def self.generate_work_bias_analysis(
+      def self.generate_bias_analysis_from_s3_images(
         image_s3_uris:,
         llm_kwargs:,
         s3_kwargs:,

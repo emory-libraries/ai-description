@@ -144,7 +144,7 @@ module ImageCaptioningAssistant
         raise 'Failed to parse model output after 5 attempts'
       end
 
-      def self.generate_work_structured_metadata(image_s3_uris:, llm_kwargs:, s3_kwargs:, resize_kwargs:, context_s3_uri: nil)
+      def self.generate_metadata_from_s3_images(image_s3_uris:, llm_kwargs:, s3_kwargs:, resize_kwargs:, context_s3_uri: nil)
         if image_s3_uris.length > 2
           msg = "Structured metadata only supports documents of 1-2 pages, #{image_s3_uris.length} pages provided."
           Utils::LOGGER.warn(msg)
