@@ -64,7 +64,7 @@ module ImageCaptioningAssistant
                        end
 
           cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
-          Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
+          Utils::LOGGER.debug("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
 
           if image_s3_uris.length != json_dict['page_biases'].length
             raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"

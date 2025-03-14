@@ -66,7 +66,7 @@ module ImageCaptioningAssistant
                        end
 
           cot, json_dict = Utils.extract_json_and_cot_from_text(llm_output)
-          Utils::LOGGER.info("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
+          Utils::LOGGER.debug("\n\n********** CHAIN OF THOUGHT **********\n #{cot} \n\n")
 
           unless json_dict['metadata'].is_a?(Hash)
             raise Utils::LLMResponseParsingError, 'Invalid metadata format in response'

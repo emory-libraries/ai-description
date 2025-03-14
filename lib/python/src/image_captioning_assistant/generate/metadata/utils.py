@@ -72,7 +72,7 @@ def invoke_model_and_process_response(bedrock_runtime: Any, invoke_params: dict)
 
     # Parse output and extract metadata
     cot, json_dict = extract_json_and_cot_from_text(llm_output)
-    logger.info(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
+    logger.debug(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
 
     # Validate and return structured metadata
     return Metadata(**json_dict)

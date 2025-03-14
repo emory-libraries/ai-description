@@ -58,7 +58,7 @@ def find_biases_in_short_work(
             cot, work_bias_analysis = parse_model_output(llm_output, len(image_s3_uris))
 
             # Log chain of thought
-            logger.info(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
+            logger.debug(f"\n\n********** CHAIN OF THOUGHT **********\n {cot} \n\n")
 
             return work_bias_analysis
 
