@@ -70,9 +70,6 @@ module ImageCaptioningAssistant
             raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"
           end
 
-            raise Utils::LLMResponseParsingError, "incorrect number of bias lists for #{image_s3_uris.length} pages"
-          end
-
           if json_dict['metadata_biases'] && json_dict['metadata_biases']['biases']
             json_dict['metadata_biases']['biases'].each do |bias|
               bias['level'] = bias['level'].to_s.downcase if bias['level']
