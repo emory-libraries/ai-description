@@ -18,7 +18,7 @@ module ImageCaptioningAssistant
             ImageCaptioningAssistant::Data::Bias.new(
               level: ImageCaptioningAssistant::Data::BiasLevel::HIGH,
               type: ImageCaptioningAssistant::Data::BiasType::OTHER,
-              explanation: "COULD NOT PROCESS PAGE"
+              explanation: 'COULD NOT PROCESS PAGE'
             )
           ]
         )
@@ -67,8 +67,8 @@ module ImageCaptioningAssistant
               bedrock_runtime: bedrock_runtime
             )
             page_biases << llm_output.page_biases[0]
-          rescue StandardError => exc
-            LOGGER.warn("Failed to process #{image_s3_uri}: #{exc}")
+          rescue StandardError => e
+            LOGGER.warn("Failed to process #{image_s3_uri}: #{e}")
             page_biases << create_error_bias
           end
         end
@@ -84,8 +84,8 @@ module ImageCaptioningAssistant
         original_metadata: nil,
         work_context: nil
       )
-        bedrock_runtime = if llm_kwargs["region_name"]
-                            Aws::BedrockRuntime::Client.new(region: llm_kwargs["region_name"])
+        bedrock_runtime = if llm_kwargs['region_name']
+                            Aws::BedrockRuntime::Client.new(region: llm_kwargs['region_name'])
                           else
                             Aws::BedrockRuntime::Client.new
                           end
