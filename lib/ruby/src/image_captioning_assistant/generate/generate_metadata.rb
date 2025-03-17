@@ -19,8 +19,8 @@ module ImageCaptioningAssistant
       end
     end
 
-    module StructuredMetadata
-      def self.generate_structured_metadata(img_bytes_list:, llm_kwargs:, work_context: nil)
+    module Metadata
+      def self.generate_metadata_from_images(img_bytes_list:, llm_kwargs:, work_context: nil)
         bedrock_runtime = if llm_kwargs[:region]
                             Aws::BedrockRuntime::Client.new(region: llm_kwargs[:region])
                           else
@@ -165,7 +165,7 @@ module ImageCaptioningAssistant
 
         img_bytes_list = Utils.load_and_resize_images(image_s3_uris, s3_kwargs, resize_kwargs)
 
-        generate_structured_metadata(
+        generate_metadata_from_images(
           img_bytes_list: img_bytes_list,
           llm_kwargs: llm_kwargs,
           work_context: work_context

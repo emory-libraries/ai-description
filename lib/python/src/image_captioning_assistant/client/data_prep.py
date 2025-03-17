@@ -249,7 +249,7 @@ def prepare_images(
             source_bucket=original_bucket,
             source_key=page_sha,
             dest_bucket=uploads_bucket,
-            dest_key=f"{destination_folder}page_{page_index}_{page_sha}.jpg",
+            dest_key=f"{destination_folder}page_{page_index:05d}_{page_sha}.jpg",
             convert_jpeg=True,
         )
 
@@ -347,7 +347,7 @@ def prepare_images_parallel(work_df, job_name, uploads_bucket, original_bucket, 
     for _, row in work_df.iterrows():
         page_sha = row["page_sha1"]
         page_index = convert_page_to_index(row["page_title"])
-        dest_key = f"{destination_folder}page_{page_index}_{page_sha}.jpg"
+        dest_key = f"{destination_folder}page_{page_index:05d}_{page_sha}.jpg"
         tasks.append((original_bucket, page_sha, uploads_bucket, dest_key))
 
     # Process images in parallel

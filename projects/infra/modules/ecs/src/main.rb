@@ -187,7 +187,7 @@ def process_sqs_messages
           resize_kwargs: RESIZE_KWARGS
         )
         # Update DynamoDB with structured metadata and bias analysis fields
-        update_data = work_structured_metadata.model_dump.merge(work_bias_analysis.model_dump)
+        update_data = work_structured_metadata.to_h.merge(work_bias_analysis.to_h)
       elsif job_type == 'bias'
         work_bias_analysis = ImageCaptioningAssistant::Generate::BiasAnalysis.generate_bias_analysis_from_s3_images(
           image_s3_uris: image_s3_uris,
@@ -198,7 +198,7 @@ def process_sqs_messages
           resize_kwargs: RESIZE_KWARGS
         )
         # Update DynamoDB with just the bias_analysis fields
-        update_data = work_bias_analysis.model_dump
+        update_data = work_bias_analysis.to_h
       else
         raise ArgumentError, "#{JOB_TYPE}='#{job_type}' not supported"
       end
