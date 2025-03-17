@@ -58,7 +58,7 @@ def parse_model_output(llm_output: str, image_count: int) -> tuple[str, WorkBias
     cot, json_dict = extract_json_and_cot_from_text(llm_output)
 
     # validate correct number of biases output
-    if image_count != len(json_dict["page_biases"]):
+    if image_count > 0 and image_count != len(json_dict["page_biases"]):
         raise LLMResponseParsingError(f"incorrect number of bias lists for {image_count} pages")
 
     return cot, WorkBiasAnalysis(**json_dict)
