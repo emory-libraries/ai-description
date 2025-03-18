@@ -23,11 +23,6 @@ variable "works_table_name" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "ID of the VPC"
-  type        = string
-}
-
 variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
