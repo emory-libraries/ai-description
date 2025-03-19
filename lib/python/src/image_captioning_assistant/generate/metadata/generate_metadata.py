@@ -57,7 +57,6 @@ def generate_metadata_from_images(
         try:
             # Prepare invocation parameters
             invoke_params = prepare_model_invocation(
-                bedrock_runtime=bedrock_runtime,
                 model_name=model_name,
                 img_bytes_list=img_bytes_list,
                 work_context=work_context,
