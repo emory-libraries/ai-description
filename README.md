@@ -8,6 +8,8 @@ Workflow is outlined in [this markdown file](./assets/workflow.md).
 
 Architecture is outlined [here](./assets/architecture.md).
 
+Next steps and long-term sustainability notes [here](./assets/next_steps.md).
+
 ## Code organization
 
 ```
