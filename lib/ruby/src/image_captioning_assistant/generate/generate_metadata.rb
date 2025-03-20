@@ -15,7 +15,7 @@ module ImageCaptioningAssistant
       end
 
       def to_s
-        "DocumentLengthError: #{message} (Error Code: #{error_code})"
+        "DocumentLengthError: #{@message} (Error Code: #{error_code})"
       end
     end
 
