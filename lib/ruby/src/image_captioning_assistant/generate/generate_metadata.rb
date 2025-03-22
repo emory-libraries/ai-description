@@ -74,8 +74,8 @@ module ImageCaptioningAssistant
 
           metadata = {}
 
-          metadata[:description] =
-            { value: json_dict['metadata']['description'], explanation: 'Generated from image analysis' }
+          # Convert string keys to symbols for all explained values
+          metadata[:description] = convert_to_explained_value_hash(json_dict['metadata']['description'])
 
           transcription_data = json_dict['metadata']['transcription']
           metadata[:transcription] = if transcription_data.is_a?(Hash) && transcription_data.key?('transcriptions')
@@ -107,28 +107,27 @@ module ImageCaptioningAssistant
                                        }
                                      end
 
-          metadata[:date] = { value: json_dict['metadata']['date'], explanation: 'Generated from image analysis' }
-          metadata[:location] =
-            { value: json_dict['metadata']['location'] || [], explanation: 'Generated from image analysis' }
-          metadata[:publication_info] =
-            { value: json_dict['metadata']['publication_info'] || '', explanation: 'Generated from image analysis' }
-          metadata[:contextual_info] =
-            { value: json_dict['metadata']['contextual_info'] || '', explanation: 'Generated from image analysis' }
+          metadata[:date] = convert_to_explained_value_hash(json_dict['metadata']['date'])
+          metadata[:location] = convert_to_explained_value_hash(json_dict['metadata']['location'])
+          metadata[:publication_info] = convert_to_explained_value_hash(json_dict['metadata']['publication_info'])
+          metadata[:contextual_info] = convert_to_explained_value_hash(json_dict['metadata']['contextual_info'])
 
           format_value = json_dict['metadata']['format']
-          format_value = 'Still Image' unless Data::Constants::LibraryFormat.all.include?(format_value)
-          metadata[:format] = { value: format_value, explanation: 'Generated from image analysis' }
+          if format_value.is_a?(Hash) && Data::Constants::LibraryFormat.all.include?(format_value['value'])
+            metadata[:format] = convert_to_explained_value_hash(format_value)
+          else
+            default_format = 'Still Image'
+            metadata[:format] = {
+              value: default_format,
+              explanation: format_value.is_a?(Hash) ? format_value['explanation'] : 'Generated from image analysis'
+            }
+          end
 
-          metadata[:genre] =
-            { value: json_dict['metadata']['genre'] || [], explanation: 'Generated from image analysis' }
-          metadata[:objects] =
-            { value: json_dict['metadata']['objects'] || [], explanation: 'Generated from image analysis' }
-          metadata[:actions] =
-            { value: json_dict['metadata']['actions'] || [], explanation: 'Generated from image analysis' }
-          metadata[:people] =
-            { value: json_dict['metadata']['people'] || [], explanation: 'Generated from image analysis' }
-          metadata[:topics] =
-            { value: json_dict['metadata']['topics'] || [], explanation: 'Generated from image analysis' }
+          metadata[:genre] = convert_to_explained_value_hash(json_dict['metadata']['genre'])
+          metadata[:objects] = convert_to_explained_value_hash(json_dict['metadata']['objects'])
+          metadata[:actions] = convert_to_explained_value_hash(json_dict['metadata']['actions'])
+          metadata[:people] = convert_to_explained_value_hash(json_dict['metadata']['people'])
+          metadata[:topics] = convert_to_explained_value_hash(json_dict['metadata']['topics'])
 
           return Data::Metadata.new(metadata)
         rescue StandardError => e
@@ -142,6 +141,22 @@ module ImageCaptioningAssistant
         end
 
         raise 'Failed to parse model output after 5 attempts'
+      end
+
+      # Helper method to convert string keys to symbol keys for ExplainedValue
+      def self.convert_to_explained_value_hash(hash_data)
+        if hash_data.is_a?(Hash) && hash_data['value'] && hash_data['explanation']
+          {
+            value: hash_data['value'],
+            explanation: hash_data['explanation']
+          }
+        else
+          # Fallback for missing or malformed data
+          {
+            value: hash_data.is_a?(Hash) ? (hash_data['value'] || '') : (hash_data || ''),
+            explanation: 'Generated from image analysis'
+          }
+        end
       end
 
       def self.generate_metadata_from_s3_images(image_s3_uris:, llm_kwargs:, s3_kwargs:, resize_kwargs:, context_s3_uri: nil)
