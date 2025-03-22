@@ -288,6 +288,42 @@ def translate_csv_to_job_objects(
     job_name: str,
     uploads_bucket: str,
     original_bucket: str = "fedora-cor-binaries",
+) -> list[dict]:
+    """Translate CSV into job objects."""
+    # Load data
+    df = pd.read_csv(csv_path)
+    # Group by work_id
+    grouped_df = df.groupby("work_id")
+
+    job_objects = []
+    for _, work_df in tqdm(grouped_df):
+        images_s3_uris = prepare_images(
+            work_df=work_df,
+            job_name=job_name,
+            uploads_bucket=uploads_bucket,
+            original_bucket=original_bucket,
+        )
+        metadata_s3_uri = prepare_metadata(
+            work_df=work_df,
+            job_name=job_name,
+            uploads_bucket=uploads_bucket,
+        )
+        work_id = work_df["work_id"].iloc[0]
+        job_object = {
+            "work_id": work_id,
+            "image_s3_uris": images_s3_uris,
+            "original_metadata_s3_uri": metadata_s3_uri,
+        }
+        job_objects.append(job_object)
+
+    return job_objects
+
+
+def translate_csv_to_job_objects_multithread(
+    csv_path: str,
+    job_name: str,
+    uploads_bucket: str,
+    original_bucket: str = "fedora-cor-binaries",
     max_workers: int = 10,
 ) -> list[dict]:
     """Translate CSV into job objects with parallel processing."""

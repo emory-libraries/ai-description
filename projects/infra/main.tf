@@ -122,7 +122,6 @@ module "ecs" {
     module.cloudwatch,
     module.s3,
     module.sqs,
-    module.vpc,
     module.iam,
   ]
 
@@ -134,7 +133,6 @@ module "ecs" {
   centralized_log_group_name   = module.cloudwatch.cloudwatch_log_group_name
   uploads_bucket_name          = module.s3.uploads_bucket_name
   sqs_queue_url                = module.sqs.queue_url
-  vpc_id                       = module.vpc.vpc_id
   task_execution_role_arn      = module.iam.ecs_task_execution_role_arn
   task_role_arn                = module.iam.ecs_task_role_arn
 }

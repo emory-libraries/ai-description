@@ -20,6 +20,7 @@ JOB_NAME = "job_name"
 WORK_ID = "work_id"
 WORK_STATUS = "work_status"
 IN_QUEUE = "IN QUEUE"
+FAILED_TO_PROCESS = "FAILED TO PROCESS"
 
 
 def send_to_sqs(items: list, queue_url: str) -> int:
@@ -172,17 +173,25 @@ def queue_items_with_status(status: str, queue_url: str, table: Any) -> int:
     return successful_count
 
 
-def process_orphaned_items(orphaned_status: str):
+def process_orphaned_items(orphaned_status: str, table: Any):
     """
     Find items with work_status == 'FAILED TO PROCESS',
     update them to 'IN QUEUE', and send them to SQS
     """
     try:
         # Change items from orphaned_status to 'IN QUEUE'
-        updated_count = change_status(orphaned_status, IN_QUEUE)
+        updated_count = change_status(
+            from_status=orphaned_status,
+            to_status=IN_QUEUE,
+            table=table,
+        )
 
         # Queue all items with 'IN QUEUE' status
-        queued_count = queue_items_with_status(IN_QUEUE, queue_url)
+        queued_count = queue_items_with_status(
+            status=IN_QUEUE,
+            queue_url=queue_url,
+            table=table,
+        )
 
         logger.info(f"Summary: {updated_count} items updated to '{IN_QUEUE}', {queued_count} items sent to SQS")
         return updated_count, queued_count
@@ -196,12 +205,16 @@ def process_orphaned_items(orphaned_status: str):
 if __name__ == "__main__":
     table = dynamodb.Table("ai-description-dev-nt01-works-table")
     queue_url = "https://sqs.us-east-1.amazonaws.com/008971633436/ai-description-dev-nt01-queue"
+    orphan_status = FAILED_TO_PROCESS
 
-    # updated_items, queued_items = process_in_progress_items()
-    # print(f"Updated {updated_items} items to 'IN QUEUE'")
+    updated_items, queued_items = process_orphaned_items(
+        orphaned_status=orphan_status,
+        table=table,
+    )
+    print(f"Updated {updated_items} items from '{orphan_status}' to '{IN_QUEUE}'")
     queue_items_with_status(
         status=IN_QUEUE,
         queue_url=queue_url,
         table=table,
     )
-    # print(f"Successfully queued {queued_items} items to SQS")
+    print(f"Successfully queued {queued_items} items to SQS")

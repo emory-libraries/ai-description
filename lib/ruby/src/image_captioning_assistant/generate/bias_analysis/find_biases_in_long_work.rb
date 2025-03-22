@@ -16,8 +16,8 @@ module ImageCaptioningAssistant
         ImageCaptioningAssistant::Data::Biases.new(
           biases: [
             ImageCaptioningAssistant::Data::Bias.new(
-              level: ImageCaptioningAssistant::Data::BiasLevel::HIGH,
-              type: ImageCaptioningAssistant::Data::BiasType::OTHER,
+              level: ImageCaptioningAssistant::Data::Constants::BiasLevel::HIGH,
+              type: ImageCaptioningAssistant::Data::Constants::BiasType::OTHER,
               explanation: 'COULD NOT PROCESS PAGE'
             )
           ]
