@@ -11,7 +11,23 @@ locals {
 resource "aws_s3_bucket" "uploads" {
   bucket        = "${var.deployment_prefix_global}-uploads"
   force_destroy = local.force_destroy
+ 
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "ninetydays" {
+  bucket = aws_s3_bucket.uploads.id
+  rule {
+    id = "90days"
+    expiration {
+       days = 90
+     }
+    status = "Enabled" 
+  }
+
+
+
+}
+
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "uploads_encryption" {
   bucket = aws_s3_bucket.uploads.id
