@@ -11,7 +11,7 @@ locals {
 resource "aws_s3_bucket" "uploads" {
   bucket        = "${var.deployment_prefix_global}-uploads"
   force_destroy = local.force_destroy
- 
+
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "ninetydays" {
@@ -21,7 +21,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "ninetydays" {
     expiration {
        days = 90
      }
-    status = "Enabled" 
+    status = "Enabled"
   }
 
 

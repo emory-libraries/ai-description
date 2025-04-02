@@ -55,9 +55,9 @@ DynamoDB is where all generated bias and metadata information are stored. Each r
 - original_metadata_s3_uri
 - page_biases
 - people
-- publication_info	
-- topics	
-- transcription	
+- publication_info
+- topics
+- transcription
 - work_status
 
 ### Amazon CloudWatch
