@@ -151,17 +151,22 @@ module "lambda" {
     module.ecs,
   ]
 
-  deployment_prefix       = local.deployment_prefix
-  sqs_queue_url           = module.sqs.queue_url
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  works_table_name        = module.dynamodb.works_table_name
-  uploads_bucket_name     = module.s3.uploads_bucket_name
-  lambda_role_arn         = module.iam.lambda_role_arn
-  task_execution_role_arn = module.iam.ecs_task_execution_role_arn
-  ecs_cluster_name        = module.ecs.cluster_name
-  ecs_task_definition_arn = module.ecs.task_definition_arn
-  ecs_security_group_id   = module.vpc.ecs_security_group_id
-  api_gateway_role_name   = module.iam.api_gateway_role_name
+  create_job_role_arn        = module.iam.create_job_role_arn
+  job_progress_role_arn      = module.iam.job_progress_role_arn
+  overall_progress_role_arn  = module.iam.overall_progress_role_arn
+  get_results_role_arn       = module.iam.get_results_role_arn
+  get_presigned_url_role_arn = module.iam.get_presigned_url_role_arn
+  update_results_role_arn    = module.iam.update_results_role_arn
+  deployment_prefix          = local.deployment_prefix
+  sqs_queue_url              = module.sqs.queue_url
+  private_subnet_ids         = module.vpc.private_subnet_ids
+  works_table_name           = module.dynamodb.works_table_name
+  uploads_bucket_name        = module.s3.uploads_bucket_name
+  task_execution_role_arn    = module.iam.ecs_task_execution_role_arn
+  ecs_cluster_name           = module.ecs.cluster_name
+  ecs_task_definition_arn    = module.ecs.task_definition_arn
+  ecs_security_group_id      = module.vpc.ecs_security_group_id
+  api_gateway_role_name      = module.iam.api_gateway_role_name
 }
 
 # API Gateway module
@@ -169,14 +174,13 @@ module "api_gateway" {
   source     = "./modules/api_gateway"
   depends_on = [module.lambda, module.iam]
 
-  deployment_prefix       = local.deployment_prefix
-  deployment_stage        = var.deployment_stage
-  lambda_function_arns    = module.lambda.function_arns
-  lambda_invoke_arns      = module.lambda.invoke_arns
-  lambda_names            = module.lambda.function_names
-  api_gateway_role_arn    = module.iam.api_gateway_role_arn
-  authorizer_iam_role_arn = module.iam.lambda_role_arn
-  website_bucket_name     = module.s3.website_bucket_name
+  deployment_prefix    = local.deployment_prefix
+  deployment_stage     = var.deployment_stage
+  lambda_function_arns = module.lambda.function_arns
+  lambda_invoke_arns   = module.lambda.invoke_arns
+  lambda_names         = module.lambda.function_names
+  api_gateway_role_arn = module.iam.api_gateway_role_arn
+  website_bucket_name  = module.s3.website_bucket_name
 }
 
 module "s3_site" {
