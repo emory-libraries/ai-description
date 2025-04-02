@@ -11,23 +11,8 @@ locals {
 resource "aws_s3_bucket" "uploads" {
   bucket        = "${var.deployment_prefix_global}-uploads"
   force_destroy = local.force_destroy
- 
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "ninetydays" {
-  bucket = aws_s3_bucket.uploads.id
-  rule {
-    id = "90days"
-    expiration {
-       days = 90
-     }
-    status = "Enabled" 
-  }
-
-
 
 }
-
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "uploads_encryption" {
   bucket = aws_s3_bucket.uploads.id
@@ -122,5 +107,62 @@ resource "aws_s3_bucket_website_configuration" "website" {
 
   error_document {
     key = "index.html" # For SPA (Single Page Applications), redirect errors to index
+  }
+}
+
+
+# For the uploads bucket - transitioning and expiring objects
+resource "aws_s3_bucket_lifecycle_configuration" "uploads_lifecycle" {
+  bucket = aws_s3_bucket.uploads.id
+
+  rule {
+    id     = "expire-old-uploads"
+    status = "Enabled"
+
+    expiration {
+      days = 90
+    }
+  }
+}
+
+# For the logs bucket - expire logs after retention period
+resource "aws_s3_bucket_lifecycle_configuration" "logs_lifecycle" {
+  bucket = aws_s3_bucket.logs.id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 90
+    }
+  }
+}
+
+# For the lambda code bucket - clean up old versions
+resource "aws_s3_bucket_lifecycle_configuration" "lambda_code_lifecycle" {
+  bucket = aws_s3_bucket.lambda_code.id
+
+  rule {
+    id     = "expire-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
+# For the website bucket - keep only latest versions
+resource "aws_s3_bucket_lifecycle_configuration" "website_lifecycle" {
+  bucket = aws_s3_bucket.website.id
+
+  rule {
+    id     = "clean-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
   }
 }

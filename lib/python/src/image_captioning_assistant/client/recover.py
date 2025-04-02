@@ -1,6 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+"""Module for recovering failed tasks."""
+
 import json
 import logging
 from typing import Any
@@ -24,8 +26,7 @@ FAILED_TO_PROCESS = "FAILED TO PROCESS"
 
 
 def send_to_sqs(items: list, queue_url: str) -> int:
-    """
-    Send job_name and work_id from each item to SQS queue
+    """Send job_name and work_id from each item to SQS queue.
 
     Args:
         items (list): List of DynamoDB items to process
@@ -60,8 +61,7 @@ def send_to_sqs(items: list, queue_url: str) -> int:
 
 
 def get_items_with_status(status: str, table: Any) -> list:
-    """
-    Get all items with the specified work_status
+    """Get all items with the specified work_status.
 
     Args:
         status (str): The work_status to filter for
@@ -99,8 +99,7 @@ def get_items_with_status(status: str, table: Any) -> list:
 
 
 def change_status(from_status: str, to_status: str, table: Any) -> int:
-    """
-    Change items from one status to another status
+    """Change items from one status to another status.
 
     Args:
         from_status (str): The current status to find items by
@@ -148,8 +147,7 @@ def change_status(from_status: str, to_status: str, table: Any) -> int:
 
 
 def queue_items_with_status(status: str, queue_url: str, table: Any) -> int:
-    """
-    Add all items with a specific status to SQS queue
+    """Add all items with a specific status to SQS queue.
 
     Args:
         status (str): The work_status of items to queue
@@ -173,11 +171,8 @@ def queue_items_with_status(status: str, queue_url: str, table: Any) -> int:
     return successful_count
 
 
-def process_orphaned_items(orphaned_status: str, table: Any):
-    """
-    Find items with work_status == 'FAILED TO PROCESS',
-    update them to 'IN QUEUE', and send them to SQS
-    """
+def process_orphaned_items(orphaned_status: str, table: Any) -> tuple[int, int]:
+    """Find items with work_status == 'FAILED TO PROCESS', update them to 'IN QUEUE', and send them to SQS."""
     try:
         # Change items from orphaned_status to 'IN QUEUE'
         updated_count = change_status(

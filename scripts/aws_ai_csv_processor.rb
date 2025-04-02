@@ -45,7 +45,7 @@ class AwsAiCsvProcessor
     process_return_csv
   end
 
-  private 
+  private
 
   def process_csv_lines
     csv_file = File.open(@csv)
@@ -141,4 +141,3 @@ class AwsAiCsvProcessor
       'category_from_elizabeth': obj['category_from_elizabeth'] }
   end
 end
-

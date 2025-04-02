@@ -1,6 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+"""Utilities for LLM generation."""
+
 import json
 import logging
 from io import BytesIO
@@ -19,7 +21,8 @@ from image_captioning_assistant.generate.errors import LLMResponseParsingError
 logger = logging.getLogger(__name__)
 
 
-def convert_and_reduce_image(image_bytes, max_dimension=2048, jpeg_quality=95):
+def convert_and_reduce_image(image_bytes: bytes, max_dimension: int = 2048, jpeg_quality: int = 95) -> bytes:
+    """Convert and reduce size of image."""
     # Open image and convert to RGB (removes alpha channel if present)
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
@@ -75,6 +78,7 @@ def load_and_resize_images(
 
 @retry(exceptions=Exception, tries=5, delay=10, backoff=2)
 def invoke_with_retry(structured_llm: Any, messages: list) -> Any:
+    """Invoke LLM with retry."""
     logger.info("Invoking structured LLM...")
     response = structured_llm.invoke(messages)
     logger.info("Invocation successful")
@@ -109,7 +113,8 @@ def format_prompt_for_converse(
     return msg_list
 
 
-def extract_json_and_cot_from_text(text):
+def extract_json_and_cot_from_text(text: str) -> tuple:
+    """Extract JSON and chain-of-thought from text."""
     cot, text = text.split(p.COT_TAG_END)
     try:
         return (cot.replace(p.COT_TAG, ""), json.loads(text.strip()))

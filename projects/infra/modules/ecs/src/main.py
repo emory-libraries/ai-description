@@ -65,9 +65,8 @@ dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(WORKS_TABLE_NAME)
 
 
-def get_work_details(job_name, work_id):
-    """
-    Get the details of a work item from DynamoDB.
+def get_work_details(job_name: str, work_id: str) -> dict:
+    """Get the details of a work item from DynamoDB.
 
     Args:
         job_name (str): The job name
@@ -92,10 +91,9 @@ def update_dynamodb_item(
     job_name: str,
     work_id: str,
     update_data: dict | None = None,
-    status: dict | None = None,
-):
-    """
-    Update a DynamoDB item with new data and/or status.
+    status: str | None = None,
+) -> None:
+    """Update a DynamoDB item with new data and/or status.
 
     Args:
         job_name (str): The job name
@@ -153,7 +151,7 @@ def update_dynamodb_item(
         raise
 
 
-def process_sqs_messages():
+def process_sqs_messages() -> None:
     """Process SQS messages."""
     while True:
         # Receive message from SQS queue

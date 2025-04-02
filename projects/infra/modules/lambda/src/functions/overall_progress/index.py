@@ -53,10 +53,10 @@ def get_ecs_status(cluster_name: str, task_family_name: str) -> str:
 
 
 def get_queue_length(queue_url: str) -> int:
-    """Get the approximate length of the queue
+    """Get the approximate length of the queue.
 
     Args:
-    queue_url (str): The URL of the SQS queue
+        queue_url (str): The URL of the SQS queue
 
     Returns:
         int: Approximate number of messages in the queue

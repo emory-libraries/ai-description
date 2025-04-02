@@ -20,7 +20,7 @@ and score the LLM's answer, assuming the human's answer is the gold standard.
 
 
 class FreeformResponseEvaluation(BaseModel):
-    """Evaluation of an LLM's freeform response"""
+    """Evaluation of an LLM's freeform response."""
 
     faithfulness_and_consistency: float = Field(
         ...,
@@ -60,7 +60,8 @@ class BatchFreeformResponseEvaluation(BaseModel):
         description="Average score for the clarity of the LLM's response.",
     )
 
-    def overall(self):
+    def overall(self) -> float:
+        """Get overall score."""
         return mean(
             [
                 self.mean_faithfulness_and_consistency,
@@ -107,7 +108,7 @@ def evaluate_freeform_response(
 def combine_freeform_evaluations(
     freeform_evaluations: list[FreeformResponseEvaluation],
 ) -> BatchFreeformResponseEvaluation:
-    """Combine freeform evaluations
+    """Combine freeform evaluations.
 
     Args:
         freeform_evaluations (list[FreeformResponseEvaluation]): Freeform evaluations for multiple items.

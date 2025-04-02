@@ -18,11 +18,6 @@ variable "sqs_queue_url" {
   type        = string
 }
 
-variable "base_lambda_role_arn" {
-  description = "ARN of the base Lambda role"
-  type        = string
-}
-
 variable "ecs_cluster_name" {
   description = "Name of the ECS cluster"
   type        = string
@@ -55,5 +50,35 @@ variable "deployment_prefix" {
 
 variable "api_gateway_role_name" {
   description = "Name of API Gateway role"
+  type        = string
+}
+
+variable "create_job_role_arn" {
+  description = "ARN of the create-job Lambda role"
+  type        = string
+}
+
+variable "job_progress_role_arn" {
+  description = "ARN of the job-progress Lambda role"
+  type        = string
+}
+
+variable "overall_progress_role_arn" {
+  description = "ARN of the overall-progress Lambda role"
+  type        = string
+}
+
+variable "get_results_role_arn" {
+  description = "ARN of the get-results Lambda role"
+  type        = string
+}
+
+variable "get_presigned_url_role_arn" {
+  description = "ARN of the get-presigned-url Lambda role"
+  type        = string
+}
+
+variable "update_results_role_arn" {
+  description = "ARN of the update-results Lambda role"
   type        = string
 }

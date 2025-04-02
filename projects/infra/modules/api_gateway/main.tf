@@ -665,6 +665,7 @@ resource "aws_api_gateway_method_settings" "all" {
     data_trace_enabled     = true
     throttling_rate_limit  = 100
     throttling_burst_limit = 50
+    caching_enabled        = false
   }
 }
 

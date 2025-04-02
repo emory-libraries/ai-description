@@ -43,7 +43,8 @@ class BatchBiasAnalysesEvaluation(BaseModel):
         bias_level_weight: int = 1,
         bias_type_weight: int = 1,
         explanation_weight: int = 1,
-    ):
+    ) -> float:
+        """Get overall score."""
         return mean(
             [
                 bias_level_weight * self.average_bias_level_alignment,
@@ -80,11 +81,13 @@ def evaluate_potential_biases(
     human_potential_biases: BiasAnalysisCOT,
     chat_bedrock_converse_kwargs: dict[str, Any],
 ) -> BiasAnalysisEvaluation:
-    """Evaluate bias analysis
+    """Evaluate bias analysis.
 
     Args:
-        llm_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list of potential biases identified by an LLM.
-        human_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list of potential biases identified by a human.
+        llm_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list of
+            potential biases identified by an LLM.
+        human_potential_biases (BiasAnalysisCOT): A BiasAnalysis object with COT and list
+            of potential biases identified by a human.
         chat_bedrock_converse_kwargs (dict[str, Any]): Keyword args for ChatBedrockConverse.
 
     Returns:
@@ -127,7 +130,7 @@ def batch_evaluate_bias_analyses(
     for llm_bias_analysis, human_bias_analyis in zip(llm_bias_analyses, human_bias_analyses):
         individual_eval = evaluate_potential_biases(
             llm_potential_biases=llm_bias_analysis,
-            human_bias_analyis=human_bias_analyis,
+            human_potential_biases=human_bias_analyis,
             chat_bedrock_converse_kwargs=chat_bedrock_converse_kwargs,
         )
         individual_evals.append(individual_eval)

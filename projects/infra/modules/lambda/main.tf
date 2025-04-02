@@ -29,6 +29,7 @@ locals {
       source_dir  = "${path.module}/src/functions/create_job"
       description = "Create new batch job"
       timeout     = 30
+      role_arn    = var.create_job_role_arn
       environment = {
         WORKS_TABLE_NAME        = var.works_table_name
         SQS_QUEUE_URL           = var.sqs_queue_url
@@ -44,6 +45,7 @@ locals {
       source_dir  = "${path.module}/src/functions/job_progress"
       description = "Manages job status tracking and updates"
       timeout     = 15
+      role_arn    = var.job_progress_role_arn
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
       }
@@ -52,6 +54,7 @@ locals {
       source_dir  = "${path.module}/src/functions/overall_progress"
       description = "Checks SQS and ECS status"
       timeout     = 15
+      role_arn    = var.overall_progress_role_arn
       environment = {
         SQS_QUEUE_URL           = var.sqs_queue_url
         ECS_CLUSTER_NAME        = var.ecs_cluster_name
@@ -62,6 +65,7 @@ locals {
       source_dir  = "${path.module}/src/functions/get_results"
       description = "Retrieve results for a work in a job"
       timeout     = 30
+      role_arn    = var.get_results_role_arn
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
       }
@@ -70,12 +74,14 @@ locals {
       source_dir  = "${path.module}/src/functions/get_presigned_url"
       description = "Get a pre-signed URL for an S3 item"
       timeout     = 30
+      role_arn    = var.get_presigned_url_role_arn
       environment = {}
     }
     update_results = {
       source_dir  = "${path.module}/src/functions/update_results"
       description = "Updates results for a work in a job"
       timeout     = 30
+      role_arn    = var.update_results_role_arn
       environment = {
         WORKS_TABLE_NAME = var.works_table_name
       }
@@ -102,7 +108,7 @@ resource "aws_lambda_function" "functions" {
   for_each      = local.lambda
   function_name = "${var.deployment_prefix}-${each.key}"
   description   = each.value.description
-  role          = var.base_lambda_role_arn
+  role          = each.value.role_arn
   timeout       = each.value.timeout
   memory_size   = lookup(each.value, "memory_size", 256)
 

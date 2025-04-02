@@ -34,11 +34,6 @@ variable "api_gateway_role_arn" {
   type        = string
 }
 
-variable "authorizer_iam_role_arn" {
-  description = "ARN for authorizer lambda role"
-  type        = string
-}
-
 variable "website_bucket_name" {
   description = "Name of the S3 bucket containing the static website files"
   type        = string

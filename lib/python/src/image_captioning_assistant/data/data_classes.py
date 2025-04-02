@@ -20,14 +20,14 @@ ValueType = TypeVar("ValueType")
 
 
 class ExplainedValue(BaseModel, Generic[ValueType]):
-    """Generic container for typed values with LLM explanations"""
+    """Generic container for typed values with LLM explanations."""
 
     value: ValueType
     explanation: str = Field(..., description="LLM's reasoning for providing this specific value")
 
     @classmethod
     def with_type(cls, value_type: type[ValueType]) -> type["ExplainedValue"]:
-        """Type helper for creating field-specific variants"""
+        """Type helper for creating field-specific variants."""
 
         class ConcreteExplainedValue(ExplainedValue[ValueType]):
             value: value_type  # type: ignore

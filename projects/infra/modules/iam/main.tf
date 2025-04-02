@@ -6,27 +6,24 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-# Base Lambda Role
-resource "aws_iam_role" "base_lambda_role" {
-  name = "${var.deployment_prefix}-base-lambda-role"
+# Create Job Lambda Role
+resource "aws_iam_role" "create_job_role" {
+  name = "${var.deployment_prefix}-create-job-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRole"
       Effect = "Allow"
       Principal = {
-        Service = [
-          "lambda.amazonaws.com",
-          "apigateway.amazonaws.com"
-        ]
+        Service = "lambda.amazonaws.com"
       }
     }]
   })
 }
 
-# Base Lambda Policy (common permissions)
-resource "aws_iam_policy" "base_lambda_policy" {
-  name = "${var.deployment_prefix}-base-lambda-policy"
+# Create Job Policy
+resource "aws_iam_policy" "create_job_policy" {
+  name = "${var.deployment_prefix}-create-job-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -35,35 +32,16 @@ resource "aws_iam_policy" "base_lambda_policy" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "bedrock:InvokeModel"
+          "logs:PutLogEvents"
         ]
-        Resource = [
-          "arn:aws:logs:*:*:*",
-          "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/*"
-        ]
-      }
-    ]
-  })
-}
-
-# Service-Specific Policy
-resource "aws_iam_policy" "service_lambda_policy" {
-  name = "${var.deployment_prefix}-service-lambda-policy"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
       {
         Effect = "Allow"
         Action = [
           "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
         ]
-        Resource = [
-          var.sqs_works_queue_arn,
-        ]
+        Resource = [var.sqs_works_queue_arn]
       },
       {
         Effect = "Allow"
@@ -80,15 +58,12 @@ resource "aws_iam_policy" "service_lambda_policy" {
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
+          "dynamodb:GetItem",
           "dynamodb:Query",
-          "dynamodb:Scan",
+          "dynamodb:Scan"
         ]
-        Resource = [
-          var.works_table_arn,
-        ]
+        Resource = [var.works_table_arn]
       },
       {
         Effect = "Allow"
@@ -115,15 +90,274 @@ resource "aws_iam_policy" "service_lambda_policy" {
   })
 }
 
-# Lambda Policy Attachments
-resource "aws_iam_role_policy_attachment" "base_lambda_base_policy" {
-  role       = aws_iam_role.base_lambda_role.name
-  policy_arn = aws_iam_policy.base_lambda_policy.arn
+resource "aws_iam_role_policy_attachment" "create_job_attachment" {
+  role       = aws_iam_role.create_job_role.name
+  policy_arn = aws_iam_policy.create_job_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "base_lambda_service_policy" {
-  role       = aws_iam_role.base_lambda_role.name
-  policy_arn = aws_iam_policy.service_lambda_policy.arn
+# Job Progress Lambda Role
+resource "aws_iam_role" "job_progress_role" {
+  name = "${var.deployment_prefix}-job-progress-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Job Progress Policy
+resource "aws_iam_policy" "job_progress_policy" {
+  name = "${var.deployment_prefix}-job-progress-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [var.works_table_arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "job_progress_attachment" {
+  role       = aws_iam_role.job_progress_role.name
+  policy_arn = aws_iam_policy.job_progress_policy.arn
+}
+
+# Overall Progress Lambda Role
+resource "aws_iam_role" "overall_progress_role" {
+  name = "${var.deployment_prefix}-overall-progress-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Overall Progress Policy
+resource "aws_iam_policy" "overall_progress_policy" {
+  name = "${var.deployment_prefix}-overall-progress-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:ListTasks",
+          "ecs:RunTask"
+        ]
+        Resource = [
+          "arn:aws:ecs:*:*:cluster/*",
+          "arn:aws:ecs:*:*:container-instance/*",
+          "arn:aws:ecs:*:*:task-definition/*",
+          "arn:aws:ecs:*:*:task/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          var.sqs_works_queue_arn,
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [var.works_table_arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "overall_progress_attachment" {
+  role       = aws_iam_role.overall_progress_role.name
+  policy_arn = aws_iam_policy.overall_progress_policy.arn
+}
+
+# Get Results Lambda Role
+resource "aws_iam_role" "get_results_role" {
+  name = "${var.deployment_prefix}-get-results-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Get Results Policy
+resource "aws_iam_policy" "get_results_policy" {
+  name = "${var.deployment_prefix}-get-results-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [var.works_table_arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "get_results_attachment" {
+  role       = aws_iam_role.get_results_role.name
+  policy_arn = aws_iam_policy.get_results_policy.arn
+}
+
+# Get Presigned URL Lambda Role
+resource "aws_iam_role" "get_presigned_url_role" {
+  name = "${var.deployment_prefix}-get-presigned-url-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Get Presigned URL Policy
+resource "aws_iam_policy" "get_presigned_url_policy" {
+  name = "${var.deployment_prefix}-get-presigned-url-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
+        ]
+        Resource = [
+          var.uploads_bucket_arn,
+          "${var.uploads_bucket_arn}/*",
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "get_presigned_url_attachment" {
+  role       = aws_iam_role.get_presigned_url_role.name
+  policy_arn = aws_iam_policy.get_presigned_url_policy.arn
+}
+
+# Update Results Lambda Role
+resource "aws_iam_role" "update_results_role" {
+  name = "${var.deployment_prefix}-update-results-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Update Results Policy
+resource "aws_iam_policy" "update_results_policy" {
+  name = "${var.deployment_prefix}-update-results-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = ["arn:aws:logs:*:*:*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [var.works_table_arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "update_results_attachment" {
+  role       = aws_iam_role.update_results_role.name
+  policy_arn = aws_iam_policy.update_results_policy.arn
 }
 
 # IAM Role for ECS Task Execution
@@ -184,7 +418,6 @@ resource "aws_iam_policy" "ecs_task_policy" {
       {
         Effect = "Allow"
         Action = [
-          "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
@@ -243,12 +476,18 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "cloudwatch:PutMetricData",
           "cloudwatch:GetMetricStatistics",
           "cloudwatch:ListMetrics",
+        ],
+        "Resource" : ["*"] # Must be wildcard
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
           "ecs:DescribeClusters",
           "ecs:ListClusters",
           "ecs:ListTasks",
           "ecs:DescribeTasks"
         ],
-        "Resource" : "*"
+        "Resource" : ["*"]
       }
     ]
   })

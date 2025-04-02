@@ -14,7 +14,7 @@ from image_captioning_assistant.generate.bias_analysis.find_biases_in_short_work
 logger = logging.getLogger(__name__)
 
 
-def create_error_bias():
+def create_error_bias() -> Biases:
     """Create fill-in object for when individual page cannot be processed."""
     return Biases(biases=[Bias(level=BiasLevel.high, type=BiasType.other, explanation="COULD NOT PROCESS PAGE")])
 
@@ -26,7 +26,6 @@ def find_biases_in_original_metadata(
     work_context: str | None = None,
 ) -> Biases:
     """Find biases in original metadata."""
-
     logger.info("Analyzing original metadata")
     llm_output = find_biases_in_short_work(
         image_s3_uris=[],  # no images
@@ -66,7 +65,7 @@ def find_biases_in_images(
             page_biases.append(llm_output.page_biases[0])
         except Exception as exc:
             logger.warning(f"Failed to process {image_s3_uri}: {exc}")
-            biases_error = create_bias_error()
+            biases_error = create_error_bias()
             page_biases.append(biases_error)
 
     return page_biases
@@ -81,7 +80,6 @@ def find_biases_in_long_work(
     work_context: str | None = None,
 ) -> WorkBiasAnalysis:
     """Find image and metadata biases independently."""
-
     if "region_name" in llm_kwargs:
         bedrock_runtime = boto3.client("bedrock-runtime", region_name=llm_kwargs["region_name"])
     else:

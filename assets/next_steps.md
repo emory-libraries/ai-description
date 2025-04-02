@@ -18,31 +18,25 @@ It should happen less and less as edge cases are found, but at some point a task
 
 For the MVP we are trusting users to track job names themselves. A nice-to-have feature would be an option to browse from a list of all jobs. The complication this would create, however, is around access management - you may not want all users to be able to see or edit all jobs.
 
-
 ## Add process metadata to items in DynamoDB
 
 Saving the timestamp when each item was created and/or modified, along with the name of the model used to generate the metadata/bias analysis, would be helpful and pretty simple feature to add.
-
 
 ## Set lifecycle policy in S3, Time To Live for DynamoDB
 
 Storage costs for this application should be relatively small, but it could be worth considering a lifecycle policy for uploaded files so that they don't sit around indefinitely once the information has been reviewed, downloaded, and added to some other internal data store. The same goes for DynamoDB - if certain items haven't been touched in 365 days, for example, DynamoDB's TTL feature could be used to automatically remove them to eliminate clutter.
 
-
 ## Use a content delivery network
 
 Our original hope was to serve the ReactJS frontend from S3 using a content delivery network like Amazon Cloudfront, but Emory's AWS environment was configured to block that service so we exposed it through the API Gateway as a workaround. A CDN like Cloudfront would cache content closer to users to reduce both latency and costs. It would also provide added security measures like DDoS protection.
-
 
 ## Consider concurrent ECS tasks
 
 The application is currently configured to run only one ECS task at a time. If the pace of processing works is a concern, you could update the application to increase the number of concurrent tasks.
 
-
 ## Bedrock Batch Processing
 
 This application would be an excellent candidate for Bedrock batch processing. It's cheaper and avoids any potential throttling issues that the realtime API may face.
-
 
 ## Other considerations for maintaining the application long-term
 
