@@ -68,6 +68,11 @@ def invoke_model_and_process_response(bedrock_runtime: Any, invoke_params: dict)
     """
     # Invoke the model
     response = bedrock_runtime.converse(**invoke_params)
+
+    input_tokens = response["usage"]["inputTokens"]
+    output_tokens = response["usage"]["outputTokens"]
+    logger.info(f"Token usage - Input: {input_tokens}, Output: {output_tokens}")
+
     llm_output = response["output"]["message"]["content"][0]["text"]
 
     # Parse output and extract metadata

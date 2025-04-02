@@ -50,6 +50,12 @@ def call_model(bedrock_runtime: Any, model_name: str, messages: list[dict[str, A
         },
     )
 
+    # Log token usage from the response
+    input_tokens = response["usage"]["inputTokens"]
+    output_tokens = response["usage"]["outputTokens"]
+
+    logger.info(f"Token usage - Input: {input_tokens}, Output: {output_tokens}")
+
     return response["output"]["message"]["content"][0]["text"]
 
 
