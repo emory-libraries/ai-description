@@ -1,6 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+"""Ground truth."""
+
 from enum import Enum
 
 import pandas as pd
@@ -9,7 +11,7 @@ from image_captioning_assistant.aws.s3 import copy_s3_object
 
 
 class Columns(Enum):
-    """Columns in ground_truth.csv"""
+    """Columns in ground_truth.csv."""
 
     file_set_id = "file_set_id"
     work_link = "work_link"

@@ -44,11 +44,11 @@ def get_job_progress(api_url: str, job_name: str, api_key: str) -> dict:
     """Query the job_progress endpoint with the given job_name.
 
     Args:
-    api_url (str): The base URL of your API Gateway
-    job_name (str): The name of the job to query
+        api_url (str): The base URL of your API Gateway
+        job_name (str): The name of the job to query
 
     Returns:
-    dict: The JSON response from the API, or None if an error occurred
+        dict: The JSON response from the API, or None if an error occurred
     """
     api_url = api_url.rstrip("/")
     # Construct the full URL
@@ -79,13 +79,13 @@ def get_job_progress(api_url: str, job_name: str, api_key: str) -> dict:
 
 
 def get_overall_progress(api_url: str, api_key: str) -> dict:
-    """Query the overall_progress endpoint
+    """Query the overall_progress endpoint.
 
     Args:
-    api_url (str): The base URL of your API Gateway
+        api_url (str): The base URL of your API Gateway
 
     Returns:
-    dict: The JSON response from the API, or None if an error occurred
+        dict: The JSON response from the API, or None if an error occurred
     """
     api_url = api_url.rstrip("/")
     # Construct the full URL
@@ -108,16 +108,15 @@ def get_overall_progress(api_url: str, api_key: str) -> dict:
 
 
 def get_job_results(api_url: str, job_name: str, work_id: str, api_key: str) -> dict:
-    """
-    Query the results endpoint with the given job_name and work_id.
+    """Query the results endpoint with the given job_name and work_id.
 
     Args:
-    api_url (str): The base URL of your API Gateway.
-    job_name (str): The name of the job to query.
-    work_id (str): The ID of the work within the job.
+        api_url (str): The base URL of your API Gateway.
+        job_name (str): The name of the job to query.
+        work_id (str): The ID of the work within the job.
 
     Returns:
-    dict: The JSON response from the API, or None if an error occurred
+        dict: The JSON response from the API, or None if an error occurred
     """
     api_url = api_url.rstrip("/")
     # Construct the full URL
@@ -143,6 +142,7 @@ def get_job_results(api_url: str, job_name: str, work_id: str, api_key: str) -> 
 
 
 def update_job_results(api_url: str, job_name: str, work_id: str, api_key: str, updated_fields: dict) -> dict:
+    """Update job results."""
     # Construct the full URL
     api_url = api_url.rstrip("/")
     endpoint = f"{api_url}/results"

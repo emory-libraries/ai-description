@@ -1,6 +1,8 @@
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
+"""S3 helper functions."""
+
 import logging
 from typing import Any
 
@@ -70,7 +72,7 @@ def load_to_str(
     return file_bytes.decode(encoding)
 
 
-def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str):
+def copy_s3_object(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str) -> bool:
     """Copy an object from one S3 location to another."""
     s3_client = boto3.client("s3")
 

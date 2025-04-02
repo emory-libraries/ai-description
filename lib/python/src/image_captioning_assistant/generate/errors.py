@@ -5,20 +5,28 @@
 
 
 class LLMResponseParsingError(Exception):
-    def __init__(self, message, error_code=None):
+    """LLM response parsing error."""
+
+    def __init__(self, message: str, error_code: str | None = None):
+        """Initialize error."""
         self.message = message
         self.error_code = error_code
         super().__init__(self.message)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return error in string form."""
         return f"LLMResponseParsingError: {self.message} (Error Code: {self.error_code})"
 
 
 class DocumentLengthError(Exception):
-    def __init__(self, message, error_code=None):
+    """Document length error."""
+
+    def __init__(self, message: str, error_code: str | None = None):
+        """Initialize error."""
         self.message = message
         self.error_code = error_code
         super().__init__(self.message)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return error in string form."""
         return f"DocumentLengthError: {self.message} (Error Code: {self.error_code})"

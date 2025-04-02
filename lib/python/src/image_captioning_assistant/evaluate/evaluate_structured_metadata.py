@@ -85,7 +85,8 @@ class BatchStructuredMetadataEvaluation(BaseModel):
         location_weight: int = 1,
         publication_info_weight: int = 1,
         contextual_info_weight: int = 1,
-    ):
+    ) -> float:
+        """Get overall score."""
         return mean(
             [
                 description_weight * self.overall_description_evaluation.overall(),

@@ -4,7 +4,7 @@ stages:
 run probe:
   image:
     name: registry.gitlab.aws.dev/tsd/probe/standalone-scanner:latest
-    entrypoint: [""]
+    entrypoint: ['']
   stage: test
   script:
     # https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3538 - mark directory as safe
@@ -12,6 +12,6 @@ run probe:
     - /usr/bin/python3 -u /exec/app.py
   artifacts:
     paths:
-    - ${CI_PROJECT_DIR}/probe-out/*
+      - ${CI_PROJECT_DIR}/probe-out/*
     reports:
       junit: ${CI_PROJECT_DIR}/probe-out/probe_report.xml

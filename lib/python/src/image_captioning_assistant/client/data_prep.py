@@ -7,10 +7,10 @@ import json
 import logging
 import os
 import re
-import subprocess
 import tempfile
 from functools import partial
 from io import BytesIO
+from typing import Any
 
 import boto3
 import pandas as pd
@@ -25,8 +25,7 @@ def populate_bucket(
     metadata: str,
     convert_jpeg: bool = True,
 ) -> tuple[str, str, str]:
-    """
-    Upload image and related files to S3 bucket, with option to convert image to JPEG.
+    """Upload image and related files to S3 bucket, with option to convert image to JPEG.
 
     Args:
         bucket_name (str): Target S3 bucket
@@ -93,8 +92,7 @@ def populate_bucket(
 
 
 def convert_to_jpeg(file_content: bytes) -> bytes:
-    """
-    Convert binary image data to JPEG format
+    """Convert binary image data to JPEG format.
 
     Args:
         file_content (bytes): Binary image data
@@ -123,47 +121,44 @@ def convert_to_jpeg(file_content: bytes) -> bytes:
         return file_content
 
 
-def copy_s3_file_using_subprocess(
+def copy_s3_file_using_boto3(
     source_bucket: str,
     source_key: str,
     dest_bucket: str,
     dest_key: str,
     convert_jpeg: bool = True,
 ) -> None:
-    """Copy S3 file using subprocess"""
-    logging.debug(f"Trying alternative method with AWS CLI for {source_key}")
+    """Copy S3 file using boto3 entirely."""
+    logging.debug(f"Trying alternative method with boto3 for {source_key}")
+    s3_client = boto3.client("s3")
 
     if convert_jpeg:
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
-            temp_path = temp_file.name
-
-        # Download the file
-        download_cmd = f"aws s3 cp s3://{source_bucket}/{source_key} {temp_path}"
-        subprocess.run(download_cmd, shell=True, check=True)
-
-        # Convert to JPEG
+        # Download the file to memory
         try:
-            img = Image.open(temp_path)
+            response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
+            file_content = response["Body"].read()
+
+            # Convert to JPEG in memory
+            output_buffer = BytesIO()
+            img = Image.open(BytesIO(file_content))
             if img.mode != "RGB":
                 img = img.convert("RGB")
-            img.save(temp_path, format="JPEG", quality=95)
+            img.save(output_buffer, format="JPEG", quality=95)
+            jpeg_content = output_buffer.getvalue()
+
+            # Upload to destination
+            s3_client.put_object(Body=jpeg_content, Bucket=dest_bucket, Key=dest_key, ContentType="image/jpeg")
         except Exception as e:
-            logging.error(f"Failed to convert image using subprocess method: {str(e)}")
-
-        # Upload the converted file
-        upload_cmd = f"aws s3 cp {temp_path} s3://{dest_bucket}/{dest_key}"
-        process = subprocess.run(upload_cmd, shell=True, capture_output=True, text=True)
-
-        # Clean up
-        os.unlink(temp_path)
+            logging.error(f"Failed to convert and copy image using boto3: {str(e)}")
+            # Try direct copy without conversion as fallback
+            s3_client.copy_object(
+                CopySource={"Bucket": source_bucket, "Key": source_key}, Bucket=dest_bucket, Key=dest_key
+            )
     else:
-        cmd = f"aws s3 cp s3://{source_bucket}/{source_key} s3://{dest_bucket}/{dest_key}"
-        process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        # Direct copy without conversion
+        s3_client.copy_object(CopySource={"Bucket": source_bucket, "Key": source_key}, Bucket=dest_bucket, Key=dest_key)
 
-    if process.returncode == 0:
-        logging.debug(f"Successfully copied {source_key} using AWS CLI")
-    else:
-        logging.error(f"AWS CLI copy failed: {process.stderr}")
+    logging.debug(f"Successfully copied {source_key} using boto3")
 
 
 def copy_s3_file(
@@ -173,8 +168,7 @@ def copy_s3_file(
     dest_key: str,
     convert_jpeg: bool = True,
 ) -> None:
-    """
-    Copy a file from source bucket to destination bucket, optionally converting to JPEG.
+    """Copy a file from source bucket to destination bucket, optionally converting to JPEG.
 
     Args:
         source_bucket (str): Bucket of source file
@@ -197,7 +191,7 @@ def copy_s3_file(
 
     except Exception as e:
         logging.error(f"Error: {str(e)}")
-        copy_s3_file_using_subprocess(
+        copy_s3_file_using_boto3(
             source_bucket=source_bucket,
             source_key=source_key,
             dest_bucket=dest_bucket,
@@ -207,6 +201,7 @@ def copy_s3_file(
 
 
 def convert_page_to_index(page_string: str) -> int:
+    """Convert page to index."""
     # Handle "Front" case
     if page_string == "Front":
         return 0
@@ -316,7 +311,9 @@ def translate_csv_to_job_objects(
     return job_objects
 
 
-def process_single_work_group(work_id, work_df, job_name, uploads_bucket, original_bucket):
+def process_single_work_group(
+    work_id: str, work_df: pd.DataFrame, job_name: str, uploads_bucket: str, original_bucket: str
+) -> dict[str, Any]:
     """Process a single work group to create a job object."""
     images_s3_uris = prepare_images_parallel(
         work_df=work_df,
@@ -337,7 +334,9 @@ def process_single_work_group(work_id, work_df, job_name, uploads_bucket, origin
     }
 
 
-def prepare_images_parallel(work_df, job_name, uploads_bucket, original_bucket, max_workers=5):
+def prepare_images_parallel(
+    work_df: pd.DataFrame, job_name: str, uploads_bucket: str, original_bucket: str, max_workers: int = 5
+) -> list[str]:
     """Copy images in parallel using ThreadPoolExecutor."""
     work_id = work_df["work_id"].iloc[0]
     destination_folder = f"{job_name}/{work_id}/images/"

@@ -47,8 +47,7 @@ def create_response(status_code: int, body: Any) -> dict[str, Any]:
 
 
 def generate_presigned_url(s3_uri: str, expiration: int = DEFAULT_EXPIRATION) -> str:
-    """
-    Generate a presigned URL from an S3 URI.
+    """Generate a presigned URL from an S3 URI.
 
     Args:
         s3_uri: The S3 URI in the format s3://bucket-name/path/to/object
@@ -80,8 +79,7 @@ def generate_presigned_url(s3_uri: str, expiration: int = DEFAULT_EXPIRATION) ->
 
 
 def handler(event: Any, context: Any) -> dict[str, Any]:
-    """
-    Lambda handler to generate a presigned URL for an S3 object.
+    """Lambda handler to generate a presigned URL for an S3 object.
 
     Expected event format:
     - For direct Lambda invocation: {"s3_uri": "s3://bucket-name/path/to/object", "expires_in": 3600}

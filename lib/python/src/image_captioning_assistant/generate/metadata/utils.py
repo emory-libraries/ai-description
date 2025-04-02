@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def prepare_model_invocation(
     model_name: str, img_bytes_list: list[bytes], work_context: str | None, court_order: bool = False
-) -> tuple[Any, list]:
+) -> dict:
     """Prepare the model invocation parameters.
 
     Args:
@@ -25,7 +25,7 @@ def prepare_model_invocation(
         court_order: Whether to use court order prompt
 
     Returns:
-        tuple: Prepared parameters for model invocation
+        dict: Prepared parameters for model invocation
     """
     # Construct prompt
     text_prompt = f"{p.user_prompt_metadata}\nContextual Help: {work_context}"

@@ -69,8 +69,8 @@ def create_messages(
     work_context: str | None = None,
     original_metadata: str | None = None,
     model_name: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-) -> dict[str, Any]:
-    """Create Messages list to pass to LLM, supports Claude and Nova models"""
+) -> list[dict[str, Any]]:
+    """Create Messages list to pass to LLM, supports Claude and Nova models."""
     # Create system prompt
     prompt = p.bias_analysis_template.render(
         COT_TAG=p.COT_TAG,

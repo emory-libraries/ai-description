@@ -83,9 +83,9 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
-def s3_path_to_file_list(s3_path_uri, recursive=True) -> list[str]:
-    """
-    Processes an S3 URI path and returns a list of S3 URIs.
+def s3_path_to_file_list(s3_path_uri: str, recursive: bool = True) -> list[str]:
+    """Processes an S3 URI path and returns a list of S3 URIs.
+
     - If the path is a folder, returns all files within that folder
     - If the path is a file, returns a list containing just that file URI
 
@@ -169,9 +169,8 @@ def s3_path_to_file_list(s3_path_uri, recursive=True) -> list[str]:
     return sorted(result_uris)
 
 
-def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
-    """
-    Expands a list of mixed S3 URIs (files and/or folders) into a flat list of all file URIs.
+def expand_s3_uris_to_files(uri_list: list[str], recursive: bool = True, max_workers: int = 10) -> list[str]:
+    """Expands a list of mixed S3 URIs (files and/or folders) into a flat list of all file URIs.
 
     Args:
         uri_list (list): List of S3 URIs (can be files or folders)
@@ -203,6 +202,7 @@ def expand_s3_uris_to_files(uri_list, recursive=True, max_workers=10):
 
 
 def validate_request_body(body: dict[str, Any]) -> None:
+    """Validate request body."""
     job_keys = (JOB_NAME, JOB_TYPE, WORKS)
     job_keys_present = [key in body for key in job_keys]
     if any(job_keys_present) and not all(job_keys_present):
@@ -239,7 +239,7 @@ def create_ecs_task(run_task_kwargs: dict[str, Any]) -> str:
         return message
 
     # If no task is running, start a new one
-    logger.info(f"Running task")
+    logger.info("Running task")
     logger.debug(f"Task kwargs: {json.dumps(run_task_kwargs, indent=4)}")
     response = ecs_client.run_task(**run_task_kwargs)
     message = f"New ECS task {response['tasks'][0]['taskArn']} started successfully"
@@ -247,7 +247,7 @@ def create_ecs_task(run_task_kwargs: dict[str, Any]) -> str:
     return message
 
 
-def create_job(job_name: str, works: list[dict[str, str]], job_type: str) -> None:
+def create_job(job_name: str, works: list[dict[str, Any]], job_type: str) -> None:
     """Create job in DynamoDB and SQS."""
     table = dynamodb.Table(WORKS_TABLE_NAME)
 
