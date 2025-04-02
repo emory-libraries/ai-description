@@ -102,7 +102,7 @@ resource "aws_lambda_function" "functions" {
   for_each      = local.lambda
   function_name = "${var.deployment_prefix}-${each.key}"
   description   = each.value.description
-  role          = var.base_lambda_role_arn
+  role          = var.lambda_role_arn
   timeout       = each.value.timeout
   memory_size   = lookup(each.value, "memory_size", 256)
 

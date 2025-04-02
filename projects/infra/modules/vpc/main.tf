@@ -307,3 +307,71 @@ resource "aws_vpc_endpoint" "bedrock" {
     Name = "${var.deployment_prefix}-bedrock-runtime-endpoint"
   }
 }
+
+
+# CloudWatch Log Group for VPC Flow Logs
+resource "aws_cloudwatch_log_group" "flow_logs" {
+  name              = "/aws/vpc/${var.deployment_prefix}-flow-logs"
+  retention_in_days = var.flow_log_retention_days # Add this variable to your variables.tf
+
+  tags = {
+    Name = "${var.deployment_prefix}-vpc-flow-logs"
+  }
+}
+
+# IAM Role for VPC Flow Logs
+resource "aws_iam_role" "flow_logs" {
+  name = "${var.deployment_prefix}-vpc-flow-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.deployment_prefix}-vpc-flow-logs-role"
+  }
+}
+
+# IAM Policy for Flow Logs Role
+resource "aws_iam_role_policy" "flow_logs" {
+  name = "${var.deployment_prefix}-vpc-flow-logs-policy"
+  role = aws_iam_role.flow_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_cloudwatch_log_group.flow_logs.arn}:*"
+      }
+    ]
+  })
+}
+
+# VPC Flow Logs
+resource "aws_flow_log" "main" {
+  iam_role_arn    = aws_iam_role.flow_logs.arn
+  log_destination = aws_cloudwatch_log_group.flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = local.vpc_id
+
+  tags = {
+    Name = "${var.deployment_prefix}-vpc-flow-logs"
+  }
+}

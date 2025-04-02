@@ -7,7 +7,7 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 # Base Lambda Role
-resource "aws_iam_role" "base_lambda_role" {
+resource "aws_iam_role" "lambda_execution_role" {
   name = "${var.deployment_prefix}-base-lambda-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -25,7 +25,7 @@ resource "aws_iam_role" "base_lambda_role" {
 }
 
 # Base Lambda Policy (common permissions)
-resource "aws_iam_policy" "base_lambda_policy" {
+resource "aws_iam_policy" "lambda_execution_policy" {
   name = "${var.deployment_prefix}-base-lambda-policy"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -42,24 +42,11 @@ resource "aws_iam_policy" "base_lambda_policy" {
           "arn:aws:logs:*:*:*",
           "arn:aws:bedrock:${data.aws_region.current.name}::foundation-model/*"
         ]
-      }
-    ]
-  })
-}
-
-# Service-Specific Policy
-resource "aws_iam_policy" "service_lambda_policy" {
-  name = "${var.deployment_prefix}-service-lambda-policy"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
+      },
       {
         Effect = "Allow"
         Action = [
           "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
         ]
         Resource = [
           var.sqs_works_queue_arn,
@@ -116,14 +103,9 @@ resource "aws_iam_policy" "service_lambda_policy" {
 }
 
 # Lambda Policy Attachments
-resource "aws_iam_role_policy_attachment" "base_lambda_base_policy" {
-  role       = aws_iam_role.base_lambda_role.name
-  policy_arn = aws_iam_policy.base_lambda_policy.arn
-}
-
-resource "aws_iam_role_policy_attachment" "base_lambda_service_policy" {
-  role       = aws_iam_role.base_lambda_role.name
-  policy_arn = aws_iam_policy.service_lambda_policy.arn
+resource "aws_iam_role_policy_attachment" "lambda_execution_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_execution_policy.arn
 }
 
 # IAM Role for ECS Task Execution
@@ -184,7 +166,6 @@ resource "aws_iam_policy" "ecs_task_policy" {
       {
         Effect = "Allow"
         Action = [
-          "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
@@ -243,12 +224,18 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "cloudwatch:PutMetricData",
           "cloudwatch:GetMetricStatistics",
           "cloudwatch:ListMetrics",
+        ],
+        "Resource" : ["*"] # Must be wildcard
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
           "ecs:DescribeClusters",
           "ecs:ListClusters",
           "ecs:ListTasks",
           "ecs:DescribeTasks"
         ],
-        "Resource" : "*"
+        "Resource" : ["*"]
       }
     ]
   })

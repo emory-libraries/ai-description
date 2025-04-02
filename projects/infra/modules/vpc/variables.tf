@@ -29,3 +29,9 @@ variable "deployment_prefix" {
 variable "enable_vpc_endpoints" {
   type = bool
 }
+
+variable "flow_log_retention_days" {
+  description = "Number of days to retain VPC flow logs in CloudWatch"
+  type        = number
+  default     = 7
+}

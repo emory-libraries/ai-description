@@ -108,3 +108,70 @@ resource "aws_s3_bucket_website_configuration" "website" {
     key = "index.html" # For SPA (Single Page Applications), redirect errors to index
   }
 }
+
+
+# For the uploads bucket - transitioning and expiring objects
+resource "aws_s3_bucket_lifecycle_configuration" "uploads_lifecycle" {
+  bucket = aws_s3_bucket.uploads.id
+
+  rule {
+    id     = "transition-to-ia-and-glacier"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
+}
+
+# For the logs bucket - expire logs after retention period
+resource "aws_s3_bucket_lifecycle_configuration" "logs_lifecycle" {
+  bucket = aws_s3_bucket.logs.id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 90
+    }
+  }
+}
+
+# For the lambda code bucket - clean up old versions
+resource "aws_s3_bucket_lifecycle_configuration" "lambda_code_lifecycle" {
+  bucket = aws_s3_bucket.lambda_code.id
+
+  rule {
+    id     = "expire-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
+# For the website bucket - keep only latest versions
+resource "aws_s3_bucket_lifecycle_configuration" "website_lifecycle" {
+  bucket = aws_s3_bucket.website.id
+
+  rule {
+    id     = "clean-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+  }
+}

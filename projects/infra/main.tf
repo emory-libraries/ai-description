@@ -156,7 +156,7 @@ module "lambda" {
   private_subnet_ids      = module.vpc.private_subnet_ids
   works_table_name        = module.dynamodb.works_table_name
   uploads_bucket_name     = module.s3.uploads_bucket_name
-  base_lambda_role_arn    = module.iam.base_lambda_role_arn
+  lambda_role_arn         = module.iam.lambda_role_arn
   task_execution_role_arn = module.iam.ecs_task_execution_role_arn
   ecs_cluster_name        = module.ecs.cluster_name
   ecs_task_definition_arn = module.ecs.task_definition_arn
@@ -175,7 +175,7 @@ module "api_gateway" {
   lambda_invoke_arns      = module.lambda.invoke_arns
   lambda_names            = module.lambda.function_names
   api_gateway_role_arn    = module.iam.api_gateway_role_arn
-  authorizer_iam_role_arn = module.iam.base_lambda_role_arn
+  authorizer_iam_role_arn = module.iam.lambda_role_arn
   website_bucket_name     = module.s3.website_bucket_name
 }
 

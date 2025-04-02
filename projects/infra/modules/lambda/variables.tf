@@ -18,7 +18,7 @@ variable "sqs_queue_url" {
   type        = string
 }
 
-variable "base_lambda_role_arn" {
+variable "lambda_role_arn" {
   description = "ARN of the base Lambda role"
   type        = string
 }
