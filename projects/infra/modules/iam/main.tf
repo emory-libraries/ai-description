@@ -47,7 +47,6 @@ resource "aws_iam_policy" "create_job_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:HeadObject",
           "s3:ListBucket",
         ]
         Resource = [
@@ -296,7 +295,6 @@ resource "aws_iam_policy" "get_presigned_url_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:HeadObject",
           "s3:ListBucket",
         ]
         Resource = [
@@ -439,21 +437,11 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:HeadObject",
           "s3:ListBucket",
         ]
         Resource = [
           "${var.uploads_bucket_arn}",
           "${var.uploads_bucket_arn}/*",
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:ListBucket"
-        ]
-        Resource = [
-          var.uploads_bucket_arn
         ]
       },
       {
@@ -583,7 +571,6 @@ resource "aws_vpc_endpoint_policy" "s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:ListBucket",
-          "s3:HeadObject",
         ]
         Resource = "*"
       }
