@@ -5,7 +5,13 @@ FROM ruby:3.2-slim
 WORKDIR /app
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y build-essential imagemagick
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       build-essential \
+       imagemagick \
+       libopenjp2-7-dev \
+       libtiff-dev \
+       ghostscript
 
 # Copy lib directory containing source code and Gemfile
 COPY lib/ruby/ ./lib/
