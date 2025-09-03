@@ -166,7 +166,7 @@ module ImageCaptioningAssistant
           raise DocumentLengthError.new(msg)
         end
 
-        llm_kwargs[:model_id] ||= 'us.anthropic.claude-3-5-sonnet-20241022-v2:0'
+        llm_kwargs[:model_id] ||= 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'
 
         work_context = nil
         if context_s3_uri && !context_s3_uri.to_s.empty?
