@@ -365,13 +365,13 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 # VPC Flow Logs
-resource "aws_flow_log" "main" {
-  iam_role_arn    = aws_iam_role.flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.flow_logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = local.vpc_id
+#resource "aws_flow_log" "main" {
+#  iam_role_arn    = aws_iam_role.flow_logs.arn
+#  log_destination = aws_cloudwatch_log_group.flow_logs.arn
+#  traffic_type    = "ALL"
+# vpc_id          = local.vpc_id
 
-  tags = {
-    Name = "${var.deployment_prefix}-vpc-flow-logs"
-  }
-}
+#  tags = {
+#    Name = "${var.deployment_prefix}-vpc-flow-logs"
+#  }
+#}
