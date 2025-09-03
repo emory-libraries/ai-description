@@ -1,0 +1,212 @@
+# RuboCop configuration for Image Captioning Assistant Ruby library
+
+require:
+  - rubocop-rspec
+  - rubocop-factory_bot
+  - rubocop-rake
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.7
+  Exclude:
+    - 'vendor/**/*'
+    - 'coverage/**/*'
+    - '.bundle/**/*'
+    - 'bin/**/*'
+    - 'tmp/**/*'
+  SuggestExtensions: false
+
+# Layout cops
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - 'spec/**/*'
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+# Metrics cops - we'll relax these for existing code
+Metrics/BlockLength:
+  Max: 30
+  Exclude:
+    - 'spec/**/*'
+    - 'Rakefile'
+    - '*.gemspec'
+    - 'lib/tasks/**/*.rake'
+
+Metrics/MethodLength:
+  Max: 15
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/AbcSize:
+  Max: 20
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/ClassLength:
+  Max: 150
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/ModuleLength:
+  Max: 150
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+Metrics/ParameterLists:
+  Max: 6
+
+# Style cops
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+Style/GlobalStdStream:
+  Enabled: true
+
+Style/OptionalBooleanParameter:
+  Enabled: false  # Common pattern in Ruby
+
+Style/MutableConstant:
+  Enabled: true
+
+Style/BlockDelimiters:
+  EnforcedStyle: line_count_based
+  Exclude:
+    - 'spec/**/*'
+
+# RSpec specific cops
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/MultipleExpectations:
+  Max: 5
+
+RSpec/NestedGroups:
+  Max: 5
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/integration/**/*'
+
+# Disable Capybara cops (not using Capybara in this project)
+Capybara:
+  Enabled: false
+
+RSpec/Capybara:
+  Enabled: false
+
+Capybara/RSpec/PredicateMatcher:
+  Enabled: false
+
+# Bundler cops
+Bundler/OrderedGems:
+  Enabled: true
+
+# Exclude specific files with known offenses that are acceptable
+# These are mostly complexity metrics that would require significant refactoring
+
+# Factory Bot specific
+FactoryBot/FactoryAssociationWithStrategy:
+  Exclude:
+    - 'spec/factories/data_factories.rb'
+
+# RSpec specific
+RSpec/MultipleExpectations:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/ExampleLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/MultipleMemoizedHelpers:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/ContextWording:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/MessageSpies:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/StubbedMock:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/FilePath:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/IndexedLet:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+RSpec/AnyInstance:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+
+# Metrics - Exclude files with complex business logic
+Metrics/MethodLength:
+  Exclude:
+    - 'src/image_captioning_assistant/client/data_prep.rb'
+    - 'src/image_captioning_assistant/generate/**/*.rb'
+    - 'src/image_captioning_assistant/data/data_classes.rb'
+    - 'src/image_captioning_assistant/aws/s3.rb'
+    - 'src/image_captioning_assistant/client/client_utils.rb'
+    - 'spec/spec_helper.rb'
+
+Metrics/AbcSize:
+  Exclude:
+    - 'src/image_captioning_assistant/client/data_prep.rb'
+    - 'src/image_captioning_assistant/generate/**/*.rb'
+    - 'src/image_captioning_assistant/aws/s3.rb'
+    - 'src/image_captioning_assistant/client/client_utils.rb'
+    - 'src/image_captioning_assistant/data/data_classes.rb'
+    - 'spec/spec_helper.rb'
+
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - 'src/image_captioning_assistant/generate/**/*.rb'
+    - 'src/image_captioning_assistant/data/data_classes.rb'
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - 'src/image_captioning_assistant/generate/**/*.rb'
+    - 'src/image_captioning_assistant/data/data_classes.rb'
+
+Metrics/ClassLength:
+  Exclude:
+    - 'src/image_captioning_assistant/client/data_prep.rb'
+
+Metrics/ParameterLists:
+  Exclude:
+    - 'src/image_captioning_assistant/generate/**/*.rb'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - 'spec/factories/**/*.rb'
+    - 'src/image_captioning_assistant/generate/**/*.rb'

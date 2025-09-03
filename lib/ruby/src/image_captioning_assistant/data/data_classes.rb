@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -175,6 +177,9 @@ module ImageCaptioningAssistant
       attr_accessor :biases
 
       def initialize(biases: [])
+        # Validate input type first
+        raise ArgumentError, 'biases must be an array' unless biases.is_a?(Array)
+
         # Handle both array of hashes and array of Bias objects
         @biases = biases.map do |b|
           if b.is_a?(Bias)
@@ -192,8 +197,6 @@ module ImageCaptioningAssistant
       end
 
       def validate!
-        raise ArgumentError, 'biases must be an array' unless @biases.is_a?(Array)
-
         @biases.each(&:validate!)
       end
 
@@ -215,6 +218,9 @@ module ImageCaptioningAssistant
                            else
                              metadata_biases || Biases.new
                            end
+
+        # Validate page_biases is an array
+        raise ArgumentError, 'page_biases must be an array' unless page_biases.nil? || page_biases.is_a?(Array)
 
         # Handle page_biases as array of hashes or array of Biases objects
         @page_biases = if page_biases.is_a?(Array)

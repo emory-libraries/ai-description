@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -31,7 +33,7 @@ module ImageCaptioningAssistant
           [parts[0], parts[1]]
         else
           # If it's just a key, use the UPLOADS_BUCKET_NAME from environment
-          bucket = ENV['UPLOADS_BUCKET_NAME']
+          bucket = ENV.fetch('UPLOADS_BUCKET_NAME', nil)
           puts "Using uploads bucket - bucket: #{bucket}, key: #{s3_uri}"
           raise ArgumentError, 'S3 key must not be blank' if s3_uri.strip.empty?
 

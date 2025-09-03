@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -48,7 +50,7 @@ class DataPrepUtils
         temp_file.close
         temp_file.unlink
       rescue StandardError => e
-        logger = Logger.new(STDOUT)
+        logger = Logger.new($stdout)
         logger.error("Failed to convert image: #{e.message}. Uploading original.")
         image_key = "images/#{image_filename}"
         s3_client.put_object(
@@ -123,14 +125,14 @@ class DataPrepUtils
 
     jpeg_content
   rescue StandardError => e
-    logger = Logger.new(STDOUT)
+    logger = Logger.new($stdout)
     logger.error("Failed to convert image to JPEG: #{e.message}")
     # Return original content if conversion fails
     file_content
   end
 
   def self.copy_s3_file_using_subprocess(source_bucket, source_key, dest_bucket, dest_key, convert_jpeg = true)
-    logger = Logger.new(STDOUT)
+    logger = Logger.new($stdout)
     logger.debug("Trying alternative method with AWS CLI for #{source_key}")
 
     if convert_jpeg
@@ -172,7 +174,7 @@ class DataPrepUtils
   end
 
   def self.copy_s3_file(source_bucket, source_key, dest_bucket, dest_key, convert_jpeg = true)
-    logger = Logger.new(STDOUT)
+    logger = Logger.new($stdout)
     s3_client = Aws::S3::Client.new
 
     begin
@@ -306,7 +308,8 @@ class DataPrepUtils
     ["s3://#{uploads_bucket}/#{destination_folder}"]
   end
 
-  def self.translate_csv_to_job_objects(csv_path:, job_name:, uploads_bucket:, original_bucket: 'fedora-cor-binaries', max_workers: 10)
+  def self.translate_csv_to_job_objects(csv_path:, job_name:, uploads_bucket:, original_bucket: 'fedora-cor-binaries',
+                                        max_workers: 10)
     # Load data
     csv_data = CSV.read(csv_path, headers: true)
 
