@@ -50,7 +50,7 @@ output "public_route_table_ids" {
 output "vpc_endpoint_ids" {
   description = "Map of VPC Endpoint IDs"
   value = {
-    s3         = var.enable_vpc_endpoints ? aws_vpc_endpoint.s3[0].id : null
+    s3         = (var.enable_vpc_endpoints && length(aws_vpc_endpoint.s3) > 0) ? aws_vpc_endpoint.s3[0].id : null
     ecr_api    = var.enable_vpc_endpoints ? aws_vpc_endpoint.ecr_api[0].id : null
     ecr_dkr    = var.enable_vpc_endpoints ? aws_vpc_endpoint.ecr_dkr[0].id : null
     logs       = var.enable_vpc_endpoints ? aws_vpc_endpoint.logs[0].id : null
