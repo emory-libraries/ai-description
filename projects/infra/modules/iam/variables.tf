@@ -31,16 +31,19 @@ variable "sqs_works_queue_arn" {
 variable "vpc_s3_endpoint_id" {
   description = "The ID of the VPC's S3 endpoint"
   type        = string
+  default     = ""
 }
 
 variable "vpc_ecr_api_endpoint_id" {
   description = "The ID of the VPC's ECR API endpoint"
   type        = string
+  default     = ""
 }
 
 variable "vpc_ecr_dkr_endpoint_id" {
   description = "The ID of the VPC's ECR DKR endpoint"
   type        = string
+  default     = ""
 }
 
 variable "ecr_processor_repository_name" {

@@ -97,7 +97,8 @@ resource "aws_api_gateway_integration_response" "root_files_integration_response
   }
 
   depends_on = [
-    aws_api_gateway_method_response.root_files_method_response
+    aws_api_gateway_method_response.root_files_method_response,
+    aws_api_gateway_integration.root_files_integration
   ]
 }
 
@@ -142,12 +143,16 @@ resource "aws_api_gateway_integration_response" "root_s3_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_rest_api.api.root_resource_id
   http_method = aws_api_gateway_method.root_method.http_method
-  status_code = aws_api_gateway_method_response.root_method_response.status_code
+  status_code = "200"
 
   response_parameters = {
     "method.response.header.Content-Type"                = "integration.response.header.Content-Type"
     "method.response.header.Access-Control-Allow-Origin" = "'*'"
   }
+  depends_on = [
+    aws_api_gateway_integration.root_s3_integration,
+    aws_api_gateway_method_response.root_method_response
+  ]
 }
 
 #----------------------------------------------
@@ -201,12 +206,16 @@ resource "aws_api_gateway_integration_response" "static_files_s3_integration_res
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.static_files.id
   http_method = aws_api_gateway_method.static_files_method.http_method
-  status_code = aws_api_gateway_method_response.static_files_method_response.status_code
+  status_code = "200"
 
   response_parameters = {
     "method.response.header.Content-Type"                = "integration.response.header.Content-Type"
     "method.response.header.Access-Control-Allow-Origin" = "'*'"
   }
+  depends_on = [
+    aws_api_gateway_integration.static_files_s3_integration,
+    aws_api_gateway_method_response.static_files_method_response
+  ]
 }
 
 #----------------------------------------------
@@ -575,21 +584,24 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
   triggers = {
     redeployment = sha1(jsonencode({
-      base_resources      = values(aws_api_gateway_resource.base_resources)[*].id,
-      methods             = values(aws_api_gateway_method.api_methods)[*].id,
-      integrations        = values(aws_api_gateway_integration.api_integrations)[*].id,
-      options             = values(aws_api_gateway_method.options_method)[*].id,
-      options_integration = values(aws_api_gateway_integration.options_integration)[*].id,
-      method_responses    = values(aws_api_gateway_method_response.method_response_200)[*].id,
-      options_responses   = values(aws_api_gateway_method_response.options_200)[*].id,
-      root_method         = aws_api_gateway_method.root_method.id,
-      root_integration    = aws_api_gateway_integration.root_s3_integration.id,
-      static_files        = aws_api_gateway_resource.static_files.id,
-      static_files_method = aws_api_gateway_method.static_files_method.id,
-      static_integration  = aws_api_gateway_integration.static_files_s3_integration.id,
-      static_assets       = aws_api_gateway_resource.static_assets.id,
-      static_assets_files = aws_api_gateway_resource.static_assets_files.id,
-      root_files          = values(aws_api_gateway_resource.root_files)[*].id
+      base_resources              = values(aws_api_gateway_resource.base_resources)[*].id,
+      methods                     = values(aws_api_gateway_method.api_methods)[*].id,
+      integrations                = values(aws_api_gateway_integration.api_integrations)[*].id,
+      options                     = values(aws_api_gateway_method.options_method)[*].id,
+      options_integration         = values(aws_api_gateway_integration.options_integration)[*].id,
+      method_responses            = values(aws_api_gateway_method_response.method_response_200)[*].id,
+      options_responses           = values(aws_api_gateway_method_response.options_200)[*].id,
+      root_method                 = aws_api_gateway_method.root_method.id,
+      root_method_response        = aws_api_gateway_method_response.root_method_response.id,
+      root_integration            = aws_api_gateway_integration.root_s3_integration.id,
+      root_integration_response   = aws_api_gateway_integration_response.root_s3_integration_response.id,
+      static_files                = aws_api_gateway_resource.static_files.id,
+      static_files_method         = aws_api_gateway_method.static_files_method.id,
+      static_integration          = aws_api_gateway_integration.static_files_s3_integration.id,
+      static_integration_response = aws_api_gateway_integration_response.static_files_s3_integration_response.id,
+      static_assets               = aws_api_gateway_resource.static_assets.id,
+      static_assets_files         = aws_api_gateway_resource.static_assets_files.id,
+      root_files                  = values(aws_api_gateway_resource.root_files)[*].id
     }))
   }
 
@@ -607,9 +619,13 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_method_response.options_200,
     aws_api_gateway_integration_response.options_integration_response,
     aws_api_gateway_method.root_method,
+    aws_api_gateway_method_response.root_method_response,
     aws_api_gateway_integration.root_s3_integration,
+    aws_api_gateway_integration_response.root_s3_integration_response,
     aws_api_gateway_method.static_files_method,
     aws_api_gateway_integration.static_files_s3_integration,
+    aws_api_gateway_method_response.static_files_method_response,
+    aws_api_gateway_integration_response.static_files_s3_integration_response,
     aws_api_gateway_method.static_assets_method,
     aws_api_gateway_integration.static_assets_s3_integration,
     aws_api_gateway_method_response.static_assets_method_response,
