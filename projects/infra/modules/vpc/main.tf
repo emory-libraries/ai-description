@@ -201,11 +201,13 @@ resource "aws_security_group" "vpc_endpoints_sg" {
 
 # VPC Endpoints
 resource "aws_vpc_endpoint" "s3" {
-  count             = var.enable_vpc_endpoints ? 1 : 0
+  # Only create the S3 gateway endpoint when endpoints are enabled AND the
+  # module is creating the VPC itself. Import or reuse existing endpoints otherwise.
+  count             = var.enable_vpc_endpoints && local.create_vpc && var.create_gateway_endpoints ? 1 : 0
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : data.aws_route_tables.private[0].ids
+  route_table_ids   = aws_route_table.private[*].id
 
   tags = {
     Name = "${var.deployment_prefix}-s3-endpoint"
@@ -213,11 +215,13 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_vpc_endpoint" "dynamodb" {
-  count             = var.enable_vpc_endpoints ? 1 : 0
+  # Only create the DynamoDB gateway endpoint when endpoints are enabled AND the
+  # module is creating the VPC itself.
+  count             = var.enable_vpc_endpoints && local.create_vpc && var.create_gateway_endpoints ? 1 : 0
   vpc_id            = local.vpc_id
   service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.create_vpc ? aws_route_table.private[*].id : data.aws_route_tables.private[0].ids
+  route_table_ids   = aws_route_table.private[*].id
 
   tags = {
     Name = "${var.deployment_prefix}-dynamodb-endpoint"
@@ -365,13 +369,13 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 # VPC Flow Logs
-resource "aws_flow_log" "main" {
-  iam_role_arn    = aws_iam_role.flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.flow_logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = local.vpc_id
+#resource "aws_flow_log" "main" {
+#  iam_role_arn    = aws_iam_role.flow_logs.arn
+#  log_destination = aws_cloudwatch_log_group.flow_logs.arn
+#  traffic_type    = "ALL"
+# vpc_id          = local.vpc_id
 
-  tags = {
-    Name = "${var.deployment_prefix}-vpc-flow-logs"
-  }
-}
+#  tags = {
+#    Name = "${var.deployment_prefix}-vpc-flow-logs"
+#  }
+#}

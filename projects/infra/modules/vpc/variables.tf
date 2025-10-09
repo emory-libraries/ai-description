@@ -30,6 +30,12 @@ variable "enable_vpc_endpoints" {
   type = bool
 }
 
+variable "create_gateway_endpoints" {
+  description = "Create S3/DynamoDB gateway endpoints (only when creating VPC)"
+  type        = bool
+  default     = true
+}
+
 variable "flow_log_retention_days" {
   description = "Number of days to retain VPC flow logs in CloudWatch"
   type        = number
