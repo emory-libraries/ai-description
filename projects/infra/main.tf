@@ -104,6 +104,10 @@ module "iam" {
   deployment_prefix             = local.deployment_prefix
   works_table_arn               = module.dynamodb.works_table_arn
   uploads_bucket_arn            = module.s3.uploads_bucket_arn
+  bucket_arns = [
+    for bucket_name in var.additional_bucket_names :
+    "arn:aws:s3:::${bucket_name}"
+  ]
   sqs_works_queue_arn           = module.sqs.queue_arn
   vpc_s3_endpoint_id            = module.vpc.vpc_endpoint_ids.s3
   vpc_ecr_api_endpoint_id       = module.vpc.vpc_endpoint_ids.ecr_api

@@ -18,6 +18,12 @@ variable "uploads_bucket_arn" {
   type        = string
 }
 
+variable "bucket_arns" {
+  description = "List of S3 bucket ARNs to grant access to"
+  type        = list(string)
+  default     = []
+}
+
 variable "deployment_prefix" {
   description = "Unique name of the deployment"
   type        = string
