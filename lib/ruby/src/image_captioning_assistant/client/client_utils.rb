@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -9,7 +11,7 @@ require 'uri'
 # Client utils for the api_gateway_demo notebook.
 class ApiClient
   def initialize
-    @logger = Logger.new(STDOUT)
+    @logger = Logger.new($stdout)
   end
 
   def submit_job(api_url, job_name, job_type, works, api_key)

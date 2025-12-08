@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+# Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
+# Terms and the SOW between the parties dated 2025.
+
+require 'rspec/core/rake_task'
+require 'rubocop/rake_task'
+
+# RSpec tasks
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.rspec_opts = '--format documentation'
+end
+
+namespace :spec do
+  RSpec::Core::RakeTask.new(:unit) do |t|
+    t.pattern = 'spec/**/*_spec.rb'
+    t.exclude_pattern = 'spec/integration/**/*_spec.rb'
+    t.rspec_opts = '--format documentation --tag ~integration'
+  end
+
+  RSpec::Core::RakeTask.new(:integration) do |t|
+    t.pattern = 'spec/integration/**/*_spec.rb'
+    t.rspec_opts = '--format documentation --tag integration'
+  end
+
+  desc 'Run tests with coverage'
+  task :coverage do
+    ENV['COVERAGE'] = 'true'
+    Rake::Task['spec'].invoke
+  end
+end
+
+# RuboCop tasks
+RuboCop::RakeTask.new(:rubocop) do |t|
+  t.options = ['--display-cop-names']
+end
+
+namespace :rubocop do
+  desc 'Auto-correct RuboCop offenses'
+  task :auto_correct do
+    sh 'rubocop --auto-correct'
+  end
+end
+
+# Default task
+task default: %i[spec rubocop]
+
+# CI task
+desc 'Run all checks for CI'
+task ci: ['spec:coverage', :rubocop]
+
+# Setup task
+desc 'Setup the project for development'
+task :setup do
+  puts '📦 Installing dependencies...'
+  sh 'bundle install'
+  puts '✅ Setup complete!'
+end
+
+# Console task
+desc 'Open an interactive console with the library loaded'
+task :console do
+  require 'pry'
+  require_relative 'src/image_captioning_assistant'
+  ARGV.clear
+  Pry.start
+end

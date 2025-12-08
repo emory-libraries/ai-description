@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -27,7 +29,7 @@ module ImageCaptioningAssistant
         raise 'maximum of 2 images (front and back) supported for short work' if image_s3_uris.length > 2
 
         img_bytes_list = []
-        if image_s3_uris.length > 0
+        if image_s3_uris.length.positive?
           img_bytes_list = BiasAnalysis.load_and_resize_images(
             image_s3_uris: image_s3_uris,
             s3_kwargs: s3_kwargs,
@@ -50,9 +52,9 @@ module ImageCaptioningAssistant
           request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
 
           response = bedrock_runtime.invoke_model({
-                                                    model_id: model_name,
-                                                    body: JSON.generate(request_body)
-                                                  })
+            model_id: model_name,
+            body: JSON.generate(request_body)
+          })
 
           result = JSON.parse(response.body.read)
           llm_output = if model_name.include?('claude')

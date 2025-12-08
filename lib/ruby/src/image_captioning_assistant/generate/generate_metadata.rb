@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright © Amazon.com and Affiliates: This deliverable is considered Developed Content as defined in the AWS Service
 # Terms and the SOW between the parties dated 2025.
 
@@ -52,9 +54,9 @@ module ImageCaptioningAssistant
           request_body = Utils.format_request_body(model_name, messages, court_order: court_order)
 
           response = bedrock_runtime.invoke_model({
-                                                    model_id: model_name,
-                                                    body: JSON.generate(request_body)
-                                                  })
+            model_id: model_name,
+            body: JSON.generate(request_body)
+          })
 
           result = JSON.parse(response.body.read)
           llm_output = if model_name.include?('claude')
@@ -159,11 +161,12 @@ module ImageCaptioningAssistant
         end
       end
 
-      def self.generate_metadata_from_s3_images(image_s3_uris:, llm_kwargs:, s3_kwargs:, resize_kwargs:, context_s3_uri: nil)
+      def self.generate_metadata_from_s3_images(image_s3_uris:, llm_kwargs:, s3_kwargs:, resize_kwargs:,
+                                                context_s3_uri: nil)
         if image_s3_uris.length > 2
           msg = "Structured metadata only supports documents of 1-2 pages, #{image_s3_uris.length} pages provided."
           Utils::LOGGER.warn(msg)
-          raise DocumentLengthError.new(msg)
+          raise DocumentLengthError, msg
         end
 
         llm_kwargs[:model_id] ||= 'us.anthropic.claude-3-5-sonnet-20241022-v2:0'

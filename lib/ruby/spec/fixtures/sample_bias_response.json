@@ -1,0 +1,22 @@
+{
+  "metadata_biases": {
+    "biases": [
+      {
+        "level": "medium",
+        "type": "cultural",
+        "explanation": "The metadata uses outdated terminology that may not reflect current cultural understanding"
+      }
+    ]
+  },
+  "page_biases": [
+    {
+      "biases": [
+        {
+          "level": "low",
+          "type": "gender",
+          "explanation": "The image shows traditional gender roles typical of the era"
+        }
+      ]
+    }
+  ]
+}

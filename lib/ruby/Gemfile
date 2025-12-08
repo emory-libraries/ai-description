@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
+# Production dependencies
 gem 'aws-sdk-bedrockruntime'
 gem 'aws-sdk-dynamodb'
 gem 'aws-sdk-s3'
@@ -8,3 +11,21 @@ gem 'aws-sdk-sqs'
 gem 'json'
 gem 'mini_magick'
 gem 'retry_block'
+
+# Development and test dependencies
+group :development, :test do
+  gem 'factory_bot', '~> 6.4'
+  gem 'faker', '~> 3.2'
+  gem 'parallel', '~> 1.23'
+  gem 'pry', '~> 0.14'
+  gem 'pry-byebug', '~> 3.10'
+  gem 'rake', '~> 13.0'
+  gem 'rspec', '~> 3.12'
+  gem 'rspec-mocks', '~> 3.12'
+  gem 'rubocop', '~> 1.56'
+  gem 'rubocop-factory_bot', '~> 2.24'
+  gem 'rubocop-rake', '~> 0.6'
+  gem 'rubocop-rspec', '~> 2.24'
+  gem 'simplecov', '~> 0.22'
+  gem 'webmock', '~> 3.19'
+end
