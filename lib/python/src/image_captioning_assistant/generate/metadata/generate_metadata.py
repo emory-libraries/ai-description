@@ -109,7 +109,7 @@ def generate_metadata_from_s3_images(
 
     # Establish a default model
     if "model_id" not in llm_kwargs:
-        llm_kwargs["model_id"] = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+        llm_kwargs["model_id"] = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
     # Load context if provided
     work_context = None

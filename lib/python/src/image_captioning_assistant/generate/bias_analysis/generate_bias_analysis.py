@@ -24,7 +24,7 @@ def generate_bias_analysis_from_s3_images(
     """Find biases across an arbitrarily long work."""
     # Establish a default model
     if "model_id" not in llm_kwargs:
-        llm_kwargs["model_id"] = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+        llm_kwargs["model_id"] = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
     original_metadata = None
     # If metadata was provided
     if original_metadata_s3_uri:

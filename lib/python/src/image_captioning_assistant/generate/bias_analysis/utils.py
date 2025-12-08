@@ -74,7 +74,7 @@ def create_messages(
     img_bytes_list: list[bytes],
     work_context: str | None = None,
     original_metadata: str | None = None,
-    model_name: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    model_name: str = "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 ) -> list[dict[str, Any]]:
     """Create Messages list to pass to LLM, supports Claude and Nova models."""
     # Create system prompt
