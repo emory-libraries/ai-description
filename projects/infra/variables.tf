@@ -57,3 +57,9 @@ variable "enable_vpc_endpoints" {
   type    = bool
   default = true
 }
+
+variable "additional_bucket_names" {
+  description = "List of additional S3 bucket names to grant IAM access to (e.g., search bucket)"
+  type        = list(string)
+  default     = []
+}

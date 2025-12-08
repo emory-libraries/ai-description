@@ -50,10 +50,18 @@ resource "aws_iam_policy" "create_job_policy" {
           "s3:HeadObject",
           "s3:ListBucket",
         ]
-        Resource = [
-          var.uploads_bucket_arn,
-          "${var.uploads_bucket_arn}/*",
-        ]
+        Resource = concat(
+          [
+            var.uploads_bucket_arn,
+            "${var.uploads_bucket_arn}/*",
+          ],
+          flatten([
+            for bucket_arn in var.bucket_arns : [
+              bucket_arn,
+              "${bucket_arn}/*"
+            ]
+          ])
+        )
       },
       {
         Effect = "Allow"
@@ -299,10 +307,18 @@ resource "aws_iam_policy" "get_presigned_url_policy" {
           "s3:HeadObject",
           "s3:ListBucket",
         ]
-        Resource = [
-          var.uploads_bucket_arn,
-          "${var.uploads_bucket_arn}/*",
-        ]
+        Resource = concat(
+          [
+            var.uploads_bucket_arn,
+            "${var.uploads_bucket_arn}/*",
+          ],
+          flatten([
+            for bucket_arn in var.bucket_arns : [
+              bucket_arn,
+              "${bucket_arn}/*"
+            ]
+          ])
+        )
       }
     ]
   })
@@ -442,19 +458,30 @@ resource "aws_iam_policy" "ecs_task_policy" {
           "s3:HeadObject",
           "s3:ListBucket",
         ]
-        Resource = [
-          "${var.uploads_bucket_arn}",
-          "${var.uploads_bucket_arn}/*",
-        ]
+        Resource = concat(
+          [
+            "${var.uploads_bucket_arn}",
+            "${var.uploads_bucket_arn}/*",
+          ],
+          flatten([
+            for bucket_arn in var.bucket_arns : [
+              bucket_arn,
+              "${bucket_arn}/*"
+            ]
+          ])
+        )
       },
       {
         Effect = "Allow"
         Action = [
           "s3:ListBucket"
         ]
-        Resource = [
-          var.uploads_bucket_arn
-        ]
+        Resource = concat(
+          [
+            var.uploads_bucket_arn
+          ],
+          var.bucket_arns
+        )
       },
       {
         Effect = "Allow"
