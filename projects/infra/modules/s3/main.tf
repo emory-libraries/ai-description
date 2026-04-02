@@ -120,7 +120,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads_lifecycle" {
     status = "Enabled"
 
     expiration {
-      days = 90
+      days = 270
     }
   }
 }
